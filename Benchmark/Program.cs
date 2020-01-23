@@ -20,8 +20,23 @@ namespace HashTest
         {
             Console.WriteLine("Arc.Crypto Benchmark.");
 
-            // HashBenchmark, StringBenchmark, SHA256Benchmark, SpeedBenchmark
-            var summary = BenchmarkRunner.Run<SpeedBenchmark>();
+            // var summary = BenchmarkRunner.Run<SpeedBenchmark>();
+            var switcher = new BenchmarkSwitcher(new[]
+            {
+                typeof(HashBenchmark),
+                typeof(StringBenchmark),
+                typeof(SHA256Benchmark),
+                typeof(SpeedBenchmark),
+            });
+            switcher.Run(args);
+        }
+    }
+
+    public class BenchmarkConfig : BenchmarkDotNet.Configs.ManualConfig
+    {
+        public BenchmarkConfig()
+        {
+            // this.Add(BenchmarkDotNet.Jobs.Job.ShortRun);
         }
     }
 
@@ -265,13 +280,5 @@ namespace HashTest
 
         [Benchmark]
         public ulong ArcCRC32() => Arc.Crypto.CRC32.Hash32(this.data.AsSpan(0, this.Length));
-    }
-
-    internal class BenchmarkConfig : BenchmarkDotNet.Configs.ManualConfig
-    {
-        public BenchmarkConfig()
-        {
-            // this.Add(BenchmarkDotNet.Jobs.Job.ShortRun);
-        }
     }
 }

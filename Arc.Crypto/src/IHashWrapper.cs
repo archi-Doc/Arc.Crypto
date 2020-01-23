@@ -35,7 +35,7 @@ namespace Arc.Crypto
         public virtual bool IsCryptographic => false;
 
         /// <summary>
-        /// Not implemented, because HashAlgorithm does not support Span. Use <see cref="GetHash(byte[], int, int)"/> instead.
+        /// Not implemented, because HashAlgorithm does not support Span (TransformBlock()). Use <see cref="GetHash(byte[], int, int)"/> instead.
         /// </summary>
         /// <param name="input">The read-only span that contains input data.</param>
         /// <returns>A hash.</returns>
@@ -58,7 +58,7 @@ namespace Arc.Crypto
         public void HashInitialize() => this.HashAlgorithm!.Initialize();
 
         /// <summary>
-        /// Not implemented, because HashAlgorithm does not support Span. Use <see cref="HashUpdate(byte[], int, int)"/> instead.
+        /// Not implemented, because HashAlgorithm does not support Span (TransformBlock()). Use <see cref="HashUpdate(byte[], int, int)"/> instead.
         /// </summary>
         /// <param name="input">The read-only span that contains input data.</param>
         public void HashUpdate(ReadOnlySpan<byte> input)
