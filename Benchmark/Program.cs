@@ -36,6 +36,9 @@ namespace HashTest
     {
         public BenchmarkConfig()
         {
+            this.Add(BenchmarkDotNet.Exporters.MarkdownExporter.GitHub);
+            this.Add(BenchmarkDotNet.Diagnosers.MemoryDiagnoser.Default);
+
             // this.Add(BenchmarkDotNet.Jobs.Job.ShortRun);
         }
     }
