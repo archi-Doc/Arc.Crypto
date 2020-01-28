@@ -18,7 +18,7 @@ namespace Arc.Crypto
         /// <summary>
         /// Gets or sets the instance of HashAlgorithm.
         /// </summary>
-        public HashAlgorithm? HashAlgorithm { get; protected set; }
+        public HashAlgorithm HashAlgorithm { get; protected set; }
 
         /// <summary>
         /// Gets empty byte[].
@@ -35,6 +35,14 @@ namespace Arc.Crypto
         public virtual bool IsCryptographic => false;
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="HashAlgorithmWrapper"/> class.
+        /// </summary>
+        public HashAlgorithmWrapper()
+        {
+            this.HashAlgorithm = null!; // this.HashAlgorithm must be set in a constructor of inherited class.
+        }
+
+        /// <summary>
         /// Not implemented, because HashAlgorithm does not support Span (TransformBlock()). Use <see cref="GetHash(byte[], int, int)"/> instead.
         /// </summary>
         /// <param name="input">The read-only span that contains input data.</param>
@@ -45,17 +53,17 @@ namespace Arc.Crypto
         }
 
         /// <inheritdoc/>
-        public byte[] GetHash(byte[] input, int inputOffset, int inputCount) => this.HashAlgorithm!.ComputeHash(input, inputOffset, inputCount);
+        public byte[] GetHash(byte[] input, int inputOffset, int inputCount) => this.HashAlgorithm.ComputeHash(input, inputOffset, inputCount);
 
         /// <inheritdoc/>
         public byte[] HashFinal()
         {
-            this.HashAlgorithm!.TransformFinalBlock(this.EmptyByte, 0, 0);
-            return this.HashAlgorithm!.Hash;
+            this.HashAlgorithm.TransformFinalBlock(this.EmptyByte, 0, 0);
+            return this.HashAlgorithm.Hash;
         }
 
         /// <inheritdoc/>
-        public void HashInitialize() => this.HashAlgorithm!.Initialize();
+        public void HashInitialize() => this.HashAlgorithm.Initialize();
 
         /// <summary>
         /// Not implemented, because HashAlgorithm does not support Span (TransformBlock()). Use <see cref="HashUpdate(byte[], int, int)"/> instead.
@@ -67,7 +75,7 @@ namespace Arc.Crypto
         }
 
         /// <inheritdoc/>
-        public void HashUpdate(byte[] input, int inputOffset, int inputCount) => this.HashAlgorithm!.TransformBlock(input, inputOffset, inputCount, null, 0);
+        public void HashUpdate(byte[] input, int inputOffset, int inputCount) => this.HashAlgorithm.TransformBlock(input, inputOffset, inputCount, null, 0);
 
         #region IDisposable Support
         private bool disposed = false; // To detect redundant calls.
