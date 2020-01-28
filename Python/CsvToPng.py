@@ -1,5 +1,6 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# searches for ../results folder, and convert csv to png chart.
 import os
 import sys
 import pathlib
@@ -106,13 +107,18 @@ def processFile(p):
     return
 
 def processFolder(p):
+    flag = p.name == 'results'
+
     for x in p.iterdir():
-        if x.suffix.lower() == '.csv':
-            processFile(x)
+        if x.is_dir(): # folder
+            processFolder(x)
+        else: # file
+            if flag and x.suffix.lower() == '.csv': # results folder and csv files.
+                processFile(x)
     return
 
 sns.set_style("whitegrid")
 sns.set(font_scale=0.8)
 
 path = os.getcwd()
-processFolder(pathlib.Path(path))
+processFolder(pathlib.Path(path).parent)
