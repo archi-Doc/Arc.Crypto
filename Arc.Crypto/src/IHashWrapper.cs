@@ -106,7 +106,7 @@ namespace Arc.Crypto
                 if (disposing)
                 {
                     // free managed resources.
-                    this.HashAlgorithm!.Dispose();
+                    this.HashAlgorithm.Dispose();
                 }
 
                 // free native resources here if there are any.
