@@ -209,19 +209,19 @@ namespace HashTest
         public uint ArcFarmHash32_Direct() => Arc.Crypto.FarmHash.Hash32(TestString);
 
         [Benchmark]
-        public uint ArcFarmHash32_64to32() => (uint)Arc.Crypto.FarmHash.Hash64(TestString);
+        public uint ArcFarmHash32_64to32() => unchecked((uint)Arc.Crypto.FarmHash.Hash64(TestString));
 
         [Benchmark]
         public ulong ArcFarmHash64_Direct() => Arc.Crypto.FarmHash.Hash64(TestString);
 
-        [Benchmark]
+        /*[Benchmark]
         public ulong ArcFarmHash64_GetBytes() => Arc.Crypto.FarmHash.Hash64(Encoding.UTF8.GetBytes(TestString));
 
         [Benchmark]
         public uint ArcXXHash32_Direct() => Arc.Crypto.XXHash32.Hash32(TestString);
 
         [Benchmark]
-        public ulong ArcXXHash64_Direct() => Arc.Crypto.XXHash64.Hash64(TestString);
+        public ulong ArcXXHash64_Direct() => Arc.Crypto.XXHash64.Hash64(TestString);*/
     }
 
     [Config(typeof(BenchmarkConfig))]
