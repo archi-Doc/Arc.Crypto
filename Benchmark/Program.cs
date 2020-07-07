@@ -209,6 +209,9 @@ namespace HashTest
         public uint ArcFarmHash32_Direct() => Arc.Crypto.FarmHash.Hash32(TestString);
 
         [Benchmark]
+        public uint ArcFarmHash32_64to32() => (uint)Arc.Crypto.FarmHash.Hash64(TestString);
+
+        [Benchmark]
         public ulong ArcFarmHash64_Direct() => Arc.Crypto.FarmHash.Hash64(TestString);
 
         [Benchmark]
