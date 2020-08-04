@@ -69,6 +69,14 @@ namespace Arc.Crypto
         /// <summary>
         /// Static function: Calculates a 32bit hash from the given string.
         /// </summary>
+        /// <param name="input">The read-only span that contains input data.</param>
+        /// <returns>A 32bit hash.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe ulong Hash32(ReadOnlySpan<char> input) => Hash32(MemoryMarshal.Cast<char, byte>(input));
+
+        /// <summary>
+        /// Static function: Calculates a 32bit hash from the given string.
+        /// </summary>
         /// <param name="str">The string containing the characters to calculates.</param>
         /// <returns>A 32bit hash.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -87,6 +95,14 @@ namespace Arc.Crypto
                 return Hash64(p, (uint)input.Length);
             }
         }
+
+        /// <summary>
+        /// Static function: Calculates a 64bit hash from the given string.
+        /// </summary>
+        /// <param name="input">The read-only span that contains input data.</param>
+        /// <returns>A 64bit hash.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe ulong Hash64(ReadOnlySpan<char> input) => Hash64(MemoryMarshal.Cast<char, byte>(input));
 
         /// <summary>
         /// Static function: Calculates a 64bit hash from the given string.
