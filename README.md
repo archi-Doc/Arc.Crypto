@@ -64,7 +64,7 @@ Intel Core i7-6700K CPU 4.00GHz (Skylake), 1 CPU, 8 logical and 4 physical cores
 ```
 ### HashTest.HashBenchmark
 
-![HashTest.HashBenchmark-report](doc\HashTest.HashBenchmark-report.png)
+![HashTest.HashBenchmark-report](doc/HashTest.HashBenchmark-report.png)
 
 IHash version uses HashInitialize() HashUpdate() HashFinal() functions to process data sequentially. Thus it's capable of calculating a hash of large data. But IHash version is slower than GetHash() version.
 
@@ -126,7 +126,7 @@ The advantage of XXHash is that IHash version is as fast as GetHash() version. X
 
 ### HashTest.SHA256Benchmark
 
-![HashTest.SHA256Benchmark-report](doc\HashTest.SHA256Benchmark-report.png)
+![HashTest.SHA256Benchmark-report](doc/HashTest.SHA256Benchmark-report.png)
 
 The performance of SHA256 / SHA256Managed / SHA256ServiceProvider is identical.
 
@@ -146,7 +146,7 @@ The performance of SHA256 / SHA256Managed / SHA256ServiceProvider is identical.
 
 ### HashTest.SpeedBenchmark
 
-![HashTest.SpeedBenchmark-report](doc\HashTest.SpeedBenchmark-report.png)
+![HashTest.SpeedBenchmark-report](doc/HashTest.SpeedBenchmark-report.png)
 
 Non-cryptographic hash functions (FarmHash, XXHash) are much faster then cryptographic hash functions (SHA series).
 
@@ -169,4 +169,4 @@ Non-cryptographic hash functions (FarmHash, XXHash) are much faster then cryptog
 
 ### HashTest.StringBenchmark
 
-![HashTest.StringBenchmark-report](doc\HashTest.StringBenchmark-report.png)
+![HashTest.StringBenchmark-report](doc/HashTest.StringBenchmark-report.png)
