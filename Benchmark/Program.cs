@@ -11,6 +11,9 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 
 #pragma warning disable SA1310 // Field names should not contain underscore
+#pragma warning disable CS1591
+#pragma warning disable SA1402
+#pragma warning disable SA1600 // Elements should be documented
 
 namespace HashTest
 {
@@ -106,6 +109,7 @@ namespace HashTest
         private const int N = 1_000_000;
         private readonly byte[] data;
         private IHash farm;
+        private IHash farmBeta;
         private IHash xxh32;
         private IHash xxh64;
         private IHash sha1;
@@ -122,6 +126,7 @@ namespace HashTest
             new Random(42).NextBytes(this.data);
 
             this.farm = new FarmHash();
+            this.farmBeta = new Beta.Crypto.FarmHash(); // System.Numerics.BitOperation
             this.xxh32 = new XXHash32();
             this.xxh64 = new XXHash64();
             this.sha1 = new Arc.Crypto.SHA1();
@@ -135,6 +140,9 @@ namespace HashTest
 
         [Benchmark]
         public byte[] FarmHash64() => this.farm.GetHash(this.data);
+
+        [Benchmark]
+        public byte[] FarmHash64Beta() => this.farmBeta.GetHash(this.data);
 
         [Benchmark]
         public byte[] XXHash32() => this.xxh32.GetHash(this.data);
