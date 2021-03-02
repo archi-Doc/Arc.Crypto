@@ -156,5 +156,28 @@ csharp_new_line_before_members_in_anonymous_types = true
 # Blocks are allowed
 csharp_prefer_braces = true:silent
 
+dotnet_diagnostic.SA1000.severity = silent
 # SA1011: Closing square brackets should be spaced correctly
 dotnet_diagnostic.SA1011.severity = silent
+# SA1200: Using directives should be placed correctly
+dotnet_diagnostic.SA1200.severity = none
+# SA1201: Elements should appear in the correct order
+dotnet_diagnostic.SA1201.severity = suggestion
+# SA1402: File may only contain a single type
+dotnet_diagnostic.SA1402.severity = suggestion
+# SA1512: Single-line comments should not be followed by blank line
+dotnet_diagnostic.SA1512.severity = suggestion
+# SA1515: Single-line comment should be preceded by blank line
+dotnet_diagnostic.SA1515.severity = suggestion
+# SA1600: Elements should be documented
+dotnet_diagnostic.SA1600.severity = suggestion
+# SA1601: Partial elements should be documented
+dotnet_diagnostic.SA1601.severity = suggestion
+# CS1573: Parameter has no matching param tag in the XML comment
+dotnet_diagnostic.CS1573.severity = silent
+# CS1591: Missing XML comment for publicly visible type or member
+dotnet_diagnostic.CS1591.severity = silent
+# SA1649: File name should match first type name
+dotnet_diagnostic.SA1649.severity = silent
+
+dotnet_diagnostic.SA1591.severity = suggestion
