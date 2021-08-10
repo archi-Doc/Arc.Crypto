@@ -42,7 +42,7 @@ namespace HashTest
             this.AddExporter(BenchmarkDotNet.Exporters.MarkdownExporter.GitHub);
             this.AddDiagnoser(BenchmarkDotNet.Diagnosers.MemoryDiagnoser.Default);
 
-            // this.Add(BenchmarkDotNet.Jobs.Job.ShortRun);
+            // this.AddJob(BenchmarkDotNet.Jobs.Job.ShortRun);
         }
     }
 
