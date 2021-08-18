@@ -188,8 +188,10 @@ namespace HashTest
             new Random(42).NextBytes(this.data);
 
             this.sha256 = System.Security.Cryptography.SHA256.Create();
+#pragma warning disable SYSLIB0021 // Type or member is obsolete
             this.sha256Managed = System.Security.Cryptography.SHA256Managed.Create();
             this.sha256ServiceProvider = new SHA256CryptoServiceProvider();
+#pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
         [Params(10, 1_000, 1_000_000)]

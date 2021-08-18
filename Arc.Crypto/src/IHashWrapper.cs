@@ -59,7 +59,7 @@ namespace Arc.Crypto
         public byte[] HashFinal()
         {
             this.HashAlgorithm.TransformFinalBlock(this.EmptyByte, 0, 0);
-            return this.HashAlgorithm.Hash;
+            return this.HashAlgorithm.Hash ?? Array.Empty<byte>();
         }
 
         /// <inheritdoc/>
@@ -135,7 +135,7 @@ namespace Arc.Crypto
         /// </summary>
         public SHA1()
         {
-            this.HashAlgorithm = new SHA1CryptoServiceProvider();
+            this.HashAlgorithm = System.Security.Cryptography.SHA1.Create();
         }
     }
 
@@ -158,7 +158,7 @@ namespace Arc.Crypto
         /// </summary>
         public SHA2_256()
         {
-            this.HashAlgorithm = new SHA256CryptoServiceProvider();
+            this.HashAlgorithm = System.Security.Cryptography.SHA256.Create();
         }
     }
 
@@ -181,7 +181,7 @@ namespace Arc.Crypto
         /// </summary>
         public SHA2_384()
         {
-            this.HashAlgorithm = new SHA384CryptoServiceProvider();
+            this.HashAlgorithm = System.Security.Cryptography.SHA384.Create();
         }
     }
 
@@ -204,7 +204,7 @@ namespace Arc.Crypto
         /// </summary>
         public SHA2_512()
         {
-            this.HashAlgorithm = new SHA512CryptoServiceProvider();
+            this.HashAlgorithm = System.Security.Cryptography.SHA512.Create();
         }
     }
 }
