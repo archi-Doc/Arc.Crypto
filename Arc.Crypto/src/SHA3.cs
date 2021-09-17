@@ -115,7 +115,7 @@ namespace Arc.Crypto
         /// <summary>
         /// Gets or sets the instance of KeccakSponge.
         /// </summary>
-        internal KeccakSponge? Sponge { get; set; }
+        internal KeccakSponge Sponge { get; set; } = default!;
 
         /// <inheritdoc/>
         public byte[] GetHash(ReadOnlySpan<byte> input)
