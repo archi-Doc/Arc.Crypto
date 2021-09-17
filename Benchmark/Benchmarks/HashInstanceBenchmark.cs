@@ -32,17 +32,12 @@ public class HashInstanceBenchmark
 
     public HashInstanceBenchmark()
     {
-        this.ByteArray = new byte[this.Length];
-        for (var i = 0; i < this.Length; i++)
-        {
-            this.ByteArray[i] = (byte)i;
-        }
     }
 
     [Params(10)]
     public int Length { get; set; }
 
-    public byte[] ByteArray { get; } = default!;
+    public byte[] ByteArray { get; set; } = default!;
 
     public SHA3_256 SHA3Instance { get; } = new();
 
@@ -53,6 +48,11 @@ public class HashInstanceBenchmark
     [GlobalSetup]
     public void Setup()
     {
+        this.ByteArray = new byte[this.Length];
+        for (var i = 0; i < this.Length; i++)
+        {
+            this.ByteArray[i] = (byte)i;
+        }
     }
 
     [GlobalCleanup]
