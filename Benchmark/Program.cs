@@ -15,7 +15,7 @@ using BenchmarkDotNet.Running;
 #pragma warning disable SA1402
 #pragma warning disable SA1600 // Elements should be documented
 
-namespace HashTest
+namespace Benchmark
 {
     public class Program
     {
@@ -26,6 +26,7 @@ namespace HashTest
             // var summary = BenchmarkRunner.Run<SpeedBenchmark>();
             var switcher = new BenchmarkSwitcher(new[]
             {
+                typeof(HashInstanceBenchmark),
                 typeof(HashBenchmark),
                 typeof(StringBenchmark),
                 typeof(SHA256Benchmark),
