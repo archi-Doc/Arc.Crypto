@@ -23,6 +23,25 @@ namespace Arc.Crypto
             this.Sponge = new KeccakSponge(256);
         }
 
+        public (ulong hash0, ulong hash1, ulong hash2, ulong hash3) GetHashULong(ReadOnlySpan<byte> input)
+        {
+            this.HashInitialize();
+            this.HashUpdate(input);
+            return this.Sponge!.SqueezeToULong4();
+        }
+
+        public (ulong hash0, ulong hash1, ulong hash2, ulong hash3) GetHashULong(byte[] input, int inputOffset, int inputCount)
+        {
+            this.HashInitialize();
+            this.HashUpdate(input, inputOffset, inputCount);
+            return this.Sponge!.SqueezeToULong4();
+        }
+
+        public (ulong hash0, ulong hash1, ulong hash2, ulong hash3) HashFinalULong()
+        {
+            return this.Sponge!.SqueezeToULong4();
+        }
+
         /// <inheritdoc/>
         public override string HashName => "SHA3-256";
 
@@ -258,7 +277,6 @@ namespace Arc.Crypto
         { // state 0..(this.Bitrate / 8) : data, (this.Bitrate / 8)..100
             this.state[this.statePosition / 8] ^= 0x06UL << (8 * (this.statePosition % 8));
             this.state[(this.Bitrate / 64) - 1] ^= 0x80UL << 56;
-
             this.Permute(this.state);
 
             // copy result from this.state.
@@ -276,6 +294,78 @@ namespace Arc.Crypto
             this.Initialize();
 
             return result;
+        }
+
+        internal unsafe (ulong hash0, ulong hash1, ulong hash2, ulong hash3) SqueezeToULong4()
+        {
+            if (this.OutputBits < 256)
+            {
+                throw new InvalidOperationException();
+            }
+
+            this.state[this.statePosition / 8] ^= 0x06UL << (8 * (this.statePosition % 8));
+            this.state[(this.Bitrate / 64) - 1] ^= 0x80UL << 56;
+            this.Permute(this.state);
+
+            var h0 = this.state[0];
+            var h1 = this.state[1];
+            var h2 = this.state[2];
+            var h3 = this.state[3];
+
+            this.statePosition = -1; // force initialize.
+            this.Initialize();
+
+            return (h0, h1, h2, h3);
+        }
+
+        internal unsafe (ulong hash0, ulong hash1, ulong hash2, ulong hash3, ulong hash4, ulong hash5) SqueezeToULong6()
+        {
+            if (this.OutputBits < 384)
+            {
+                throw new InvalidOperationException();
+            }
+
+            this.state[this.statePosition / 8] ^= 0x06UL << (8 * (this.statePosition % 8));
+            this.state[(this.Bitrate / 64) - 1] ^= 0x80UL << 56;
+            this.Permute(this.state);
+
+            var h0 = this.state[0];
+            var h1 = this.state[1];
+            var h2 = this.state[2];
+            var h3 = this.state[3];
+            var h4 = this.state[4];
+            var h5 = this.state[5];
+
+            this.statePosition = -1; // force initialize.
+            this.Initialize();
+
+            return (h0, h1, h2, h3, h4, h5);
+        }
+
+        internal unsafe (ulong hash0, ulong hash1, ulong hash2, ulong hash3, ulong hash4, ulong hash5, ulong hash6, ulong hash7) SqueezeToULong8()
+        {
+            if (this.OutputBits < 512)
+            {
+                throw new InvalidOperationException();
+            }
+
+            this.state[this.statePosition / 8] ^= 0x06UL << (8 * (this.statePosition % 8));
+            this.state[(this.Bitrate / 64) - 1] ^= 0x80UL << 56;
+            this.Permute(this.state);
+
+            var h0 = this.state[0];
+            var h1 = this.state[1];
+            var h2 = this.state[2];
+            var h3 = this.state[3];
+            var h4 = this.state[4];
+            var h5 = this.state[5];
+            var h6 = this.state[6];
+            var h7 = this.state[7];
+
+            this.statePosition = -1; // force initialize.
+            this.Initialize();
+
+            return (h0, h1, h2, h3, h4, h5, h6, h7);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

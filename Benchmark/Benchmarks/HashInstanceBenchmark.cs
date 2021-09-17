@@ -55,13 +55,20 @@ public class HashInstanceBenchmark
     }
 
     [Benchmark]
+    public (ulong h0, ulong h1, ulong h2, ulong h3) SHA3ULong()
+    {
+        var h = new SHA3_256();
+        return h.GetHashULong(this.ByteArray);
+    }
+
+    [Benchmark]
     public byte[] SHA3_Obsolete()
     {
         var h = new Obsolete.SHA3_256();
         return h.GetHash(this.ByteArray);
     }
 
-    [Benchmark]
+    /*[Benchmark]
     public byte[] SHA3_NoInstance()
     {
         return this.SHA3Instance.GetHash(this.ByteArray);
@@ -71,5 +78,5 @@ public class HashInstanceBenchmark
     public byte[] SHA3_Obsolete_NoInstance()
     {
         return this.SHA3ObsoleteInstance.GetHash(this.ByteArray);
-    }
+    }*/
 }
