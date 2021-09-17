@@ -1,6 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -224,6 +225,7 @@ namespace Arc.Crypto
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint Rotate32(uint val, int shift) => shift == 0 ? val : ((val >> shift) | (val << (32 - shift)));
+        // private static uint Rotate32(uint val, int shift) => BitOperations.RotateRight(val, shift);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void Swap(ref ulong x, ref ulong z)
@@ -267,6 +269,7 @@ namespace Arc.Crypto
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ulong Rotate64(ulong val, int shift) => shift == 0 ? val : (val >> shift) | (val << (64 - shift));
+        // private static ulong Rotate64(ulong val, int shift) => BitOperations.RotateRight(val, shift);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ulong ShiftMix(ulong val) => val ^ (val >> 47);

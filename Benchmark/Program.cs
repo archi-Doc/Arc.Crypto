@@ -118,6 +118,7 @@ namespace Benchmark
         private IHash sha2_384;
         private IHash sha2_512;
         private IHash sha3_256;
+        private IHash sha3_256ob;
         private IHash sha3_384;
         private IHash sha3_512;
 
@@ -135,6 +136,7 @@ namespace Benchmark
             this.sha2_384 = new SHA2_384();
             this.sha2_512 = new SHA2_512();
             this.sha3_256 = new SHA3_256();
+            this.sha3_256ob = new Obsolete.SHA3_256();
             this.sha3_384 = new SHA3_384();
             this.sha3_512 = new SHA3_512();
         }
@@ -142,7 +144,7 @@ namespace Benchmark
         [Benchmark]
         public byte[] FarmHash64() => this.farm.GetHash(this.data);
 
-        [Benchmark]
+        /*[Benchmark]
         public byte[] FarmHash64Beta() => this.farmBeta.GetHash(this.data);
 
         [Benchmark]
@@ -161,16 +163,19 @@ namespace Benchmark
         public byte[] SHA2_384() => this.sha2_384.GetHash(this.data, 0, this.data.Length);
 
         [Benchmark]
-        public byte[] SHA2_512() => this.sha2_512.GetHash(this.data, 0, this.data.Length);
+        public byte[] SHA2_512() => this.sha2_512.GetHash(this.data, 0, this.data.Length);*/
 
         [Benchmark]
         public byte[] SHA3_256() => this.sha3_256.GetHash(this.data, 0, this.data.Length);
 
         [Benchmark]
+        public byte[] SHA3_256Ob() => this.sha3_256ob.GetHash(this.data, 0, this.data.Length);
+
+        /*[Benchmark]
         public byte[] SHA3_384() => this.sha3_384.GetHash(this.data, 0, this.data.Length);
 
         [Benchmark]
-        public byte[] SHA3_512() => this.sha3_512.GetHash(this.data, 0, this.data.Length);
+        public byte[] SHA3_512() => this.sha3_512.GetHash(this.data, 0, this.data.Length);*/
     }
 
     [Config(typeof(BenchmarkConfig))]

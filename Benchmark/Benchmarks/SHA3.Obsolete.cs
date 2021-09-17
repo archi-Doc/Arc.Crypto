@@ -1,14 +1,13 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 #pragma warning disable SA1402 // File may only contain a single type
 #pragma warning disable SA1649 // File name should match first type name
 
-namespace Arc.Crypto
+namespace Benchmark.Obsolete
 {
     /// <summary>
     /// SHA3-256 Hash Class.
@@ -82,7 +81,7 @@ namespace Arc.Crypto
     /// <summary>
     /// Wrapper class for SHA3.
     /// </summary>
-    public abstract class SHA3 : IHash
+    public abstract class SHA3 : Arc.Crypto.IHash
     {
         /// <inheritdoc/>
         public virtual string HashName => "SHA3 Wrapper";
@@ -188,7 +187,13 @@ namespace Arc.Crypto
 
             this.statePosition = 0;
 
-            Array.Fill<ulong>(this.state, 0);
+            unsafe
+            {
+                fixed (void* p = this.state)
+                {
+                    Clear(p, StateLength * sizeof(ulong));
+                }
+            }
         }
 
         /// <summary>
@@ -278,9 +283,45 @@ namespace Arc.Crypto
             return result;
         }
 
+        /// <summary>
+        /// Fills target with zeros.
+        /// </summary>
+        /// <param name="target">target data.</param>
+        /// <param name="length">target length.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ulong Rotl64(ulong val, int shift) => BitOperations.RotateLeft(val, shift);
-        // private static ulong Rotl64(ulong val, int shift) => shift == 0 ? val : (val << shift) | (val >> (64 - shift));
+        internal static void Clear(void* target, int length)
+        {
+            var targetP = (byte*)target;
+
+            while (length >= sizeof(ulong))
+            {
+                *(ulong*)targetP = 0;
+                targetP += sizeof(ulong);
+                length -= sizeof(ulong);
+            }
+
+            if (length >= sizeof(uint))
+            {
+                *(uint*)targetP = 0;
+                targetP += sizeof(uint);
+                length -= sizeof(uint);
+            }
+
+            if (length >= sizeof(ushort))
+            {
+                *(ushort*)targetP = 0;
+                targetP += sizeof(ushort);
+                length -= sizeof(ushort);
+            }
+
+            if (length > 0)
+            {
+                *targetP = 0;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong Rotl64(ulong val, int shift) => shift == 0 ? val : (val << shift) | (val >> (64 - shift));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SHA3_round(Span<ulong> t, ReadOnlySpan<ulong> a, ulong rc)

@@ -27,6 +27,10 @@ public class HashInstanceBenchmark
 
     public byte[] ByteArray { get; } = default!;
 
+    public SHA3_256 SHA3Instance { get; } = new ();
+
+    public Obsolete.SHA3_256 SHA3ObsoleteInstance { get; } = new ();
+
     [GlobalSetup]
     public void Setup()
     {
@@ -44,9 +48,28 @@ public class HashInstanceBenchmark
     }
 
     [Benchmark]
-    public byte[] SHA3_256()
+    public byte[] SHA3()
     {
         var h = new SHA3_256();
         return h.GetHash(this.ByteArray);
+    }
+
+    [Benchmark]
+    public byte[] SHA3_Obsolete()
+    {
+        var h = new Obsolete.SHA3_256();
+        return h.GetHash(this.ByteArray);
+    }
+
+    [Benchmark]
+    public byte[] SHA3_NoInstance()
+    {
+        return this.SHA3Instance.GetHash(this.ByteArray);
+    }
+
+    [Benchmark]
+    public byte[] SHA3_Obsolete_NoInstance()
+    {
+        return this.SHA3ObsoleteInstance.GetHash(this.ByteArray);
     }
 }
