@@ -115,7 +115,7 @@ namespace Arc.Crypto
         /// <summary>
         /// Gets or sets the instance of KeccakSponge.
         /// </summary>
-        internal KeccakSponge? Sponge { get; set; }
+        internal KeccakSponge Sponge { get; set; } = default!;
 
         /// <inheritdoc/>
         public byte[] GetHash(ReadOnlySpan<byte> input)
@@ -369,8 +369,8 @@ namespace Arc.Crypto
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ulong Rotl64(ulong val, int shift) => BitOperations.RotateLeft(val, shift);
-        // private static ulong Rotl64(ulong val, int shift) => shift == 0 ? val : (val << shift) | (val >> (64 - shift));
+        // private static ulong Rotl64(ulong val, int shift) => BitOperations.RotateLeft(val, shift);
+        private static ulong Rotl64(ulong val, int shift) => shift == 0 ? val : (val << shift) | (val >> (64 - shift));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SHA3_round(Span<ulong> t, ReadOnlySpan<ulong> a, ulong rc)
