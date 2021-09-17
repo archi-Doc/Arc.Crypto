@@ -370,7 +370,7 @@ namespace Arc.Crypto
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         // private static ulong Rotl64(ulong val, int shift) => BitOperations.RotateLeft(val, shift);
-        private static ulong Rotl64(ulong val, int shift) => shift == 0 ? val : (val << shift) | (val >> (64 - shift));
+        private static ulong Rotl64(ulong val, int shift) => shift == 0 ? val : (val << shift) | (val >> (64 - shift)); // same
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SHA3_round(Span<ulong> t, ReadOnlySpan<ulong> a, ulong rc)

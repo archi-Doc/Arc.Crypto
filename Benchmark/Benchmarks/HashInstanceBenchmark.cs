@@ -4,7 +4,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
@@ -30,6 +32,74 @@ public class HashInstanceBenchmark
         public void Return(T item) => this.objects.Add(item);
     }
 
+    public class ObjectPool2<T>
+    {
+        private readonly ConcurrentQueue<T> objects;
+        private readonly Func<T> objectGenerator;
+
+        public ObjectPool2(Func<T> objectGenerator)
+        {
+            this.objectGenerator = objectGenerator ?? throw new ArgumentNullException(nameof(objectGenerator));
+            this.objects = new ConcurrentQueue<T>();
+        }
+
+        public T Get() => this.objects.TryDequeue(out T? item) ? item : this.objectGenerator();
+
+        public void Return(T item)
+        {
+            if (this.objects.Count < 10)
+            {
+                this.objects.Enqueue(item);
+            }
+        }
+    }
+
+    public class ObjectPool3<T>
+    {
+        private readonly Func<T> objectGenerator;
+        private T?[] objects;
+        private int max;
+        private int count;
+
+        public ObjectPool3(Func<T> objectGenerator, int max = 8)
+        {
+            this.objectGenerator = objectGenerator ?? throw new ArgumentNullException(nameof(objectGenerator));
+            this.max = max;
+            this.objects = new T?[max];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Get()
+        {// this.objects.TryDequeue(out T? item) ? item : this.objectGenerator();
+            var n = this.count;
+            if (n == 0)
+            {
+                return this.objectGenerator();
+            }
+            else
+            {
+                n--;
+                this.count = n;
+                return this.objects[n]!;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Return(T item)
+        {
+            var n = this.count;
+            if (n >= this.max)
+            {
+                this.count = this.max;
+            }
+            else
+            {
+                this.objects[n++] = item;
+                this.count = n;
+            }
+        }
+    }
+
     public HashInstanceBenchmark()
     {
     }
@@ -44,6 +114,10 @@ public class HashInstanceBenchmark
     public Obsolete.SHA3_256 SHA3ObsoleteInstance { get; } = new();
 
     public ObjectPool<SHA3_256> Pool { get; } = new(() => new SHA3_256());
+
+    public ObjectPool2<SHA3_256> Pool2 { get; } = new(() => new SHA3_256());
+
+    public ObjectPool3<SHA3_256> Pool3 { get; } = new(() => new SHA3_256());
 
     [GlobalSetup]
     public void Setup()
@@ -87,6 +161,36 @@ public class HashInstanceBenchmark
         }
     }
 
+    [Benchmark]
+    public byte[] SHA3Pool2()
+    {
+        var h = this.Pool2.Get();
+        try
+        {
+            return h.GetHash(this.ByteArray);
+        }
+        finally
+        {
+            this.Pool2.Return(h);
+        }
+    }
+
+    [Benchmark]
+    public byte[] SHA3Pool3()
+    {
+        var h = this.Pool3.Get();
+        this.Pool3.Return(h);
+        h = this.Pool3.Get();
+        try
+        {
+            return h.GetHash(this.ByteArray);
+        }
+        finally
+        {
+            this.Pool3.Return(h);
+        }
+    }
+
     /*[Benchmark]
     public (ulong h0, ulong h1, ulong h2, ulong h3) SHA3ULong()
     {
@@ -107,7 +211,7 @@ public class HashInstanceBenchmark
         return this.SHA3Instance.GetHash(this.ByteArray);
     }
 
-    [Benchmark]
+    /*[Benchmark]
     public (ulong h0, ulong h1, ulong h2, ulong h3) SHA3ULong_NoInstance()
     {
         return this.SHA3Instance.GetHashULong(this.ByteArray);
@@ -117,5 +221,5 @@ public class HashInstanceBenchmark
     public byte[] SHA3_Obsolete_NoInstance()
     {
         return this.SHA3ObsoleteInstance.GetHash(this.ByteArray);
-    }
+    }*/
 }
