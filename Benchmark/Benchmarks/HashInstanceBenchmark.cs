@@ -54,49 +54,69 @@ public class HashInstanceBenchmark
         }
     }
 
-    public class ObjectPool3<T>
+#pragma warning disable SA1307 // Accessible fields should begin with upper-case letter
+#pragma warning disable SA1401 // Fields should be private
+
+    public class LooseObjectPool<T>
+        where T : class
     {
         private readonly Func<T> objectGenerator;
-        private T?[] objects;
-        private int max;
-        private int count;
+        private Node current = default!;
 
-        public ObjectPool3(Func<T> objectGenerator, int max = 8)
+        internal class Node
+        {
+            internal Node()
+            {
+            }
+
+            internal Node previous = default!;
+            internal Node next = default!;
+            internal T? value;
+        }
+
+        public LooseObjectPool(Func<T> objectGenerator, int limit = 8)
         {
             this.objectGenerator = objectGenerator ?? throw new ArgumentNullException(nameof(objectGenerator));
-            this.max = max;
-            this.objects = new T?[max];
+            if (limit <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(limit));
+            }
+
+            this.Limit = limit;
+            var first = new Node();
+            var previous = first;
+            for (var i = 1; i < limit; i++)
+            {
+                var node = new Node();
+                previous.next = node;
+                node.previous = previous;
+                previous = node;
+            }
+
+            first.previous = previous;
+            previous.next = first;
+            this.current = first;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Get()
-        {// this.objects.TryDequeue(out T? item) ? item : this.objectGenerator();
-            var n = this.count;
-            if (n == 0)
-            {
-                return this.objectGenerator();
-            }
-            else
-            {
-                n--;
-                this.count = n;
-                return this.objects[n]!;
-            }
-        }
+        public int Limit { get; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Return(T item)
+        public T Rent()
         {
-            var n = this.count;
-            if (n >= this.max)
+            var instance = Interlocked.CompareExchange<T?>(ref this.current.value, null, this.current.value);
+            this.current = this.current.previous;
+            return instance ?? this.objectGenerator();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Return(T instance)
+        {
+            if (this.current.value != null)
             {
-                this.count = this.max;
+                this.current = this.current.next;
             }
-            else
-            {
-                this.objects[n++] = item;
-                this.count = n;
-            }
+
+            this.current.value = instance;
         }
     }
 
@@ -117,7 +137,7 @@ public class HashInstanceBenchmark
 
     public ObjectPool2<SHA3_256> Pool2 { get; } = new(() => new SHA3_256());
 
-    public ObjectPool3<SHA3_256> Pool3 { get; } = new(() => new SHA3_256());
+    public LooseObjectPool<SHA3_256> Pool3 { get; } = new(() => new SHA3_256());
 
     [GlobalSetup]
     public void Setup()
@@ -178,9 +198,7 @@ public class HashInstanceBenchmark
     [Benchmark]
     public byte[] SHA3Pool3()
     {
-        var h = this.Pool3.Get();
-        this.Pool3.Return(h);
-        h = this.Pool3.Get();
+        var h = this.Pool3.Rent();
         try
         {
             return h.GetHash(this.ByteArray);
