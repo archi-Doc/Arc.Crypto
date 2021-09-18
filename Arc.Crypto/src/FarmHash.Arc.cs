@@ -225,7 +225,7 @@ namespace Arc.Crypto
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint Rotate32(uint val, int shift) => shift == 0 ? val : ((val >> shift) | (val << (32 - shift)));
-        // private static uint Rotate32(uint val, int shift) => BitOperations.RotateRight(val, shift);
+        // private static uint Rotate32(uint val, int shift) => BitOperations.RotateRight(val, shift); // same
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void Swap(ref ulong x, ref ulong z)
@@ -269,7 +269,7 @@ namespace Arc.Crypto
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ulong Rotate64(ulong val, int shift) => shift == 0 ? val : (val >> shift) | (val << (64 - shift));
-        // private static ulong Rotate64(ulong val, int shift) => BitOperations.RotateRight(val, shift);
+        // private static ulong Rotate64(ulong val, int shift) => BitOperations.RotateRight(val, shift); // same
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ulong ShiftMix(ulong val) => val ^ (val >> 47);
