@@ -54,103 +54,6 @@ public class HashInstanceBenchmark
         }
     }
 
-#pragma warning disable SA1307 // Accessible fields should begin with upper-case letter
-#pragma warning disable SA1401 // Fields should be private
-
-    public class LooseObjectPool<T>
-        where T : class
-    {
-        private readonly Func<T> objectGenerator;
-        private Node current = default!;
-
-        internal class Node
-        {
-            internal Node()
-            {
-            }
-
-            internal Node previous = default!;
-            internal Node next = default!;
-            internal T? value;
-        }
-
-        public LooseObjectPool(Func<T> objectGenerator, int limit = 8)
-        {
-            this.objectGenerator = objectGenerator ?? throw new ArgumentNullException(nameof(objectGenerator));
-            if (limit <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(limit));
-            }
-
-            this.Limit = limit;
-            var first = new Node();
-            var previous = first;
-            for (var i = 1; i < limit; i++)
-            {
-                var node = new Node();
-                previous.next = node;
-                node.previous = previous;
-                previous = node;
-            }
-
-            first.previous = previous;
-            previous.next = first;
-            this.current = first;
-        }
-
-        public int Limit { get; }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Rent()
-        {
-            var instance = Interlocked.Exchange(ref this.current.value, null);
-            if (instance == null)
-            {
-                return this.objectGenerator();
-            }
-            else
-            {
-                this.current = this.current.previous;
-                return instance;
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Return(T instance)
-        {
-            /*if (Interlocked.CompareExchange(ref this.current.value, instance, null) == null)
-            {// Set instance
-                return;
-            }
-            else
-            {
-                this.current = this.current.next;
-                Volatile.Write(ref this.current.value, instance);
-            }*/
-
-            if (this.current.value != null)
-            {
-                this.current = this.current.next;
-            }
-
-            Volatile.Write(ref this.current.value, instance);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Return2(T instance)
-        {
-            if (Interlocked.CompareExchange(ref this.current.value, instance, null) == null)
-            {// Set instance
-                return;
-            }
-            else
-            {
-                this.current = this.current.next;
-                Volatile.Write(ref this.current.value, instance);
-            }
-        }
-    }
-
     public HashInstanceBenchmark()
     {
     }
@@ -162,7 +65,9 @@ public class HashInstanceBenchmark
 
     public SHA3_256 SHA3Instance { get; } = new();
 
+#pragma warning disable SA1401 // Fields should be private
     public SHA3_256? SHA3Instance2;
+#pragma warning restore SA1401 // Fields should be private
 
     public Obsolete.SHA3_256 SHA3ObsoleteInstance { get; } = new();
 
@@ -252,28 +157,14 @@ public class HashInstanceBenchmark
     [Benchmark]
     public byte[] SHA3Pool3()
     {
-        var h = this.Pool3.Rent();
+        var h = SHA3_256.ObjectPool.Rent();
         try
         {
             return h.GetHash(this.ByteArray);
         }
         finally
         {
-            this.Pool3.Return(h);
-        }
-    }
-
-    [Benchmark]
-    public byte[] SHA3Pool3b()
-    {
-        var h = this.Pool3.Rent();
-        try
-        {
-            return h.GetHash(this.ByteArray);
-        }
-        finally
-        {
-            this.Pool3.Return2(h);
+            SHA3_256.ObjectPool.Return(h);
         }
     }
 

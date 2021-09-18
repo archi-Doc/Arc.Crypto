@@ -15,6 +15,8 @@ namespace Arc.Crypto
     /// </summary>
     public class SHA3_256 : SHA3
     {
+        public static LooseObjectPool<SHA3_256> ObjectPool { get; } = new(static () => new SHA3_256());
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SHA3_256"/> class.
         /// </summary>
