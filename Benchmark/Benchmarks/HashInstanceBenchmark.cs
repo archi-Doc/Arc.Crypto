@@ -103,20 +103,51 @@ public class HashInstanceBenchmark
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Rent()
         {
-            var instance = Interlocked.CompareExchange<T?>(ref this.current.value, null, this.current.value);
-            this.current = this.current.previous;
-            return instance ?? this.objectGenerator();
+            var instance = Interlocked.Exchange(ref this.current.value, null);
+            if (instance == null)
+            {
+                return this.objectGenerator();
+            }
+            else
+            {
+                this.current = this.current.previous;
+                return instance;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Return(T instance)
         {
+            /*if (Interlocked.CompareExchange(ref this.current.value, instance, null) == null)
+            {// Set instance
+                return;
+            }
+            else
+            {
+                this.current = this.current.next;
+                Volatile.Write(ref this.current.value, instance);
+            }*/
+
             if (this.current.value != null)
             {
                 this.current = this.current.next;
             }
 
-            this.current.value = instance;
+            Volatile.Write(ref this.current.value, instance);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Return2(T instance)
+        {
+            if (Interlocked.CompareExchange(ref this.current.value, instance, null) == null)
+            {// Set instance
+                return;
+            }
+            else
+            {
+                this.current = this.current.next;
+                Volatile.Write(ref this.current.value, instance);
+            }
         }
     }
 
@@ -130,6 +161,8 @@ public class HashInstanceBenchmark
     public byte[] ByteArray { get; set; } = default!;
 
     public SHA3_256 SHA3Instance { get; } = new();
+
+    public SHA3_256? SHA3Instance2;
 
     public Obsolete.SHA3_256 SHA3ObsoleteInstance { get; } = new();
 
@@ -152,6 +185,27 @@ public class HashInstanceBenchmark
     [GlobalCleanup]
     public void Cleanup()
     {
+    }
+
+    [Benchmark]
+    public SHA3_256 Class_Copy()
+    {
+        this.SHA3Instance2 = this.SHA3Instance;
+        return this.SHA3Instance2;
+    }
+
+    [Benchmark]
+    public SHA3_256 Class_Interlocked()
+    {
+        Interlocked.Exchange(ref this.SHA3Instance2, this.SHA3Instance);
+        return this.SHA3Instance2;
+    }
+
+    [Benchmark]
+    public SHA3_256 Class_Volatile()
+    {
+        Volatile.Write(ref this.SHA3Instance2, this.SHA3Instance);
+        return this.SHA3Instance2;
     }
 
     [Benchmark]
@@ -206,6 +260,20 @@ public class HashInstanceBenchmark
         finally
         {
             this.Pool3.Return(h);
+        }
+    }
+
+    [Benchmark]
+    public byte[] SHA3Pool3b()
+    {
+        var h = this.Pool3.Rent();
+        try
+        {
+            return h.GetHash(this.ByteArray);
+        }
+        finally
+        {
+            this.Pool3.Return2(h);
         }
     }
 
