@@ -168,6 +168,20 @@ public class HashInstanceBenchmark
         }
     }
 
+    [Benchmark]
+    public byte[] SHA3Pool3Obsolete()
+    {
+        var h = this.Pool3.Rent();
+        try
+        {
+            return h.GetHash(this.ByteArray);
+        }
+        finally
+        {
+            this.Pool3.ReturnObsolete(h);
+        }
+    }
+
     /*[Benchmark]
     public (ulong h0, ulong h1, ulong h2, ulong h3) SHA3ULong()
     {
