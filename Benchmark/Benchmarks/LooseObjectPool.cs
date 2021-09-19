@@ -16,7 +16,7 @@ namespace Arc.Crypto
     /// <summary>
     /// A fast and thread-safe pool of objects.<br/>
     /// </summary>
-    /// <typeparam name="T">The type of the elements contained in the pool.</typeparam>
+    /// <typeparam name="T">The type of the objects contained in the pool.</typeparam>
     public class LooseObjectPool<T>
         where T : class
     {
@@ -72,7 +72,7 @@ namespace Arc.Crypto
 
         /// <summary>
         /// Gets an instance from the pool or create a new instance if not available.<br/>
-        /// Retrieved instances are unique.<br/>
+        /// The instance is guaranteed to be unique even if multiple threads called this method simultaneously.<br/>
         /// However, since it's loose, a new instance may be created even if the pool is not empty.
         /// </summary>
         /// <returns>An instance of type <typeparamref name="T"/>.</returns>
@@ -94,9 +94,9 @@ namespace Arc.Crypto
         /// <summary>
         /// Returns an instance to the pool.<br/>
         /// However, since it's loose, the instance can be lost due to the synchronization problem or the pool is full.<br/>
-        /// Forgetting to return isn't fatal, but may lead to decreased performance.
+        /// Forgetting to return is not fatal, but may lead to decreased performance.
         /// </summary>
-        /// <param name="instance">An instance to return to the pool.</param>
+        /// <param name="instance">The instance to return to the pool.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Return(T instance)
         {
@@ -107,6 +107,7 @@ namespace Arc.Crypto
 
             Volatile.Write(ref this.current.value, instance);
 
+            // Alternative
             /*if (Interlocked.CompareExchange(ref this.current.value, instance, null) == null)
             {// Set instance
                 return;

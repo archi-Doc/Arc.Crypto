@@ -157,14 +157,14 @@ public class HashInstanceBenchmark
     [Benchmark]
     public byte[] SHA3Pool3()
     {
-        var h = SHA3_256.ObjectPool.Rent();
+        var h = this.Pool3.Rent();
         try
         {
             return h.GetHash(this.ByteArray);
         }
         finally
         {
-            SHA3_256.ObjectPool.Return(h);
+            this.Pool3.Return(h);
         }
     }
 
