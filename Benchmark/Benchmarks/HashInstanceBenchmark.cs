@@ -119,7 +119,7 @@ public class HashInstanceBenchmark
     }
 
     [Benchmark]
-    public byte[] SHA3Pool2()
+    public byte[] SHA3Pool_ConcurrentQueue()
     {
         var h = this.Pool2.Get();
         try
