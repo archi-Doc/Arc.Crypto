@@ -9,7 +9,6 @@ namespace Arc.Crypto;
 
 /// <summary>
 /// Represents a pseudo-random number generator based on Mersenne Twister.<br/>
-/// Faster and better than <see cref="System.Random"/> class.<br/><br/>
 /// This class is NOT thread-safe.<br/>
 /// Consider using lock statement or ObjectPool in multi-threaded application.
 /// </summary>

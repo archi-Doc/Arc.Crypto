@@ -14,7 +14,6 @@ public class MersenneTwisterTest
     public void QuickStart_MersenneTwister()
     {
         // MersenneTwister is a pseudo-random number generator.
-        // Faster and better than System.Random class.
         var mt = new MersenneTwister(42);
         var ul = mt.NextULong(); // [0, 2^64-1]
         var d = mt.NextDouble(); // [0,1)
