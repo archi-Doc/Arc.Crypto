@@ -13,7 +13,7 @@ namespace Benchmark;
 [Config(typeof(BenchmarkConfig))]
 public class PseudoRandomBenchmark
 {
-    public Random Random { get; set; } = new(42);
+    public Random Random { get; set; } = new();
 
     public MersenneTwister Mt { get; set; } = new(42);
 

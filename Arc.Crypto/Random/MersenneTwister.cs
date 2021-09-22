@@ -14,6 +14,7 @@ namespace Arc.Crypto;
 /// </summary>
 public class MersenneTwister
 {
+    public const int BufferSize = NN * sizeof(ulong);
     private const int NN = 312;
     private const int MM = 156;
     private const ulong MATRIX_A = 0xB5026F5AA96619E9UL;
@@ -58,6 +59,15 @@ public class MersenneTwister
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="MersenneTwister"/> class.<br/>
+    /// </summary>
+    /// <param name="seedArray">The array of seeds.</param>
+    public MersenneTwister(byte[] seedArray)
+    {
+        this.Reset(seedArray);
+    }
+
+    /// <summary>
     /// Reset a state vector with the specified seed.
     /// </summary>
     /// <param name="seed">seed.</param>
@@ -76,45 +86,25 @@ public class MersenneTwister
     /// Reset state vectors with the specified seeds.
     /// </summary>
     /// <param name="seedArray">The array of seeds.</param>
-    public void Reset(ulong[] seedArray)
+    public unsafe void Reset(byte[] seedArray)
     {
-        this.Reset(19650218UL);
-
-        var seedLength = (ulong)seedArray.Length;
-        var i = 1UL;
-        var j = 0UL;
-        var k = (ulong)((seedArray.Length < NN) ? NN : seedArray.Length);
-        for (; k > 0; k--)
+        var seedLength = seedArray.Length / sizeof(ulong);
+        fixed (byte* seed = seedArray)
         {
-            this.mt[i] = (this.mt[i] ^ ((this.mt[i - 1] ^ (this.mt[i - 1] >> 62)) * 3935559000370003845UL)) + seedArray[j] + j;
-            i++;
-            j++;
-
-            if (i >= NN)
-            {
-                this.mt[0] = this.mt[NN - 1];
-                i = 1;
-            }
-
-            if (j >= seedLength)
-            {
-                j = 0;
-            }
+            this.Reset((ulong*)seed, seedLength);
         }
+    }
 
-        for (k = NN - 1; k > 0; k--)
+    /// <summary>
+    /// Reset state vectors with the specified seeds.
+    /// </summary>
+    /// <param name="seedArray">The array of seeds.</param>
+    public unsafe void Reset(ulong[] seedArray)
+    {
+        fixed (ulong* seed = seedArray)
         {
-            this.mt[i] = (this.mt[i] ^ ((this.mt[i - 1] ^ (this.mt[i - 1] >> 62)) * 2862933555777941757UL)) - i;
-
-            i++;
-            if (i >= NN)
-            {
-                this.mt[0] = this.mt[NN - 1];
-                i = 1;
-            }
+            this.Reset(seed, seedArray.Length);
         }
-
-        this.mt[0] = 1UL << 63;
     }
 
     /// <summary>
@@ -279,6 +269,47 @@ public class MersenneTwister
                 }
             }
         }
+    }
+
+    private unsafe void Reset(ulong* seedArray, int seedLength)
+    {
+        this.Reset(19650218UL);
+
+        var i = 1UL;
+        var j = 0UL;
+        var k = (ulong)((seedLength < NN) ? NN : seedLength);
+        var seedLength2 = (ulong)seedLength;
+        for (; k > 0; k--)
+        {
+            this.mt[i] = (this.mt[i] ^ ((this.mt[i - 1] ^ (this.mt[i - 1] >> 62)) * 3935559000370003845UL)) + seedArray[j] + j;
+            i++;
+            j++;
+
+            if (i >= NN)
+            {
+                this.mt[0] = this.mt[NN - 1];
+                i = 1;
+            }
+
+            if (j >= seedLength2)
+            {
+                j = 0;
+            }
+        }
+
+        for (k = NN - 1; k > 0; k--)
+        {
+            this.mt[i] = (this.mt[i] ^ ((this.mt[i - 1] ^ (this.mt[i - 1] >> 62)) * 2862933555777941757UL)) - i;
+
+            i++;
+            if (i >= NN)
+            {
+                this.mt[0] = this.mt[NN - 1];
+                i = 1;
+            }
+        }
+
+        this.mt[0] = 1UL << 63;
     }
 
     private void Generate()

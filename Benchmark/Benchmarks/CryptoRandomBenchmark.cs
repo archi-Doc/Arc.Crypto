@@ -59,8 +59,11 @@ public class CryptoRandomBenchmark
     [Benchmark]
     public byte[] Mt_Bytes()
     {// Pseudo-random
-        this.Mt.NextBytes(this.RandomBytes);
-        return this.RandomBytes;
+        lock (this.Mt)
+        {
+            this.Mt.NextBytes(this.RandomBytes);
+            return this.RandomBytes;
+        }
     }
 
     [Benchmark]
@@ -80,7 +83,10 @@ public class CryptoRandomBenchmark
     [Benchmark]
     public ulong Mt_ULong()
     {// Pseudo-random
-        return this.Mt.NextULong();
+        lock (this.Mt)
+        {
+            return this.Mt.NextULong();
+        }
     }
 
     [Benchmark]
