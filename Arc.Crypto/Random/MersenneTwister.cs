@@ -2,6 +2,8 @@
 
 #pragma warning disable SA1310 // Field names should not contain underscore
 
+using System.Runtime.CompilerServices;
+
 namespace Arc.Crypto;
 
 /// <summary>
@@ -22,7 +24,7 @@ public class MersenneTwister
     /// </summary>
     public MersenneTwister()
     {
-        this.Initialize(5489UL);
+        this.Reset(5489UL);
     }
 
     /// <summary>
@@ -31,7 +33,7 @@ public class MersenneTwister
     /// <param name="seed">seed.</param>
     public MersenneTwister(uint seed)
     {
-        this.Initialize(seed);
+        this.Reset(seed);
     }
 
     /// <summary>
@@ -40,14 +42,23 @@ public class MersenneTwister
     /// <param name="seed">seed.</param>
     public MersenneTwister(ulong seed)
     {
-        this.Initialize(seed);
+        this.Reset(seed);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MersenneTwister"/> class.<br/>
+    /// </summary>
+    /// <param name="seedArray">The array of seeds.</param>
+    public MersenneTwister(ulong[] seedArray)
+    {
+        this.Reset(seedArray);
     }
 
     /// <summary>
     /// Reset a state vector with the specified seed.
     /// </summary>
     /// <param name="seed">seed.</param>
-    public void Initialize(ulong seed)
+    public void Reset(ulong seed)
     {
         this.mt[0] = seed;
         for (this.mti = 1; this.mti < NN; this.mti++)
@@ -56,7 +67,57 @@ public class MersenneTwister
         }
     }
 
-    public ulong NextLong()
+    /// <summary>
+    /// Reset a state vector with the specified seeds.
+    /// </summary>
+    /// <param name="seedArray">The array of seeds.</param>
+    public void Reset(ulong[] seedArray)
+    {
+        this.Reset(19650218UL);
+
+        var seedLength = (ulong)seedArray.Length;
+        var i = 1UL;
+        var j = 0UL;
+        var k = (ulong)((seedArray.Length < NN) ? NN : seedArray.Length);
+        for (; k > 0; k--)
+        {
+            this.mt[i] = (this.mt[i] ^ ((this.mt[i - 1] ^ (this.mt[i - 1] >> 62)) * 3935559000370003845UL)) + seedArray[j] + j;
+            i++;
+            j++;
+
+            if (i >= NN)
+            {
+                this.mt[0] = this.mt[NN - 1];
+                i = 1;
+            }
+
+            if (j >= seedLength)
+            {
+                j = 0;
+            }
+        }
+
+        for (k = NN - 1; k > 0; k--)
+        {
+            this.mt[i] = (this.mt[i] ^ ((this.mt[i - 1] ^ (this.mt[i - 1] >> 62)) * 2862933555777941757UL)) - i;
+
+            i++;
+            if (i >= NN)
+            {
+                this.mt[0] = this.mt[NN - 1];
+                i = 1;
+            }
+        }
+
+        this.mt[0] = 1UL << 63;
+    }
+
+    /// <summary>
+    /// [0, 2^64-1]<br/>
+    /// Returns a non-negative random integer.
+    /// </summary>
+    /// <returns>A 64-bit unsigned integer that is greater than or equal to 0 and less than 2^64.</returns>
+    public ulong NextULong()
     {
         int i;
         ulong x;
@@ -91,13 +152,35 @@ public class MersenneTwister
     }
 
     /// <summary>
+    /// [0, 2^32-1]<br/>
+    /// Returns a non-negative random integer.
+    /// </summary>
+    /// <returns>A 32-bit unsigned integer that is greater than or equal to 0 and less than 2^32.</returns>
+    public uint NextUInt()
+    {
+        if (this.nextUIntIsAvailable)
+        {
+            this.nextUIntIsAvailable = false;
+            return this.nextUInt;
+        }
+        else
+        {
+            var u = this.NextULong();
+            this.nextUInt = (uint)(u >> 32);
+            this.nextUIntIsAvailable = true;
+            return (uint)u;
+        }
+    }
+
+    /// <summary>
     /// [0,1)<br/>
     /// Returns a random floating-point number that is greater than or equal to 0.0, and less than 1.0.
     /// </summary>
     /// <returns>A double-precision floating point number that is greater than or equal to 0.0, and less than 1.0.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public double NextDouble()
     {
-        return (this.NextLong() >> 11) * (1.0 / 9007199254740992.0);
+        return (this.NextULong() >> 11) * (1.0 / 9007199254740992.0);
     }
 
     /// <summary>
@@ -105,11 +188,25 @@ public class MersenneTwister
     /// Returns a random floating-point number that is greater than or equal to 0.0, and less than or equal to 1.0.
     /// </summary>
     /// <returns>A double-precision floating-point number that is greater than or equal to 0.0, and less than or equal to 1.0.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public double NextDouble2()
     {
-        return (this.NextLong() >> 11) * (1.0 / 9007199254740992.0);
+        return (this.NextULong() >> 11) * (1.0 / 9007199254740991);
+    }
+
+    /// <summary>
+    /// (0,1)<br/>
+    /// Returns a random floating-point number that is greater than 0.0, and less than 1.0.
+    /// </summary>
+    /// <returns>A double-precision floating-point number that is greater than 0.0, and less than 1.0.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public double NextDouble3()
+    {
+        return ((this.NextULong() >> 12) + 0.5) * (1.0 / 4503599627370496.0);
     }
 
     private ulong[] mt = new ulong[NN]; // The array for the state vector
     private ulong mti = NN + 1; // mti==NN+1 means mt[NN] is not initialized
+    private uint nextUInt;
+    private bool nextUIntIsAvailable;
 }

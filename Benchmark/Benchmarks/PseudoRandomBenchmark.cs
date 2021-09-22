@@ -50,10 +50,16 @@ public class PseudoRandomBenchmark
     [Benchmark]
     public uint MT_Raw()
     {
-        return (uint)this.Mt.NextLong();
+        return this.Mt.NextUInt();
     }
 
     [Benchmark]
+    public uint MT_Long()
+    {
+        return (uint)this.Mt.NextULong();
+    }
+
+    /*[Benchmark]
     public int Random_Lock()
     {
         lock (this.Random)
@@ -81,5 +87,5 @@ public class PseudoRandomBenchmark
     {
         var r = new Random(12);
         return r.Next();
-    }
+    }*/
 }
