@@ -32,28 +32,6 @@ public class HashInstanceBenchmark
         public void Return(T item) => this.objects.Add(item);
     }
 
-    public class ObjectPool2<T>
-    {
-        private readonly ConcurrentQueue<T> objects;
-        private readonly Func<T> objectGenerator;
-
-        public ObjectPool2(Func<T> objectGenerator)
-        {
-            this.objectGenerator = objectGenerator ?? throw new ArgumentNullException(nameof(objectGenerator));
-            this.objects = new ConcurrentQueue<T>();
-        }
-
-        public T Get() => this.objects.TryDequeue(out T? item) ? item : this.objectGenerator();
-
-        public void Return(T item)
-        {
-            if (this.objects.Count < 10)
-            {
-                this.objects.Enqueue(item);
-            }
-        }
-    }
-
     public HashInstanceBenchmark()
     {
     }
@@ -73,7 +51,7 @@ public class HashInstanceBenchmark
 
     public ObjectPool<SHA3_256> Pool { get; } = new(() => new SHA3_256());
 
-    public ObjectPool2<SHA3_256> Pool2 { get; } = new(() => new SHA3_256());
+    public ObjectPoolConcurrentQueue<SHA3_256> Pool2 { get; } = new(() => new SHA3_256());
 
     public LooseObjectPool<SHA3_256> Pool3 { get; } = new(() => new SHA3_256());
 
@@ -141,7 +119,7 @@ public class HashInstanceBenchmark
     }
 
     [Benchmark]
-    public byte[] SHA3Pool2()
+    public byte[] SHA3Pool_ConcurrentQueue()
     {
         var h = this.Pool2.Get();
         try
@@ -165,6 +143,20 @@ public class HashInstanceBenchmark
         finally
         {
             this.Pool3.Return(h);
+        }
+    }
+
+    [Benchmark]
+    public byte[] SHA3Pool3Obsolete()
+    {
+        var h = this.Pool3.Rent();
+        try
+        {
+            return h.GetHash(this.ByteArray);
+        }
+        finally
+        {
+            this.Pool3.ReturnObsolete(h);
         }
     }
 
