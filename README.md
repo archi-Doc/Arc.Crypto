@@ -1,9 +1,9 @@
-﻿## Arc.Crypto
+﻿﻿## Arc.Crypto
 ![Nuget](https://img.shields.io/nuget/v/Arc.Crypto) ![Build and Test](https://github.com/archi-Doc/Arc.Crypto/workflows/Build%20and%20Test/badge.svg)
 
 Arc.Crypto is a collection of classes used in cryptography, which includes
 
-- Hash functions (XXHash, FarmHash, SHA)
+- Hash functions (XXHash, FarmHash, SHA3)
 - Pseudo-random generator (Mersenne Twister)
 
 
@@ -70,7 +70,7 @@ public void QuickStart_MersenneTwister()
 
 ### PseudoRandomBenchmark
 
-![Benchmark.PseudoRandomBenchmark-report](doc\Benchmark.PseudoRandomBenchmark-report.png)
+![Benchmark.PseudoRandomBenchmark-report](doc/Benchmark.PseudoRandomBenchmark-report.png)
 
 | Method        |       Mean |     Error |    StdDev | Gen 0 | Gen 1 | Gen 2 | Allocated |
 | ------------- | ---------: | --------: | --------: | ----: | ----: | ----: | --------: |
