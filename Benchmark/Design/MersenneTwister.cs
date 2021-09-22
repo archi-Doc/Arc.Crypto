@@ -4,6 +4,9 @@
 
 namespace Arc.Crypto;
 
+/// <summary>
+/// Represents a pseudo-random number generator based on Mersenne Twister.
+/// </summary>
 public class MersenneTwister
 {
     private const int NN = 312;
@@ -13,21 +16,37 @@ public class MersenneTwister
     private const ulong LM = 0x7FFFFFFFUL;
     private static ulong[] mag01 = new ulong[] { 0UL, MATRIX_A };
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MersenneTwister"/> class.<br/>
+    /// The default seed is 5489UL.
+    /// </summary>
     public MersenneTwister()
     {
         this.Initialize(5489UL);
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MersenneTwister"/> class.<br/>
+    /// </summary>
+    /// <param name="seed">seed.</param>
     public MersenneTwister(uint seed)
     {
         this.Initialize(seed);
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MersenneTwister"/> class.<br/>
+    /// </summary>
+    /// <param name="seed">seed.</param>
     public MersenneTwister(ulong seed)
     {
         this.Initialize(seed);
     }
 
+    /// <summary>
+    /// Reset a state vector with the specified seed.
+    /// </summary>
+    /// <param name="seed">seed.</param>
     public void Initialize(ulong seed)
     {
         this.mt[0] = seed;
@@ -41,7 +60,6 @@ public class MersenneTwister
     {
         int i;
         ulong x;
-
         if (this.mti >= NN)
         {
             for (i = 0; i < NN - MM; i++)

@@ -1,13 +1,16 @@
-using System;
-using Xunit;
-using Arc.Crypto;
-using System.Text;
-using System.Security.Cryptography;
-using System.Linq;
+// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-namespace Test
-{
-    public class UnitTest1
+using System;
+using System.Linq;
+using System.Text;
+using Arc.Crypto;
+using Xunit;
+
+#pragma warning disable SA1202 // Elements should be ordered by access
+
+namespace Test;
+
+    public class HashTest
     {
         [Fact]
         public void QuickStart()
@@ -50,7 +53,7 @@ namespace Test
             var data = new byte[N];
             random.NextBytes(data);
 
-            //CRC-32
+            // CRC-32
             var crc32 = new CRC32();
             for (var n = 0; n < 1000; n++)
             {
@@ -59,9 +62,10 @@ namespace Test
                 var h2 = CRC32.Hash32(span);
                 Assert.Equal(h, h2);
             }
-            TestHashUpdate_do(crc32, data, random);
 
-            //Adler-32
+            this.TestHashUpdate_do(crc32, data, random);
+
+            // Adler-32
             var adler32 = new Adler32();
             for (var n = 0; n < 1000; n++)
             {
@@ -70,9 +74,10 @@ namespace Test
                 var h2 = Adler32.Hash32(span);
                 Assert.Equal(h, h2);
             }
-            TestHashUpdate_do(adler32, data, random);
 
-            //FarmHash
+            this.TestHashUpdate_do(adler32, data, random);
+
+            // FarmHash
             var farm = new FarmHash();
             for (var n = 0; n < 1000; n++)
             {
@@ -81,9 +86,10 @@ namespace Test
                 var h2 = FarmHash.Hash64(span);
                 Assert.Equal(h, h2);
             }
-            TestHashUpdate_do(farm, data, random);
 
-            //xxHash32
+            this.TestHashUpdate_do(farm, data, random);
+
+            // xxHash32
             var xxh32 = new XXHash32();
             for (var n = 0; n < 1000; n++)
             {
@@ -92,9 +98,10 @@ namespace Test
                 var h2 = XXHash32.Hash32(span);
                 Assert.Equal(h, h2);
             }
-            TestHashUpdate_do(xxh32, data, random);
 
-            //xxHash64
+            this.TestHashUpdate_do(xxh32, data, random);
+
+            // xxHash64
             var xxh64 = new XXHash64();
             for (var n = 0; n < 1000; n++)
             {
@@ -103,49 +110,50 @@ namespace Test
                 var h2 = XXHash64.Hash64(span);
                 Assert.Equal(h, h2);
             }
-            TestHashUpdate_do(xxh64, data, random);
 
-            //SHA1
+            this.TestHashUpdate_do(xxh64, data, random);
+
+            // SHA1
             using var sha1 = new Arc.Crypto.SHA1();
-            TestHashUpdate_do(sha1, data, random);
+            this.TestHashUpdate_do(sha1, data, random);
 
-            //SHA2_256
+            // SHA2_256
             using var sha2_256 = new Arc.Crypto.SHA2_256();
-            TestHashUpdate_do(sha2_256, data, random);
+            this.TestHashUpdate_do(sha2_256, data, random);
 
-            //SHA2_384
+            // SHA2_384
             using var sha2_384 = new Arc.Crypto.SHA2_384();
-            TestHashUpdate_do(sha2_384, data, random);
+            this.TestHashUpdate_do(sha2_384, data, random);
 
-            //SHA2_512
+            // SHA2_512
             using var sha2_512 = new Arc.Crypto.SHA2_512();
-            TestHashUpdate_do(sha2_512, data, random);
+            this.TestHashUpdate_do(sha2_512, data, random);
 
-            //SHA3_256
+            // SHA3_256
             var sha3_256 = new Arc.Crypto.SHA3_256();
-            TestHashUpdate_do(sha3_256, data, random);
+            this.TestHashUpdate_do(sha3_256, data, random);
 
-            //SHA3_384
+            // SHA3_384
             var sha3_384 = new Arc.Crypto.SHA3_384();
-            TestHashUpdate_do(sha3_384, data, random);
+            this.TestHashUpdate_do(sha3_384, data, random);
 
-            //SHA3_512
+            // SHA3_512
             var sha3_512 = new Arc.Crypto.SHA3_512();
-            TestHashUpdate_do(sha3_512, data, random);
+            this.TestHashUpdate_do(sha3_512, data, random);
         }
 
         private void TestHashUpdate_do(IHash hash, byte[] data, Random random)
         {
-            TestHashUpdate_core(hash, data, 10, random);
-            TestHashUpdate_core(hash, data, 100, random);
-            TestHashUpdate_core(hash, data, 1_000, random);
-            TestHashUpdate_core(hash, data, 10_000, random);
-            TestHashUpdate_core(hash, data, data.Length, random);
+            this.TestHashUpdate_core(hash, data, 10, random);
+            this.TestHashUpdate_core(hash, data, 100, random);
+            this.TestHashUpdate_core(hash, data, 1_000, random);
+            this.TestHashUpdate_core(hash, data, 10_000, random);
+            this.TestHashUpdate_core(hash, data, data.Length, random);
         }
 
         private void TestHashUpdate_core(IHash hash, byte[] data, int length, Random random)
         {
-            var RandomSize = new int[] { 10, 100, 1_000, 10_000, 100_000 }.Where(n => n <= length).ToArray();
+            var randomSize = new int[] { 10, 100, 1_000, 10_000, 100_000 }.Where(n => n <= length).ToArray();
 
             var reference = hash.GetHash(data, 0, length); // data.AsSpan(0, length)
             for (var n = 0; n < 20; n++)
@@ -154,17 +162,21 @@ namespace Test
                 int start = 0;
                 while (start < length)
                 {
-                    var size = getRandomSize(random, RandomSize);
-                    if ((start + size) > length) size = length - start;
+                    var size = this.GetRandomSize(random, randomSize);
+                    if ((start + size) > length)
+                    {
+                        size = length - start;
+                    }
 
                     hash.HashUpdate(data, start, size); // data.AsSpan(start, size)
                     start += size;
                 }
+
                 Assert.Equal(reference, hash.HashFinal());
             }
         }
 
-        private int getRandomSize(Random random, int[] randomSize)
+        private int GetRandomSize(Random random, int[] randomSize)
         {
             int range = random.Next(randomSize.Length);
             return random.Next(1, randomSize[range]);
@@ -174,7 +186,7 @@ namespace Test
         public void TestSHA3()
         {
             var aa = new char[100];
-            var utf8_empty = Encoding.UTF8.GetBytes("");
+            var utf8_empty = Encoding.UTF8.GetBytes(string.Empty);
             var utf8_abc = Encoding.UTF8.GetBytes("abc");
             var utf8_alphabet = Encoding.UTF8.GetBytes("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
             var million_a = new char[1_000_000];
@@ -216,14 +228,14 @@ namespace Test
         [Fact]
         public void TestXXHash64()
         {
-            testUtf8String_xxHash64("", 0xef46db3751d8e999UL);
-            testUtf8String_xxHash64("a", 0xd24ec4f1a98c6e5bUL);
-            testUtf8String_xxHash64("123", 0x3c697d223fa7e885UL);
-            testUtf8String_xxHash64("123456789012345", 0xc377d78ade001a3cUL);
-            testUtf8String_xxHash64("The quick brown fox jumps over the lazy dog", 0x0b242d361fda71bcUL);
+            this.TestUtf8String_xxHash64(string.Empty, 0xef46db3751d8e999UL);
+            this.TestUtf8String_xxHash64("a", 0xd24ec4f1a98c6e5bUL);
+            this.TestUtf8String_xxHash64("123", 0x3c697d223fa7e885UL);
+            this.TestUtf8String_xxHash64("123456789012345", 0xc377d78ade001a3cUL);
+            this.TestUtf8String_xxHash64("The quick brown fox jumps over the lazy dog", 0x0b242d361fda71bcUL);
         }
 
-        private void testUtf8String_xxHash64(string text, ulong expected)
+        private void TestUtf8String_xxHash64(string text, ulong expected)
         {
             var bytes = Encoding.UTF8.GetBytes(text);
             var value = XXHash64.Hash64(bytes);
@@ -233,14 +245,14 @@ namespace Test
         [Fact]
         public void TestXXHash32()
         {
-            testUtf8String_xxHash32("", 0x02cc5d05);
-            testUtf8String_xxHash32("a", 0x550d7456);
-            testUtf8String_xxHash32("123", 0xb6855437);
-            testUtf8String_xxHash32("123456789012345", 0xda7b17e8);
-            testUtf8String_xxHash32("The quick brown fox jumps over the lazy dog", 0xe85ea4de);
+            this.TestUtf8String_xxHash32(string.Empty, 0x02cc5d05);
+            this.TestUtf8String_xxHash32("a", 0x550d7456);
+            this.TestUtf8String_xxHash32("123", 0xb6855437);
+            this.TestUtf8String_xxHash32("123456789012345", 0xda7b17e8);
+            this.TestUtf8String_xxHash32("The quick brown fox jumps over the lazy dog", 0xe85ea4de);
         }
 
-        private void testUtf8String_xxHash32(string text, uint expected)
+        private void TestUtf8String_xxHash32(string text, uint expected)
         {
             var bytes = Encoding.UTF8.GetBytes(text);
             var value = XXHash32.Hash32(bytes);
@@ -251,39 +263,39 @@ namespace Test
         public void TestFarmHash()
         {
             uint value;
-            value = FarmHash.Hash32("");
+            value = FarmHash.Hash32(string.Empty);
             Assert.Equal((uint)0xdc56d17a, value);
 
-            testUtf8String_FarmHash32("abc", 0x2f635ec7);
-            testUtf8String_FarmHash32("message digest", 0x0c10337e);
-            testUtf8String_FarmHash32("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 0x3bb6b2a4);
+            this.TestUtf8String_FarmHash32("abc", 0x2f635ec7);
+            this.TestUtf8String_FarmHash32("message digest", 0x0c10337e);
+            this.TestUtf8String_FarmHash32("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 0x3bb6b2a4);
         }
 
         [Fact]
         public void TestAdler32()
         {
             uint value;
-            value = Adler32.Hash32("");
-            Assert.Equal((uint)1, value);
+            value = Adler32.Hash32(string.Empty);
+            Assert.Equal(1U, value);
 
-            testUtf8String_Adler32("abc", 0x024d0127);
-            testUtf8String_Adler32("message digest", 0x29750586);
-            testUtf8String_Adler32("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 0x8adb150c);
+            this.TestUtf8String_Adler32("abc", 0x024d0127);
+            this.TestUtf8String_Adler32("message digest", 0x29750586);
+            this.TestUtf8String_Adler32("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 0x8adb150c);
 
             var adler = new Adler32();
-            testUtf8StringSplit(adler, "abc", 1, 0x024d0127);
-            testUtf8StringSplit(adler, "message digest", 4, 0x29750586);
-            testUtf8StringSplit(adler, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 10, 0x8adb150c);
+            this.TestUtf8StringSplit(adler, "abc", 1, 0x024d0127);
+            this.TestUtf8StringSplit(adler, "message digest", 4, 0x29750586);
+            this.TestUtf8StringSplit(adler, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 10, 0x8adb150c);
         }
 
-        private void testUtf8String_FarmHash32(string text, uint expected)
+        private void TestUtf8String_FarmHash32(string text, uint expected)
         {
             var bytes = Encoding.UTF8.GetBytes(text);
             var value = FarmHash.Hash32(bytes);
             Assert.Equal(expected, value);
         }
 
-        private void testUtf8String_Adler32(string text, uint expected)
+        private void TestUtf8String_Adler32(string text, uint expected)
         {
             var bytes = Encoding.UTF8.GetBytes(text);
             var value = Adler32.Hash32(bytes);
@@ -294,20 +306,20 @@ namespace Test
         public void TestCRC32()
         {
             uint value;
-            value = CRC32.Hash32("");
-            Assert.Equal((uint)0, value);
+            value = CRC32.Hash32(string.Empty);
+            Assert.Equal(0U, value);
 
-            testUtf8String_CRC32("123456789", 0xCBF43926);
-            testUtf8String_CRC32("The quick brown fox jumps over the lazy dog", 0x414FA339);
+            this.TestUtf8String_CRC32("123456789", 0xCBF43926);
+            this.TestUtf8String_CRC32("The quick brown fox jumps over the lazy dog", 0x414FA339);
 
             var crc = new CRC32();
-            testUtf8StringSplit(crc, "123456789", 2, 0xCBF43926);
-            testUtf8StringSplit(crc, "123456789", 4, 0xCBF43926);
-            testUtf8StringSplit(crc, "The quick brown fox jumps over the lazy dog", 4, 0x414FA339);
-            testUtf8StringSplit(crc, "The quick brown fox jumps over the lazy dog", 10, 0x414FA339);
+            this.TestUtf8StringSplit(crc, "123456789", 2, 0xCBF43926);
+            this.TestUtf8StringSplit(crc, "123456789", 4, 0xCBF43926);
+            this.TestUtf8StringSplit(crc, "The quick brown fox jumps over the lazy dog", 4, 0x414FA339);
+            this.TestUtf8StringSplit(crc, "The quick brown fox jumps over the lazy dog", 10, 0x414FA339);
         }
 
-        private void testUtf8StringSplit(IHash ha, string text, int splitOffset, uint expected)
+        private void TestUtf8StringSplit(IHash ha, string text, int splitOffset, uint expected)
         {
             var bytes = Encoding.UTF8.GetBytes(text);
 
@@ -318,16 +330,15 @@ namespace Test
             var value = BitConverter.ToUInt32(ha.HashFinal());
             Assert.Equal(expected, value);
 
-            //ComputeHash function.
+            // ComputeHash function.
             value = BitConverter.ToUInt32(ha.GetHash(bytes));
             Assert.Equal(expected, value);
         }
 
-        private void testUtf8String_CRC32(string text, uint expected)
+        private void TestUtf8String_CRC32(string text, uint expected)
         {
             var bytes = Encoding.UTF8.GetBytes(text);
             var value = CRC32.Hash32(bytes);
             Assert.Equal(expected, value);
         }
     }
-}
