@@ -1,4 +1,4 @@
-﻿﻿## Arc.Crypto
+﻿## Arc.Crypto
 ![Nuget](https://img.shields.io/nuget/v/Arc.Crypto) ![Build and Test](https://github.com/archi-Doc/Arc.Crypto/workflows/Build%20and%20Test/badge.svg)
 
 Arc.Crypto is a collection of classes used in cryptography, which includes
