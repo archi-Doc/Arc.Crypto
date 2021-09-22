@@ -1,4 +1,4 @@
-﻿## Arc.Crypto
+﻿﻿## Arc.Crypto
 ![Nuget](https://img.shields.io/nuget/v/Arc.Crypto) ![Build and Test](https://github.com/archi-Doc/Arc.Crypto/workflows/Build%20and%20Test/badge.svg)
 
 C# library of hash functions (XXHash, FarmHash, SHA).
@@ -46,6 +46,19 @@ array = sha3_512.GetHash(data.AsSpan());
 sha3_512.HashInitialize(); // Another way
 sha3_512.HashUpdate(data.AsSpan());
 Assert.True(sha3_512.HashFinal().SequenceEqual(array));
+```
+
+```csharp
+public void QuickStart_MersenneTwister()
+{
+    // MersenneTwister is a pseudo-random number generator.
+    // Faster and better than System.Random.
+    var mt = new MersenneTwister(42);
+    var ul = mt.NextULong(); // [0, 2^64-1]
+    var d = mt.NextDouble(); // [0,1)
+    var bytes = new byte[10];
+    mt.NextBytes(bytes);
+}
 ```
 
 

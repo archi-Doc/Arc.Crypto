@@ -8,7 +8,8 @@ using System.Runtime.CompilerServices;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Represents a pseudo-random number generator based on Mersenne Twister.
+/// Represents a pseudo-random number generator based on Mersenne Twister.<br/>
+/// Faster and better than <see cref="System.Random"/> class.<br/><br/>
 /// This class is NOT thread-safe.<br/>
 /// Consider using lock statement or ObjectPool in multi-threaded application.
 /// </summary>
@@ -120,38 +121,42 @@ public class MersenneTwister
     /// Returns a random integer.
     /// </summary>
     /// <returns>A 64-bit unsigned integer [0, 2^64-1].</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ulong NextULong()
     {
-        int i;
-        ulong x;
         if (this.mti >= NN)
         {
-            for (i = 0; i < NN - MM; i++)
-            {
-                x = (this.mt[i] & UM) | (this.mt[i + 1] & LM);
-                this.mt[i] = this.mt[i + MM] ^ (x >> 1) ^ mag01[(int)x & 1];
-            }
-
-            for (; i < NN - 1; i++)
-            {
-                x = (this.mt[i] & UM) | (this.mt[i + 1] & LM);
-                this.mt[i] = this.mt[i + (MM - NN)] ^ (x >> 1) ^ mag01[(int)x & 1];
-            }
-
-            x = (this.mt[NN - 1] & UM) | (this.mt[0] & LM);
-            this.mt[NN - 1] = this.mt[MM - 1] ^ (x >> 1) ^ mag01[(int)x & 1];
-
-            this.mti = 0;
+            this.Generate();
         }
 
-        x = this.mt[this.mti++];
-
+        var x = this.mt[this.mti++];
         x ^= (x >> 29) & 0x5555555555555555UL;
         x ^= (x << 17) & 0x71D67FFFEDA60000UL;
         x ^= (x << 37) & 0xFFF7EEE000000000UL;
         x ^= x >> 43;
-
         return x;
+    }
+
+    private void Generate()
+    {
+        int i;
+        ulong x;
+        for (i = 0; i < NN - MM; i++)
+        {
+            x = (this.mt[i] & UM) | (this.mt[i + 1] & LM);
+            this.mt[i] = this.mt[i + MM] ^ (x >> 1) ^ mag01[(int)x & 1];
+        }
+
+        for (; i < NN - 1; i++)
+        {
+            x = (this.mt[i] & UM) | (this.mt[i + 1] & LM);
+            this.mt[i] = this.mt[i + (MM - NN)] ^ (x >> 1) ^ mag01[(int)x & 1];
+        }
+
+        x = (this.mt[NN - 1] & UM) | (this.mt[0] & LM);
+        this.mt[NN - 1] = this.mt[MM - 1] ^ (x >> 1) ^ mag01[(int)x & 1];
+
+        this.mti = 0;
     }
 
     /// <summary>
@@ -263,7 +268,6 @@ public class MersenneTwister
     /// <param name="buffer">The array to be filled with random numbers.</param>
     public unsafe void NextBytes(Span<byte> buffer)
     {
-
     }
 
     private ulong[] mt = new ulong[NN]; // The array for the state vector
