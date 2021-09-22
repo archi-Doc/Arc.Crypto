@@ -64,6 +64,8 @@ public class MersenneTwister
     /// <param name="seed">seed.</param>
     public void Reset(ulong seed)
     {
+        this.nextUIntIsAvailable = false;
+        this.nextUInt = 0;
         this.mt[0] = seed;
         for (this.mti = 1; this.mti < NN; this.mti++)
         {
@@ -135,28 +137,6 @@ public class MersenneTwister
         x ^= (x << 37) & 0xFFF7EEE000000000UL;
         x ^= x >> 43;
         return x;
-    }
-
-    private void Generate()
-    {
-        int i;
-        ulong x;
-        for (i = 0; i < NN - MM; i++)
-        {
-            x = (this.mt[i] & UM) | (this.mt[i + 1] & LM);
-            this.mt[i] = this.mt[i + MM] ^ (x >> 1) ^ mag01[(int)x & 1];
-        }
-
-        for (; i < NN - 1; i++)
-        {
-            x = (this.mt[i] & UM) | (this.mt[i + 1] & LM);
-            this.mt[i] = this.mt[i + (MM - NN)] ^ (x >> 1) ^ mag01[(int)x & 1];
-        }
-
-        x = (this.mt[NN - 1] & UM) | (this.mt[0] & LM);
-        this.mt[NN - 1] = this.mt[MM - 1] ^ (x >> 1) ^ mag01[(int)x & 1];
-
-        this.mti = 0;
     }
 
     /// <summary>
@@ -268,6 +248,60 @@ public class MersenneTwister
     /// <param name="buffer">The array to be filled with random numbers.</param>
     public unsafe void NextBytes(Span<byte> buffer)
     {
+        var remaining = buffer.Length;
+        fixed (byte* pb = buffer)
+        {
+            byte* dest = pb;
+            while (remaining >= sizeof(ulong))
+            {
+                *(ulong*)dest = this.NextULong();
+                dest += sizeof(ulong);
+                remaining -= sizeof(ulong);
+            }
+
+            while (remaining >= sizeof(uint))
+            {
+                *(uint*)dest = this.NextUInt();
+                dest += sizeof(uint);
+                remaining -= sizeof(uint);
+            }
+
+            if (remaining == 0)
+            {
+                return;
+            }
+            else
+            {
+                var u = this.NextUInt();
+                byte* pu = (byte*)&u;
+                while (remaining-- > 0)
+                {
+                    *dest++ = *pu++;
+                }
+            }
+        }
+    }
+
+    private void Generate()
+    {
+        int i;
+        ulong x;
+        for (i = 0; i < NN - MM; i++)
+        {
+            x = (this.mt[i] & UM) | (this.mt[i + 1] & LM);
+            this.mt[i] = this.mt[i + MM] ^ (x >> 1) ^ mag01[(int)x & 1];
+        }
+
+        for (; i < NN - 1; i++)
+        {
+            x = (this.mt[i] & UM) | (this.mt[i + 1] & LM);
+            this.mt[i] = this.mt[i + (MM - NN)] ^ (x >> 1) ^ mag01[(int)x & 1];
+        }
+
+        x = (this.mt[NN - 1] & UM) | (this.mt[0] & LM);
+        this.mt[NN - 1] = this.mt[MM - 1] ^ (x >> 1) ^ mag01[(int)x & 1];
+
+        this.mti = 0;
     }
 
     private ulong[] mt = new ulong[NN]; // The array for the state vector

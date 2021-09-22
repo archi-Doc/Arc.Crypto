@@ -19,7 +19,7 @@ public class PseudoRandomBenchmark
 
     public ObjectPool<Random> Pool { get; set; } = new(() => new Random());
 
-    public byte[] RandomBytes { get; } = new byte[43];
+    public byte[] RandomBytes { get; } = new byte[24];
 
     public PseudoRandomBenchmark()
     {
@@ -36,21 +36,21 @@ public class PseudoRandomBenchmark
     }
 
     [Benchmark]
-    public int Random_Raw()
+    public int Random_Int()
     {
         return this.Random.Next();
     }
 
     [Benchmark]
-    public uint MT_Raw()
+    public int MT_Int()
     {
-        return this.Mt.NextUInt();
+        return this.Mt.NextInt();
     }
 
     [Benchmark]
-    public uint MT_Long()
+    public ulong MT_ULong()
     {
-        return (uint)this.Mt.NextULong();
+        return this.Mt.NextULong();
     }
 
     [Benchmark]
