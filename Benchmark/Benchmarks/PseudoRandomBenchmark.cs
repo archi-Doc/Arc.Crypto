@@ -15,11 +15,11 @@ public class PseudoRandomBenchmark
 {
     public Random Random { get; set; } = new(42);
 
-    public MersenneTwister32 Mt32 { get; set; } = new(42);
-
     public MersenneTwister Mt { get; set; } = new(42);
 
     public ObjectPool<Random> Pool { get; set; } = new(() => new Random());
+
+    public byte[] RandomBytes { get; } = new byte[43];
 
     public PseudoRandomBenchmark()
     {
@@ -39,12 +39,6 @@ public class PseudoRandomBenchmark
     public int Random_Raw()
     {
         return this.Random.Next();
-    }
-
-    [Benchmark]
-    public uint MT32_Raw()
-    {
-        return this.Mt32.genrand_uint32();
     }
 
     [Benchmark]
@@ -69,6 +63,32 @@ public class PseudoRandomBenchmark
     public double MT_Double()
     {
         return this.Mt.NextDouble();
+    }
+
+    [Benchmark]
+    public double Random_Range()
+    {
+        return this.Random.Next(int.MinValue, int.MaxValue);
+    }
+
+    [Benchmark]
+    public double MT_Range()
+    {
+        return this.Mt.NextInt(int.MinValue, int.MaxValue);
+    }
+
+    [Benchmark]
+    public byte[] Random_Bytes()
+    {
+        this.Random.NextBytes(this.RandomBytes);
+        return this.RandomBytes;
+    }
+
+    [Benchmark]
+    public byte[] Mt_Bytes()
+    {
+        this.Mt.NextBytes(this.RandomBytes);
+        return this.RandomBytes;
     }
 
     /*[Benchmark]

@@ -2,6 +2,7 @@
 
 #pragma warning disable SA1310 // Field names should not contain underscore
 
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Arc.Crypto;
@@ -9,7 +10,7 @@ namespace Arc.Crypto;
 /// <summary>
 /// Represents a pseudo-random number generator based on Mersenne Twister.
 /// This class is NOT thread-safe.<br/>
-/// Consider using lock statement or ObjectPool in multi-threaded environments.
+/// Consider using lock statement or ObjectPool in multi-threaded application.
 /// </summary>
 public class MersenneTwister
 {
@@ -116,7 +117,7 @@ public class MersenneTwister
 
     /// <summary>
     /// [0, 2^64-1]<br/>
-    /// Returns a non-negative random integer.
+    /// Returns a random integer.
     /// </summary>
     /// <returns>A 64-bit unsigned integer [0, 2^64-1].</returns>
     public ulong NextULong()
@@ -154,10 +155,19 @@ public class MersenneTwister
     }
 
     /// <summary>
+    /// [long.MinValue, long.MaxValue]<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <returns>A 64-bit signed integer [long.MinValue, long.MaxValue].</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public long NextLong() => unchecked((long)this.NextULong());
+
+    /// <summary>
     /// [0, 2^32-1]<br/>
-    /// Returns a non-negative random integer.
+    /// Returns a random integer.
     /// </summary>
     /// <returns>A 32-bit unsigned integer [0, 2^32-1].</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public uint NextUInt()
     {
         if (this.nextUIntIsAvailable)
@@ -179,10 +189,8 @@ public class MersenneTwister
     /// Returns a random integer.
     /// </summary>
     /// <returns>A 32-bit signed integer [int.MinValue, int.MaxValue].</returns>
-    public int NextInt()
-    {
-        return unchecked((int)this.NextUInt());
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int NextInt() => unchecked((int)this.NextUInt());
 
     /// <summary>
     /// [0, maxValue)<br/>
@@ -191,9 +199,29 @@ public class MersenneTwister
     /// <param name="maxValue">The exclusive upper bound of the random number to be generated.<br/>
     /// maxValue must be greater than or equal to 0.</param>
     /// <returns>A 32-bit unsigned integer [0, maxValue).</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int NextInt(int maxValue)
     {
         return (int)(this.NextDouble() * maxValue);
+    }
+
+    /// <summary>
+    /// [minValue, maxValue)<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <param name="minValue">The inclusive lower bound of the random number returned.</param>
+    /// <param name="maxValue">The exclusive upper bound of the random number returned.<br/>
+    /// maxValue must be greater than or equal to minValue.</param>
+    /// <returns>A 32-bit signed integer [minValue, maxValue).</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int NextInt(int minValue, int maxValue)
+    {
+        if (minValue > maxValue)
+        {
+            throw new ArgumentOutOfRangeException(nameof(minValue), $"'{nameof(minValue)}' cannot be greater than '{nameof(maxValue)}'");
+        }
+
+        return (int)((long)(this.NextDouble() * ((long)maxValue - minValue)) + minValue);
     }
 
     /// <summary>
@@ -227,6 +255,15 @@ public class MersenneTwister
     public double NextDouble3()
     {
         return ((this.NextULong() >> 12) + 0.5) * (1.0 / 4503599627370496.0);
+    }
+
+    /// <summary>
+    /// Fills the elements of a specified span of bytes with random numbers.
+    /// </summary>
+    /// <param name="buffer">The array to be filled with random numbers.</param>
+    public unsafe void NextBytes(Span<byte> buffer)
+    {
+
     }
 
     private ulong[] mt = new ulong[NN]; // The array for the state vector
