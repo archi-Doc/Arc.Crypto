@@ -8,6 +8,8 @@ namespace Arc.Crypto;
 
 /// <summary>
 /// Represents a pseudo-random number generator based on Mersenne Twister.
+/// This class is NOT thread-safe.<br/>
+/// Consider using lock statement or ObjectPool in multi-threaded environments.
 /// </summary>
 public class MersenneTwister
 {
@@ -68,7 +70,7 @@ public class MersenneTwister
     }
 
     /// <summary>
-    /// Reset a state vector with the specified seeds.
+    /// Reset state vectors with the specified seeds.
     /// </summary>
     /// <param name="seedArray">The array of seeds.</param>
     public void Reset(ulong[] seedArray)
@@ -116,7 +118,7 @@ public class MersenneTwister
     /// [0, 2^64-1]<br/>
     /// Returns a non-negative random integer.
     /// </summary>
-    /// <returns>A 64-bit unsigned integer that is greater than or equal to 0 and less than 2^64.</returns>
+    /// <returns>A 64-bit unsigned integer [0, 2^64-1].</returns>
     public ulong NextULong()
     {
         int i;
@@ -155,7 +157,7 @@ public class MersenneTwister
     /// [0, 2^32-1]<br/>
     /// Returns a non-negative random integer.
     /// </summary>
-    /// <returns>A 32-bit unsigned integer that is greater than or equal to 0 and less than 2^32.</returns>
+    /// <returns>A 32-bit unsigned integer [0, 2^32-1].</returns>
     public uint NextUInt()
     {
         if (this.nextUIntIsAvailable)
@@ -170,6 +172,28 @@ public class MersenneTwister
             this.nextUIntIsAvailable = true;
             return (uint)u;
         }
+    }
+
+    /// <summary>
+    /// [int.MinValue, int.MaxValue]<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <returns>A 32-bit signed integer [int.MinValue, int.MaxValue].</returns>
+    public int NextInt()
+    {
+        return unchecked((int)this.NextUInt());
+    }
+
+    /// <summary>
+    /// [0, maxValue)<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <param name="maxValue">The exclusive upper bound of the random number to be generated.<br/>
+    /// maxValue must be greater than or equal to 0.</param>
+    /// <returns>A 32-bit unsigned integer [0, maxValue).</returns>
+    public int NextInt(int maxValue)
+    {
+        return (int)(this.NextDouble() * maxValue);
     }
 
     /// <summary>

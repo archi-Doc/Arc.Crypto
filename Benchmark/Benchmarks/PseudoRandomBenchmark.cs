@@ -59,6 +59,18 @@ public class PseudoRandomBenchmark
         return (uint)this.Mt.NextULong();
     }
 
+    [Benchmark]
+    public double Random_Double()
+    {
+        return this.Random.NextDouble();
+    }
+
+    [Benchmark]
+    public double MT_Double()
+    {
+        return this.Mt.NextDouble();
+    }
+
     /*[Benchmark]
     public int Random_Lock()
     {
