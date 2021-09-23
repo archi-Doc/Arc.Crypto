@@ -148,16 +148,14 @@ public class Xoshiro256StarStar
 
     public long NextLong(long minValue, long maxValue)
     {
-        ulong exclusiveRange = (ulong)(maxValue - minValue);
+        var exclusiveRange = (ulong)(maxValue - minValue);
 
         if (exclusiveRange > 1)
         {
-            // Narrow down to the smallest range [0, 2^bits] that contains maxValue.
-            // Then repeatedly generate a value in that outer range until we get one within the inner range.
-            int bits = Log2Ceiling(exclusiveRange);
+            var bits = Log2Ceiling(exclusiveRange);
             while (true)
             {
-                ulong result = this.NextULong() >> ((sizeof(ulong) * 8) - bits);
+                var result = this.NextULong() >> ((sizeof(ulong) * 8) - bits);
                 if (result < exclusiveRange)
                 {
                     return (long)result + minValue;
@@ -179,8 +177,7 @@ public class Xoshiro256StarStar
         {
             Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(buffer), BitOperations.RotateLeft(s1 * 5, 7) * 9);
 
-            // Update PRNG state.
-            ulong t = s1 << 17;
+            var t = s1 << 17;
             s2 ^= s0;
             s3 ^= s1;
             s1 ^= s2;
@@ -200,7 +197,6 @@ public class Xoshiro256StarStar
                 buffer[i] = remainingBytes[i];
             }
 
-            // Update PRNG state.
             var t = s1 << 17;
             s2 ^= s0;
             s3 ^= s1;
@@ -230,7 +226,7 @@ public class Xoshiro256StarStar
     /// </summary>
     /// <returns>A double-precision floating-point number that is greater than or equal to 0.0, and less than or equal to 1.0.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double NextDouble2() => (this.NextULong() >> 11) * (1.0 / 9007199254740991);
+    public double NextDouble2() => (this.NextULong() >> 11) * (1.0 / 9007199254740991.0);
 
     /// <summary>
     /// (0,1)<br/>
@@ -246,5 +242,5 @@ public class Xoshiro256StarStar
     /// </summary>
     /// <returns>A single-precision floating point number that is greater than or equal to 0.0, and less than 1.0.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float NextSingle() => (this.NextULong() >> 40) * (1.0f / 16777216);
+    public float NextSingle() => (this.NextULong() >> 40) * (1.0f / 16777216.0f);
 }
