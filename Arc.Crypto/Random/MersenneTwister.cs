@@ -204,10 +204,7 @@ public class MersenneTwister
     /// </summary>
     /// <returns>A double-precision floating point number that is greater than or equal to 0.0, and less than 1.0.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double NextDouble()
-    {
-        return (this.NextULong() >> 11) * (1.0 / 9007199254740992.0);
-    }
+    public double NextDouble() => (this.NextULong() >> 11) * (1.0 / 9007199254740992.0);
 
     /// <summary>
     /// [0,1]<br/>
@@ -215,10 +212,7 @@ public class MersenneTwister
     /// </summary>
     /// <returns>A double-precision floating-point number that is greater than or equal to 0.0, and less than or equal to 1.0.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double NextDouble2()
-    {
-        return (this.NextULong() >> 11) * (1.0 / 9007199254740991);
-    }
+    public double NextDouble2() => (this.NextULong() >> 11) * (1.0 / 9007199254740991);
 
     /// <summary>
     /// (0,1)<br/>
@@ -226,10 +220,7 @@ public class MersenneTwister
     /// </summary>
     /// <returns>A double-precision floating-point number that is greater than 0.0, and less than 1.0.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double NextDouble3()
-    {
-        return ((this.NextULong() >> 12) + 0.5) * (1.0 / 4503599627370496.0);
-    }
+    public double NextDouble3() => ((this.NextULong() >> 12) + 0.5) * (1.0 / 4503599627370496.0);
 
     /// <summary>
     /// Fills the elements of a specified span of bytes with random numbers.
