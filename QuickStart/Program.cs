@@ -11,5 +11,19 @@ internal class Program
     public static async Task Main(string[] args)
     {
         Console.WriteLine("Quick Start");
+
+        var xo = new Arc.Crypto.Xoshiro256StarStar(42);
+        for (var i = 0; i < 5; i++)
+        {
+            Console.WriteLine(xo.NextDouble().ToString("F16"));
+        }
+
+        var array = new byte[40];
+        xo.NextBytes(array);
+        Console.WriteLine(BitConverter.ToUInt64(array));
+        Console.WriteLine(BitConverter.ToUInt64(array, 8));
+        Console.WriteLine(BitConverter.ToUInt64(array, 16));
+        Console.WriteLine(BitConverter.ToUInt64(array, 24));
+        Console.WriteLine(BitConverter.ToUInt64(array, 32));
     }
 }

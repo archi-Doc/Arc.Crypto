@@ -31,5 +31,20 @@ public class Xoshiro256StarStarTest
         Xoshiro256StarStar.SplitMix64(ref seed).Is(9817491932198370423ul);
         Xoshiro256StarStar.SplitMix64(ref seed).Is(4593380528125082431ul);
         Xoshiro256StarStar.SplitMix64(ref seed).Is(16408922859458223821ul);
+
+        var xo = new Xoshiro256StarStar(42);
+        DoubleToString(xo.NextDouble()).Is("0.0838629710598822");
+        DoubleToString(xo.NextDouble()).Is("0.3789802506626686");
+        DoubleToString(xo.NextDouble()).Is("0.6800434110281394");
+        DoubleToString(xo.NextDouble()).Is("0.9246929453253876");
+        DoubleToString(xo.NextDouble()).Is("0.9918039142821028");
+
+        string DoubleToString(double d) => d.ToString("F16");
+
+        xo.NextULong().Is(14199186830065750584ul);
+        xo.NextULong().Is(13267978908934200754ul);
+        xo.NextULong().Is(15679888225317814407ul);
+        xo.NextULong().Is(14044878350692344958ul);
+        xo.NextULong().Is(10760895422300929085ul);
     }
 }

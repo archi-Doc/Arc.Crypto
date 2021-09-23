@@ -39,8 +39,7 @@ public class Xoshiro256StarStar
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong SplitMix64(ref ulong state)
     {
-        state += 0x9E3779B97f4A7C15;
-        var result = state;
+        var result = state += 0x9E3779B97f4A7C15;
         result = (result ^ (result >> 30)) * 0xBF58476D1CE4E5B9;
         result = (result ^ (result >> 27)) * 0x94D049BB133111EB;
         return result ^ (result >> 31);
@@ -67,13 +66,10 @@ public class Xoshiro256StarStar
         var state = seed;
         do
         {
-            var tmp = SplitMix64(ref state);
-            this.ss0 = (uint)tmp;
-            this.ss1 = (uint)(tmp >> 32);
-
-            tmp = SplitMix64(ref state);
-            this.ss2 = (uint)tmp;
-            this.ss3 = (uint)(tmp >> 32);
+            this.ss0 = SplitMix64(ref state);
+            this.ss1 = SplitMix64(ref state);
+            this.ss2 = SplitMix64(ref state);
+            this.ss3 = SplitMix64(ref state);
         }
         while ((this.ss0 | this.ss1 | this.ss2 | this.ss3) == 0); // at least one value must be non-zero
     }
@@ -90,13 +86,12 @@ public class Xoshiro256StarStar
         var s3 = this.ss3;
 
         var result = BitOperations.RotateLeft(s1 * 5, 7) * 9;
-        var t = s1 << 17;
 
+        var t = s1 << 17;
         s2 ^= s0;
         s3 ^= s1;
         s1 ^= s2;
         s0 ^= s3;
-
         s2 ^= t;
         s3 = BitOperations.RotateLeft(s3, 45);
 
@@ -108,7 +103,7 @@ public class Xoshiro256StarStar
         return result;
     }
 
-    public int NextInt() => unchecked((int)this.NextUInt());
+    public int NextInt() => (int)(this.NextUInt() >> 1);
 
     public int NextInt(int maxValue)
     {
@@ -150,7 +145,7 @@ public class Xoshiro256StarStar
         return minValue;
     }
 
-    public long NextLong() => unchecked((long)this.NextULong());
+    public long NextLong() => (long)(this.NextULong() >> 1);
 
     public long NextLong(long maxValue)
     {

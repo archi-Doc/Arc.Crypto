@@ -7,4 +7,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Arc.Crypto\Arc.Crypto.csproj" />
+  </ItemGroup>
+
 </Project>

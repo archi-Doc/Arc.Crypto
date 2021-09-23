@@ -134,7 +134,7 @@ public class MersenneTwister
     /// </summary>
     /// <returns>A 64-bit signed integer [long.MinValue, long.MaxValue].</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public long NextLong() => unchecked((long)this.NextULong());
+    public long NextLong() => (long)(this.NextULong() >> 1);
 
     /// <summary>
     /// [0, 2^32-1]<br/>
@@ -159,12 +159,12 @@ public class MersenneTwister
     }
 
     /// <summary>
-    /// [int.MinValue, int.MaxValue]<br/>
+    /// [0, int.MaxValue]<br/>
     /// Returns a random integer.
     /// </summary>
-    /// <returns>A 32-bit signed integer [int.MinValue, int.MaxValue].</returns>
+    /// <returns>A 32-bit signed integer [0, int.MaxValue].</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int NextInt() => unchecked((int)this.NextUInt());
+    public int NextInt() => (int)(this.NextUInt() >> 1);
 
     /// <summary>
     /// [0, maxValue)<br/>
