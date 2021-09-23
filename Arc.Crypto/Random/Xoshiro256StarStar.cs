@@ -25,7 +25,7 @@ public class Xoshiro256StarStar
     private ulong ss3;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int Log2Ceiling(ulong value)
+    public static int Log2Ceiling(ulong value)
     {
         var result = BitOperations.Log2(value);
         if (BitOperations.PopCount(value) != 1)
@@ -34,6 +34,16 @@ public class Xoshiro256StarStar
         }
 
         return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong SplitMix64(ref ulong state)
+    {
+        state += 0x9E3779B97f4A7C15;
+        var result = state;
+        result = (result ^ (result >> 30)) * 0xBF58476D1CE4E5B9;
+        result = (result ^ (result >> 27)) * 0x94D049BB133111EB;
+        return result ^ (result >> 31);
     }
 
     public unsafe Xoshiro256StarStar()
@@ -50,6 +60,22 @@ public class Xoshiro256StarStar
         while ((this.ss0 | this.ss1 | this.ss2 | this.ss3) == 0); // at least one value must be non-zero*/
 
         this.ss0 = 1;
+    }
+
+    public Xoshiro256StarStar(ulong seed)
+    {
+        var state = seed;
+        do
+        {
+            var tmp = SplitMix64(ref state);
+            this.ss0 = (uint)tmp;
+            this.ss1 = (uint)(tmp >> 32);
+
+            tmp = SplitMix64(ref state);
+            this.ss2 = (uint)tmp;
+            this.ss3 = (uint)(tmp >> 32);
+        }
+        while ((this.ss0 | this.ss1 | this.ss2 | this.ss3) == 0); // at least one value must be non-zero
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
