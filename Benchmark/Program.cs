@@ -24,12 +24,13 @@ namespace Benchmark
         {
             Console.WriteLine("Arc.Crypto Benchmark.");
 
-            CryptoRandomBenchmark.Test1();
-            DebugRun<CryptoRandomBenchmark>();
+            RandomPoolBenchmark.Test1();
+            DebugRun<RandomPoolBenchmark>();
 
             // var summary = BenchmarkRunner.Run<SpeedBenchmark>();
             var switcher = new BenchmarkSwitcher(new[]
             {
+                typeof(RandomPoolBenchmark),
                 typeof(CryptoRandomBenchmark),
                 typeof(PseudoRandomBenchmark),
                 typeof(HashInstanceBenchmark),
