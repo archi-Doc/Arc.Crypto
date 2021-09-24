@@ -10,13 +10,14 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+#pragma warning disable SA1124 // Do not use regions
 #pragma warning disable SA1401 // Fields should be private
 
-namespace Benchmark.Design;
+namespace Arc.Crypto;
 
-internal class RandomPoolSliding
+public class RandomVault : RandomULong
 {
-    public const uint MinimumPoolSize = 32;
+    public const uint MinimumVaultSize = 32;
 
     public delegate void NextBytesDelegate(Span<byte> data);
 
@@ -33,16 +34,16 @@ internal class RandomPoolSliding
         return u;
     }
 
-    public RandomPoolSliding(Func<ulong>? nextULong, NextBytesDelegate nextBytes, uint poolSize = 100)
+    public RandomVault(Func<ulong>? nextULong, NextBytesDelegate nextBytes, uint vaultSize = 100)
     {
-        this.PoolSize = BitOperations.RoundUpToPowerOf2(poolSize);
-        if (this.PoolSize < MinimumPoolSize)
+        this.VaultSize = BitOperations.RoundUpToPowerOf2(vaultSize);
+        if (this.VaultSize < MinimumVaultSize)
         {
-            this.PoolSize = MinimumPoolSize;
+            this.VaultSize = MinimumVaultSize;
         }
 
-        this.halfSize = this.PoolSize >> 1;
-        this.positionMask = this.PoolSize - 1;
+        this.halfSize = this.VaultSize >> 1;
+        this.positionMask = this.VaultSize - 1;
         this.halfMask = this.positionMask >> 1;
         this.nextBytes = nextBytes;
         if (nextULong != null)
@@ -53,18 +54,18 @@ internal class RandomPoolSliding
         {
             // this.nextULongFunc = () => NextBytesToULong(this.nextBytes);
             this.nextULongFunc = () =>
-            {
+            {// Same as above.
                 Span<byte> b = stackalloc byte[8];
                 this.nextBytes(b);
                 return BitConverter.ToUInt64(b);
             };
         }
 
-        this.array = new ulong[this.PoolSize];
-        this.FillArray(1, this.PoolSize); // array[0] is not used.
+        this.array = new ulong[this.VaultSize];
+        this.FillArray(1, this.VaultSize); // array[0] is not used.
         this.position = 0;
         this.lowerBound = 0;
-        this.upperBound = this.PoolSize;
+        this.upperBound = this.VaultSize;
     }
 
     /// <summary>
@@ -72,7 +73,7 @@ internal class RandomPoolSliding
     /// Returns a random integer.
     /// </summary>
     /// <returns>A 64-bit signed integer [0, long.MaxValue].</returns>
-    public ulong NextULong()
+    public override ulong NextULong()
     {
         var upper = Volatile.Read(ref this.upperBound);
         if (this.position > upper)
@@ -109,7 +110,7 @@ LockAndGet:
 
     public Task Generate() => this.GenerateInternal();
 
-    public uint PoolSize { get; }
+    public uint VaultSize { get; }
 
     private Task GenerateInternal()
     {
@@ -137,7 +138,7 @@ LockAndGet:
                         {// Extend the upper bound.
                             var index = (uint)(this.upperBound & this.positionMask);
                             this.FillArray(index, index + this.halfSize);
-                            Volatile.Write(ref this.upperBound, this.lowerBound + this.PoolSize);
+                            Volatile.Write(ref this.upperBound, this.lowerBound + this.VaultSize);
                         }
                     }
                     else
@@ -146,7 +147,7 @@ LockAndGet:
                         {// Extend the upper bound.
                             var index = (uint)(this.upperBound & this.positionMask);
                             this.FillArray(index, index + this.halfSize);
-                            Volatile.Write(ref this.upperBound, this.lowerBound + this.PoolSize);
+                            Volatile.Write(ref this.upperBound, this.lowerBound + this.VaultSize);
                         }
                         else
                         {// Raise the lower bound.

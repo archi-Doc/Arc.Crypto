@@ -21,7 +21,7 @@ public class RandomPoolBenchmark
     public static void Test1()
     {
         var mt2 = new MersenneTwister(new ulong[] { 0x12345UL, 0x23456UL, 0x34567UL, 0x45678UL });
-        var poolSliding = new RandomPoolSliding(() => mt2.NextULong(), x => mt2.NextBytes(x));
+        var poolSliding = new RandomVault(() => mt2.NextULong(), x => mt2.NextBytes(x));
         Debug.Assert(poolSliding.NextULong() == 7266447313870364031UL);
 
         for (var i = 0; i < 20000; i++)
@@ -43,11 +43,11 @@ public class RandomPoolBenchmark
 
     internal RandomPoolLock PoolLock { get; set; }
 
-    internal RandomPoolSliding PoolSliding { get; set; }
+    internal RandomVault Vault { get; set; }
 
-    internal RandomPoolSliding PoolSliding2 { get; set; }
+    internal RandomVault Vault2 { get; set; }
 
-    internal RandomPoolSliding PoolSliding3 { get; set; }
+    internal RandomVault RngVault { get; set; }
 
     internal RandomPoolSplit PoolSplit { get; set; }
 
@@ -56,14 +56,14 @@ public class RandomPoolBenchmark
     public RandomPoolBenchmark()
     {
         this.PoolLock = new(() => this.Mt.NextULong());
-        this.PoolSliding = new(() => this.Mt.NextULong(), x => this.Mt.NextBytes(x));
+        this.Vault = new(() => this.Mt.NextULong(), x => this.Mt.NextBytes(x));
         this.PoolSplit = new(() => this.Mt.NextULong());
         this.PoolConcurrentQueue = new(() => this.Mt.NextULong(), x => this.Mt.NextBytes(x));
 
         var mt = new MersenneTwister(42);
-        this.PoolSliding2 = new(() => mt.NextULong(), x => mt.NextBytes(x), 2_000_000);
+        this.Vault2 = new(() => mt.NextULong(), x => mt.NextBytes(x), 2_000_000);
 
-        this.PoolSliding3 = new(null, x => RandomNumberGenerator.Fill(x), 2_000_000);
+        this.RngVault = new(null, x => RandomNumberGenerator.Fill(x), 2_000_000);
     }
 
     [GlobalSetup]
@@ -92,22 +92,22 @@ public class RandomPoolBenchmark
     }
 
     [Benchmark]
-    public ulong Pool_Sliding()
+    public ulong Mt_Vault()
     {
-        return this.PoolSliding.NextULong();
+        return this.Vault.NextULong();
     }
 
-    [IterationSetup(Target = "Pool_Sliding2")]
-    public void SetupPoolSliding2()
+    [IterationSetup(Target = "Mt_Vault2")]
+    public void SetupMt_Vault2()
     {
-        this.PoolSliding2.Generate().Wait();
+        this.Vault2.Generate().Wait();
     }
 
     [Benchmark]
     [InvocationCount(1_000_000)]
-    public ulong Pool_Sliding2()
+    public ulong Mt_Vault2()
     {
-        return this.PoolSliding2.NextULong();
+        return this.Vault2.NextULong();
     }
 
     [Benchmark]
@@ -130,17 +130,17 @@ public class RandomPoolBenchmark
         return this.PoolConcurrentQueue.NextULong();
     }
 
-    [IterationSetup(Target = "Pool_Rng")]
-    public void SetupPoolSliding3()
+    [IterationSetup(Target = "Rng_Vault")]
+    public void SetupRng_Vault()
     {
-        this.PoolSliding3.Generate().Wait();
+        this.RngVault.Generate().Wait();
     }
 
     [Benchmark]
     [InvocationCount(1_000_000)]
-    public ulong Pool_Rng()
+    public ulong Rng_Vault()
     {
-        return this.PoolSliding3.NextULong();
+        return this.RngVault.NextULong();
     }
 
     [Benchmark]
