@@ -36,6 +36,23 @@ public class Xoshiro256StarStar : RandomULong
     /// </summary>
     public unsafe Xoshiro256StarStar()
     {
+        this.Reset();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Xoshiro256StarStar"/> class.<br/>
+    /// </summary>
+    /// <param name="seed">seed.</param>
+    public Xoshiro256StarStar(ulong seed)
+    {
+        this.Reset(seed);
+    }
+
+    /// <summary>
+    /// Reset state vectors with random seeds.
+    /// </summary>
+    public unsafe void Reset()
+    {
         Span<byte> span = stackalloc byte[4 * sizeof(ulong)];
         fixed (byte* b = span)
         {
@@ -54,10 +71,10 @@ public class Xoshiro256StarStar : RandomULong
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Xoshiro256StarStar"/> class.<br/>
+    /// Reset state vectors with the specified seed.
     /// </summary>
     /// <param name="seed">seed.</param>
-    public Xoshiro256StarStar(ulong seed)
+    public void Reset(ulong seed)
     {
         var state = seed;
         do
