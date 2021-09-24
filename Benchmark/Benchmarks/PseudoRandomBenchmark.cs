@@ -52,7 +52,7 @@ public class PseudoRandomBenchmark
     [Benchmark]
     public int Xo_Int()
     {
-        return this.Mt.NextInt();
+        return this.Xo.NextInt();
     }
 
     [Benchmark]

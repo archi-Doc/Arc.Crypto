@@ -18,6 +18,7 @@ namespace Arc.Crypto;
 public class RandomVault : RandomULong
 {
     public const uint MinimumVaultSize = 32;
+    public const uint DefaultVaultSize = 128;
 
     public delegate void NextBytesDelegate(Span<byte> data);
 
@@ -34,7 +35,7 @@ public class RandomVault : RandomULong
         return u;
     }
 
-    public RandomVault(Func<ulong>? nextULong, NextBytesDelegate nextBytes, uint vaultSize = 100)
+    public RandomVault(Func<ulong>? nextULong, NextBytesDelegate nextBytes, uint vaultSize = DefaultVaultSize)
     {
         this.VaultSize = BitOperations.RoundUpToPowerOf2(vaultSize);
         if (this.VaultSize < MinimumVaultSize)
