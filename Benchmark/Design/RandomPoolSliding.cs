@@ -20,7 +20,7 @@ internal class RandomPoolSliding
 
     public delegate void NextBytesDelegate(Span<byte> data);
 
-    public RandomPoolSliding(Func<ulong> nextULong, NextBytesDelegate nextBytes, uint poolSize = 100)
+    public RandomPoolSliding(Func<ulong>? nextULong, NextBytesDelegate nextBytes, uint poolSize = 100)
     {
         this.PoolSize = BitOperations.RoundUpToPowerOf2(poolSize);
         if (this.PoolSize < MinimumPoolSize)
@@ -33,8 +33,12 @@ internal class RandomPoolSliding
         this.halfMask = this.positionMask >> 1;
         // this.poolMask = this.Length;
         // this.poolBits = BitOperations.TrailingZeroCount(this.poolMask);
-        this.nextULongFunc = nextULong;
         this.nextBytes = nextBytes;
+        this.nextULongFunc = nextULong;
+        if (this.nextULongFunc == null)
+        {
+
+        }
 
         this.array = new ulong[this.PoolSize];
         this.FillArray(1, this.PoolSize); // array[0] is not used.
@@ -135,7 +139,7 @@ LockAndGet:
         this.nextBytes(span);
     }
 
-    private Func<ulong> nextULongFunc;
+    private Func<ulong>? nextULongFunc;
     private NextBytesDelegate nextBytes;
     private object syncObject = new();
     private ulong positionMask;

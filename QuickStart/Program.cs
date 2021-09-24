@@ -12,7 +12,7 @@ internal class Program
     {
         Console.WriteLine("Quick Start");
 
-        var xo = new Arc.Crypto.Xoshiro256StarStar(42);
+        var xo = new Arc.Crypto.Xoshiro256StarStar();
         for (var i = 0; i < 5; i++)
         {
             Console.WriteLine(xo.NextDouble().ToString("F16"));

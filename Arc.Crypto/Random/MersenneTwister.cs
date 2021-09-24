@@ -129,10 +129,10 @@ public class MersenneTwister
     }
 
     /// <summary>
-    /// [long.MinValue, long.MaxValue]<br/>
+    /// [0, long.MaxValue]<br/>
     /// Returns a random integer.
     /// </summary>
-    /// <returns>A 64-bit signed integer [long.MinValue, long.MaxValue].</returns>
+    /// <returns>A 64-bit signed integer [0, long.MaxValue].</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public long NextLong() => (long)(this.NextULong() >> 1);
 
@@ -173,10 +173,22 @@ public class MersenneTwister
     /// <param name="maxValue">The exclusive upper bound of the random number to be generated.<br/>
     /// maxValue must be greater than or equal to 0.</param>
     /// <returns>A 32-bit unsigned integer [0, maxValue).</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int NextInt(int maxValue)
-    {
-        return (int)(this.NextDouble() * maxValue);
+    {// return (int)(this.NextDouble() * maxValue);
+        if (maxValue > 1)
+        {
+            int bits = Xoshiro256StarStar.Log2Ceiling((uint)maxValue);
+            while (true)
+            {
+                ulong result = this.NextULong() >> ((sizeof(ulong) * 8) - bits);
+                if (result < (uint)maxValue)
+                {
+                    return (int)result;
+                }
+            }
+        }
+
+        return 0;
     }
 
     /// <summary>
@@ -187,7 +199,6 @@ public class MersenneTwister
     /// <param name="maxValue">The exclusive upper bound of the random number returned.<br/>
     /// maxValue must be greater than or equal to minValue.</param>
     /// <returns>A 32-bit signed integer [minValue, maxValue).</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int NextInt(int minValue, int maxValue)
     {
         if (minValue > maxValue)
@@ -221,6 +232,14 @@ public class MersenneTwister
     /// <returns>A double-precision floating-point number that is greater than 0.0, and less than 1.0.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public double NextDouble3() => ((this.NextULong() >> 12) + 0.5) * (1.0 / 4503599627370496.0);
+
+    /// <summary>
+    /// [0,1)<br/>
+    /// Returns a random floating-point number that is greater than or equal to 0.0, and less than 1.0.
+    /// </summary>
+    /// <returns>A single-precision floating point number that is greater than or equal to 0.0, and less than 1.0.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public float NextSingle() => (this.NextULong() >> 40) * (1.0f / 16777216.0f);
 
     /// <summary>
     /// Fills the elements of a specified span of bytes with random numbers.

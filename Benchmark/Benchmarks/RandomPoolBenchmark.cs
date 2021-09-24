@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Arc.Crypto;
@@ -19,15 +20,6 @@ public class RandomPoolBenchmark
 {
     public static void Test1()
     {
-        /*var mt = new MersenneTwister(new ulong[] { 0x12345UL, 0x23456UL, 0x34567UL, 0x45678UL });
-        var poolLock = new RandomPoolLock(() => mt.NextULong());
-        Debug.Assert(poolLock.NextULong() == 7266447313870364031UL);
-
-        for (var i = 0; i < 20000; i++)
-        {
-            poolLock.NextULong();
-        }*/
-
         var mt2 = new MersenneTwister(new ulong[] { 0x12345UL, 0x23456UL, 0x34567UL, 0x45678UL });
         var poolSliding = new RandomPoolSliding(() => mt2.NextULong(), x => mt2.NextBytes(x));
         Debug.Assert(poolSliding.NextULong() == 7266447313870364031UL);
@@ -55,6 +47,8 @@ public class RandomPoolBenchmark
 
     internal RandomPoolSliding PoolSliding2 { get; set; }
 
+    internal RandomPoolSliding PoolSliding3 { get; set; }
+
     internal RandomPoolSplit PoolSplit { get; set; }
 
     internal RandomPoolConcurrentQueue PoolConcurrentQueue { get; set; }
@@ -67,7 +61,9 @@ public class RandomPoolBenchmark
         this.PoolConcurrentQueue = new(() => this.Mt.NextULong(), x => this.Mt.NextBytes(x));
 
         var mt = new MersenneTwister(42);
-        this.PoolSliding2 = new(() => mt.NextULong(), x => mt.NextBytes(x), 20_000_000);
+        this.PoolSliding2 = new(() => mt.NextULong(), x => mt.NextBytes(x), 2_000_000);
+
+        this.PoolSliding3 = new(null, x => RandomNumberGenerator.Fill(x));
     }
 
     [GlobalSetup]
@@ -108,7 +104,7 @@ public class RandomPoolBenchmark
     }
 
     [Benchmark]
-    [InvocationCount(10_000_000)]
+    [InvocationCount(1_000_000)]
     public ulong Pool_Sliding2()
     {
         return this.PoolSliding2.NextULong();
@@ -124,7 +120,7 @@ public class RandomPoolBenchmark
     public void SetupConcurrentQueue()
     {
         this.PoolConcurrentQueue.Clear();
-        this.PoolConcurrentQueue.Generate(10_000_000).Wait();
+        this.PoolConcurrentQueue.Generate(1_000_000).Wait();
     }
 
     [Benchmark]

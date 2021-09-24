@@ -4,6 +4,7 @@ using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 namespace Arc.Crypto;
 
@@ -47,18 +48,21 @@ public class Xoshiro256StarStar
 
     public unsafe Xoshiro256StarStar()
     {
-        /*ulong* ptr = stackalloc ulong[4];
-        do
+        Span<byte> span = stackalloc byte[4 * sizeof(ulong)];
+        fixed (byte* b = span)
         {
-            Interop.GetRandomBytes((byte*)ptr, 4 * sizeof(ulong));
-            this.ss0 = ptr[0];
-            this.ss1 = ptr[1];
-            this.ss2 = ptr[2];
-            this.ss3 = ptr[3];
-        }
-        while ((this.ss0 | this.ss1 | this.ss2 | this.ss3) == 0); // at least one value must be non-zero*/
+            ulong* d = (ulong*)b;
+            do
+            {
+                RandomNumberGenerator.Fill(span);
+            }
+            while ((d[0] | d[1] | d[2] | d[3]) == 0); // at least one value must be non-zero.
 
-        this.ss0 = 1;
+            this.ss0 = d[0];
+            this.ss1 = d[1];
+            this.ss2 = d[2];
+            this.ss3 = d[3];
+        }
     }
 
     public Xoshiro256StarStar(ulong seed)
@@ -74,9 +78,11 @@ public class Xoshiro256StarStar
         while ((this.ss0 | this.ss1 | this.ss2 | this.ss3) == 0); // at least one value must be non-zero
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public uint NextUInt() => (uint)(this.NextULong() >> 32);
-
+    /// <summary>
+    /// [0, 2^64-1]<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <returns>A 64-bit unsigned integer [0, 2^64-1].</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ulong NextULong()
     {
@@ -103,14 +109,41 @@ public class Xoshiro256StarStar
         return result;
     }
 
-    public int NextInt() => (int)(this.NextUInt() >> 1);
+    /// <summary>
+    /// [0, long.MaxValue]<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <returns>A 64-bit signed integer [0, long.MaxValue].</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public long NextLong() => (long)(this.NextULong() >> 1);
 
+    /// <summary>
+    /// [0, 2^32-1]<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <returns>A 32-bit unsigned integer [0, 2^32-1].</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public uint NextUInt() => (uint)(this.NextULong() >> 32);
+
+    /// <summary>
+    /// [0, int.MaxValue]<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <returns>A 32-bit signed integer [0, int.MaxValue].</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int NextInt() => (int)(this.NextULong() >> 33);
+
+    /// <summary>
+    /// [0, maxValue)<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <param name="maxValue">The exclusive upper bound of the random number to be generated.<br/>
+    /// maxValue must be greater than or equal to 0.</param>
+    /// <returns>A 32-bit unsigned integer [0, maxValue).</returns>
     public int NextInt(int maxValue)
     {
         if (maxValue > 1)
         {
-            // Narrow down to the smallest range [0, 2^bits] that contains maxValue.
-            // Then repeatedly generate a value in that outer range until we get one within the inner range.
             int bits = Log2Ceiling((uint)maxValue);
             while (true)
             {
@@ -125,6 +158,14 @@ public class Xoshiro256StarStar
         return 0;
     }
 
+    /// <summary>
+    /// [minValue, maxValue)<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <param name="minValue">The inclusive lower bound of the random number returned.</param>
+    /// <param name="maxValue">The exclusive upper bound of the random number returned.<br/>
+    /// maxValue must be greater than or equal to minValue.</param>
+    /// <returns>A 32-bit signed integer [minValue, maxValue).</returns>
     public int NextInt(int minValue, int maxValue)
     {
         ulong exclusiveRange = (ulong)((long)maxValue - minValue);
@@ -145,14 +186,17 @@ public class Xoshiro256StarStar
         return minValue;
     }
 
-    public long NextLong() => (long)(this.NextULong() >> 1);
-
+    /// <summary>
+    /// [0, maxValue)<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <param name="maxValue">The exclusive upper bound of the random number to be generated.<br/>
+    /// maxValue must be greater than or equal to 0.</param>
+    /// <returns>A 64-bit unsigned integer [0, maxValue).</returns>
     public long NextLong(long maxValue)
     {
         if (maxValue > 1)
         {
-            // Narrow down to the smallest range [0, 2^bits] that contains maxValue.
-            // Then repeatedly generate a value in that outer range until we get one within the inner range.
             int bits = Log2Ceiling((ulong)maxValue);
             while (true)
             {
@@ -167,6 +211,14 @@ public class Xoshiro256StarStar
         return 0;
     }
 
+    /// <summary>
+    /// [minValue, maxValue)<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <param name="minValue">The inclusive lower bound of the random number returned.</param>
+    /// <param name="maxValue">The exclusive upper bound of the random number returned.<br/>
+    /// maxValue must be greater than or equal to minValue.</param>
+    /// <returns>A 64-bit signed integer [minValue, maxValue).</returns>
     public long NextLong(long minValue, long maxValue)
     {
         var exclusiveRange = (ulong)(maxValue - minValue);
