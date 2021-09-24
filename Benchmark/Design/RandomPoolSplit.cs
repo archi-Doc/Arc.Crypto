@@ -15,6 +15,7 @@ namespace Benchmark.Design;
 internal class RandomPoolSplit
 {
     private const ulong Empty = 1 << 33;
+
     public RandomPoolSplit(Func<ulong> nextULong, uint length = 100)
     {
         this.Length = BitOperations.RoundUpToPowerOf2(length);
@@ -61,11 +62,6 @@ internal class RandomPoolSplit
 LockAndGet:
         y = x;
         return x | (y << 32);
-
-        lock (this.syncObject)
-        {
-            return this.nextULongFunc();
-        }
     }
 
     public Task Generate()

@@ -40,7 +40,7 @@ public class CryptoRandomBenchmark
 
     public RandomNumberGenerator Rng { get; set; } = RandomNumberGenerator.Create();
 
-    public byte[] RandomBytes { get; } = new byte[64];
+    public byte[] RandomBytes { get; } = new byte[1024];
 
     public CryptoRandomBenchmark()
     {

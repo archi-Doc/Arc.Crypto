@@ -14,25 +14,26 @@ using System.Threading.Tasks;
 namespace Benchmark.Design;
 
 internal class RandomPoolConcurrentQueue
-{// Slow
-    public RandomPoolConcurrentQueue(Func<ulong> nextULong, int size = 100)
+{// A bit slow
+    public RandomPoolConcurrentQueue(Func<ulong> nextULong, Action<byte[]> nextBytes, int poolSize = 100)
     {
-        this.Size = size;
-        this.nextULongFunc = nextULong;
+        this.PoolSize = poolSize;
+        this.nextULongDelegate = nextULong;
+        this.nextBytesDelegate = nextBytes;
 
-        this.count = this.Size >> 1;
-        this.GenerateULong(this.Size);
+        this.count = this.PoolSize >> 1;
+        this.GenerateULong(this.PoolSize);
     }
 
     public ulong NextULong()
     {
         var c = Interlocked.Increment(ref this.count);
-        if (c == this.Size)
+        if (c == this.PoolSize)
         {
             Volatile.Write(ref this.count, 0);
-            if (this.queue.Count <= (this.Size >> 1))
+            if (this.queue.Count <= (this.PoolSize >> 1))
             {
-                this.GenerateULong(this.Size);
+                this.GenerateULong(this.PoolSize);
             }
         }
 
@@ -43,7 +44,7 @@ internal class RandomPoolConcurrentQueue
 
         lock (this.syncObject)
         {
-            return this.nextULongFunc();
+            return this.nextULongDelegate();
         }
     }
 
@@ -57,7 +58,7 @@ internal class RandomPoolConcurrentQueue
         this.queue.Clear();
     }
 
-    public int Size { get; }
+    public int PoolSize { get; }
 
     private Task GenerateULong(int size)
     {
@@ -67,13 +68,14 @@ internal class RandomPoolConcurrentQueue
             {
                 for (var i = 0; i < size; i++)
                 {
-                    this.queue.Enqueue(this.nextULongFunc());
+                    this.queue.Enqueue(this.nextULongDelegate());
                 }
             }
         });
     }
 
-    private Func<ulong> nextULongFunc;
+    private Func<ulong> nextULongDelegate;
+    private Action<byte[]> nextBytesDelegate;
     private ConcurrentQueue<ulong> queue = new();
     private object syncObject = new();
     private int count;
