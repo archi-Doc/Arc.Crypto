@@ -13,9 +13,11 @@ namespace Benchmark;
 [Config(typeof(BenchmarkConfig))]
 public class PseudoRandomBenchmark
 {
-    public Random Random { get; set; } = new(42);
+    public Random Random { get; set; } = new();
 
     public MersenneTwister Mt { get; set; } = new(42);
+
+    public Xoshiro256StarStar Xo { get; set; } = new();
 
     public ObjectPool<Random> Pool { get; set; } = new(() => new Random());
 
@@ -48,9 +50,21 @@ public class PseudoRandomBenchmark
     }
 
     [Benchmark]
+    public int Xo_Int()
+    {
+        return this.Xo.NextInt();
+    }
+
+    [Benchmark]
     public ulong MT_ULong()
     {
         return this.Mt.NextULong();
+    }
+
+    [Benchmark]
+    public ulong Xo_ULong()
+    {
+        return this.Xo.NextULong();
     }
 
     [Benchmark]
@@ -66,6 +80,12 @@ public class PseudoRandomBenchmark
     }
 
     [Benchmark]
+    public double Xo_Double()
+    {
+        return this.Xo.NextDouble();
+    }
+
+    [Benchmark]
     public double Random_Range()
     {
         return this.Random.Next(int.MinValue, int.MaxValue);
@@ -75,6 +95,12 @@ public class PseudoRandomBenchmark
     public double MT_Range()
     {
         return this.Mt.NextInt(int.MinValue, int.MaxValue);
+    }
+
+    [Benchmark]
+    public double Xo_Range()
+    {
+        return this.Xo.NextInt(int.MinValue, int.MaxValue);
     }
 
     [Benchmark]
@@ -88,6 +114,13 @@ public class PseudoRandomBenchmark
     public byte[] Mt_Bytes()
     {
         this.Mt.NextBytes(this.RandomBytes);
+        return this.RandomBytes;
+    }
+
+    [Benchmark]
+    public byte[] Xo_Bytes()
+    {
+        this.Xo.NextBytes(this.RandomBytes);
         return this.RandomBytes;
     }
 

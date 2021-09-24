@@ -14,7 +14,6 @@ public class MersenneTwisterTest
     public void QuickStart_MersenneTwister()
     {
         // MersenneTwister is a pseudo-random number generator.
-        // Faster and better than System.Random class.
         var mt = new MersenneTwister(42);
         var ul = mt.NextULong(); // [0, 2^64-1]
         var d = mt.NextDouble(); // [0,1)
@@ -54,6 +53,18 @@ public class MersenneTwisterTest
         DoubleToString(mt.NextDouble()).Is("0.27216673");
 
         string DoubleToString(double d) => d.ToString("F8");
+
+        // Reset(byte[]) test
+        var size = init.Length * sizeof(ulong);
+        byte[] seed = new byte[size];
+        Buffer.BlockCopy(init, 0, seed, 0, size);
+        mt.Reset(init);
+
+        mt.NextULong().Is(7266447313870364031UL);
+        mt.NextULong().Is(4946485549665804864UL);
+        mt.NextULong().Is(16945909448695747420UL);
+        mt.NextULong().Is(16394063075524226720UL);
+        mt.NextULong().Is(4873882236456199058UL);
 
         // NextBytes test
         var bytes = new byte[24];

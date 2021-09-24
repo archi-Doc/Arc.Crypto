@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29613.14
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31717.71
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arc.Crypto", "Arc.Crypto\Arc.Crypto.csproj", "{C6B70906-A5BE-442E-90FB-1677FC208A78}"
 EndProject
@@ -15,7 +15,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{FB68D2EF-38A9-4E66-BDCE-4C8A2CB27130}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test", "Test\Test.csproj", "{FB68D2EF-38A9-4E66-BDCE-4C8A2CB27130}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuickStart", "QuickStart\QuickStart.csproj", "{31C233F3-A00D-4610-8374-C92276B1441F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +37,10 @@ Global
 		{FB68D2EF-38A9-4E66-BDCE-4C8A2CB27130}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB68D2EF-38A9-4E66-BDCE-4C8A2CB27130}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB68D2EF-38A9-4E66-BDCE-4C8A2CB27130}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31C233F3-A00D-4610-8374-C92276B1441F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31C233F3-A00D-4610-8374-C92276B1441F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31C233F3-A00D-4610-8374-C92276B1441F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31C233F3-A00D-4610-8374-C92276B1441F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
