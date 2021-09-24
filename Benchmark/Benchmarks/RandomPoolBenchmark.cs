@@ -36,6 +36,15 @@ public class RandomPoolBenchmark
         {
             poolSliding.NextULong();
         }
+
+        mt.Reset(new ulong[] { 0x12345UL, 0x23456UL, 0x34567UL, 0x45678UL });
+        var poolConcurrentQueue = new RandomPoolConcurrentQueue(() => mt.NextULong());
+        Debug.Assert(poolConcurrentQueue.NextULong() == 7266447313870364031UL);
+
+        for (var i = 0; i < 20000; i++)
+        {
+            poolConcurrentQueue.NextULong();
+        }
     }
 
     public MersenneTwister Mt { get; set; } = new(42);
@@ -44,10 +53,16 @@ public class RandomPoolBenchmark
 
     internal RandomPoolSliding PoolSliding { get; set; }
 
+    internal RandomPoolSplit PoolSplit { get; set; }
+
+    internal RandomPoolConcurrentQueue PoolConcurrentQueue { get; set; }
+
     public RandomPoolBenchmark()
     {
         this.PoolLock = new(() => this.Mt.NextULong());
         this.PoolSliding = new(() => this.Mt.NextULong());
+        this.PoolSplit = new(() => this.Mt.NextULong());
+        this.PoolConcurrentQueue = new(() => this.Mt.NextULong());
     }
 
     [GlobalSetup]
@@ -60,11 +75,11 @@ public class RandomPoolBenchmark
     {
     }
 
-    [Benchmark]
+    /*[Benchmark]
     public ulong Raw()
     {
         return this.Mt.NextULong();
-    }
+    }*/
 
     [Benchmark]
     public ulong Lock()
@@ -79,5 +94,31 @@ public class RandomPoolBenchmark
     public ulong Pool_Sliding()
     {
         return this.PoolSliding.NextULong();
+    }
+
+    [Benchmark]
+    public ulong Pool_ConcurrentQueue()
+    {
+        return this.PoolConcurrentQueue.NextULong();
+    }
+
+    [IterationSetup(Target = "Pool_ConcurrentQueue2")]
+    public void SetupConcurrentQueue()
+    {
+        this.PoolConcurrentQueue.Clear();
+        this.PoolConcurrentQueue.Generate(1_000_000).Wait();
+    }
+
+    [Benchmark]
+    [InvocationCount(1_000_000)]
+    public ulong Pool_ConcurrentQueue2()
+    {
+        return this.PoolConcurrentQueue.NextULong();
+    }
+
+    [Benchmark]
+    public ulong Pool_Split()
+    {
+        return this.PoolSplit.NextULong();
     }
 }

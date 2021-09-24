@@ -35,22 +35,32 @@ internal class RandomPoolSliding
 
     public ulong NextULong()
     {
+        var lower = Volatile.Read(ref this.lowerBound);
+        var upper = Volatile.Read(ref this.upperBound);
         var newPosition = Interlocked.Increment(ref this.position);
         var value = this.array[newPosition & this.positionMask];
-        if (this.lowerBound <= newPosition && newPosition < this.upperBound)
+
+        if (lower == Volatile.Read(ref this.lowerBound) && upper == Volatile.Read(ref this.upperBound))
         {
-            return value;
+            if (lower <= newPosition && newPosition < upper)
+            {
+                if ((newPosition & this.poolMask) != 0)
+                {
+                }
+
+                return value;
+            }
+
+        }
+        else
+        {// lower/upper changed
         }
 
-        /*lock (this.array)
+        return value;
+        lock (this.syncObject)
         {
-            if (this.lowerBound <= this.position && this.position < this.upperBound)
-            {
-                return this.array[this.position++ & this.positionMask];
-            }
-        }*/
-
-        return 0;
+            return this.nextULongFunc();
+        }
     }
 
     public uint Length { get; }
@@ -60,6 +70,7 @@ internal class RandomPoolSliding
     }
 
     private Func<ulong> nextULongFunc;
+    private object syncObject = new();
     private ulong positionMask;
     private ulong poolMask;
     private int poolBits;
