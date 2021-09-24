@@ -20,6 +20,19 @@ internal class RandomPoolSliding
 
     public delegate void NextBytesDelegate(Span<byte> data);
 
+    private static unsafe ulong NextBytesToULong(NextBytesDelegate nextBytes)
+    {
+        ulong u;
+        Span<byte> b = stackalloc byte[8];
+        nextBytes(b);
+        fixed (byte* bp = b)
+        {
+            u = *(ulong*)bp;
+        }
+
+        return u;
+    }
+
     public RandomPoolSliding(Func<ulong>? nextULong, NextBytesDelegate nextBytes, uint poolSize = 100)
     {
         this.PoolSize = BitOperations.RoundUpToPowerOf2(poolSize);
@@ -31,13 +44,20 @@ internal class RandomPoolSliding
         this.halfSize = this.PoolSize >> 1;
         this.positionMask = this.PoolSize - 1;
         this.halfMask = this.positionMask >> 1;
-        // this.poolMask = this.Length;
-        // this.poolBits = BitOperations.TrailingZeroCount(this.poolMask);
         this.nextBytes = nextBytes;
-        this.nextULongFunc = nextULong;
-        if (this.nextULongFunc == null)
+        if (nextULong != null)
         {
-
+            this.nextULongFunc = nextULong;
+        }
+        else
+        {
+            // this.nextULongFunc = () => NextBytesToULong(this.nextBytes);
+            this.nextULongFunc = () =>
+            {
+                Span<byte> b = stackalloc byte[8];
+                this.nextBytes(b);
+                return BitConverter.ToUInt64(b);
+            };
         }
 
         this.array = new ulong[this.PoolSize];
@@ -47,6 +67,11 @@ internal class RandomPoolSliding
         this.upperBound = this.PoolSize;
     }
 
+    /// <summary>
+    /// [0, long.MaxValue]<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <returns>A 64-bit signed integer [0, long.MaxValue].</returns>
     public ulong NextULong()
     {
         var upper = Volatile.Read(ref this.upperBound);
@@ -95,7 +120,7 @@ LockAndGet:
                 lock (this.syncObject)
                 {
                     // Fixed:  this.lowerBound, this.upperBound
-                    // Subject to change: this.position
+                    // Not fixed: this.position
                     var position = Volatile.Read(ref this.position);
 
                     if (position < this.lowerBound)
@@ -139,7 +164,7 @@ LockAndGet:
         this.nextBytes(span);
     }
 
-    private Func<ulong>? nextULongFunc;
+    private Func<ulong> nextULongFunc;
     private NextBytesDelegate nextBytes;
     private object syncObject = new();
     private ulong positionMask;

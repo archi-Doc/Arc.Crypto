@@ -63,7 +63,7 @@ public class RandomPoolBenchmark
         var mt = new MersenneTwister(42);
         this.PoolSliding2 = new(() => mt.NextULong(), x => mt.NextBytes(x), 2_000_000);
 
-        this.PoolSliding3 = new(null, x => RandomNumberGenerator.Fill(x));
+        this.PoolSliding3 = new(null, x => RandomNumberGenerator.Fill(x), 2_000_000);
     }
 
     [GlobalSetup]
@@ -124,10 +124,45 @@ public class RandomPoolBenchmark
     }
 
     [Benchmark]
-    [InvocationCount(10_000_000)]
+    [InvocationCount(1_000_000)]
     public ulong Pool_ConcurrentQueue2()
     {
         return this.PoolConcurrentQueue.NextULong();
+    }
+
+    [IterationSetup(Target = "Pool_Rng")]
+    public void SetupPoolSliding3()
+    {
+        this.PoolSliding3.Generate().Wait();
+    }
+
+    [Benchmark]
+    [InvocationCount(1_000_000)]
+    public ulong Pool_Rng()
+    {
+        return this.PoolSliding3.NextULong();
+    }
+
+    [Benchmark]
+    public unsafe ulong Rng_Rng()
+    {
+        ulong u;
+        Span<byte> b = stackalloc byte[8];
+        RandomNumberGenerator.Fill(b);
+        fixed (byte* bp = b)
+        {
+            u = *(ulong*)bp;
+        }
+
+        return u;
+    }
+
+    [Benchmark]
+    public unsafe ulong Rng_Rng2()
+    {
+        Span<byte> b = stackalloc byte[8];
+        RandomNumberGenerator.Fill(b);
+        return BitConverter.ToUInt64(b);
     }
 
     /*[Benchmark]
