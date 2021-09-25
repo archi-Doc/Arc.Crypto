@@ -18,7 +18,8 @@ namespace Arc.Crypto;
 /// <summary>
 /// <see cref="RandomVault"/> is is a random number pool.<br/>
 /// It's thread-safe and faster than lock in most cases.<br/>
-/// RandomVault generates random integers using random generator<br/>
+/// Target: Random integers requested by multiple threads simultaneously<br/><br/>
+/// <see cref="RandomVault"/> generates random integers using random generator<br/>
 /// specified by constructor parameters, and takes out integers from the buffer as needed.<br/>
 /// </summary>
 public class RandomVault : RandomULong
