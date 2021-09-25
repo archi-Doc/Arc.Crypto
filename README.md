@@ -4,7 +4,8 @@
 Arc.Crypto is a collection of classes used in cryptography, which includes
 
 - Hash functions (XXHash, FarmHash, SHA3)
-- Pseudo-random generator (Mersenne Twister)
+- Pseudo-random generator (xoshiro256**, Mersenne Twister)
+- Random number pool (RandomVault)
 
 
 
@@ -14,11 +15,57 @@ Arc.Crypto is a collection of classes used in cryptography, which includes
 Install-Package Arc.Crypto
 ```
 
-Sample code
+
+
+### xoshiro256**
 
 ```csharp
-using Arc.Crypto;
+public void QuickStart_Xoshiro256StarStar()
+{
+    // xoshiro256** is a pseudo-random number generator.
+    var xo = new Xoshiro256StarStar(42);
+    var ul = xo.NextULong(); // [0, 2^64-1]
+    var d = xo.NextDouble(); // [0,1)
+    var bytes = new byte[10];
+    xo.NextBytes(bytes);
+}
 ```
+
+
+
+### Mersenne Twister
+
+```csharp
+public void QuickStart_MersenneTwister()
+{
+    var mt = new MersenneTwister(42);
+    var ul = mt.NextULong(); // [0, 2^64-1]
+    var d = mt.NextDouble(); // [0,1)
+    var bytes = new byte[10];
+    mt.NextBytes(bytes);
+}
+```
+
+
+
+### RandomVault
+
+```csharp
+public static void QuickStart_RandomVault()
+{
+    // RandomVault is a random number pool.
+    // It's thread-safe and faster than lock in most cases.
+    var mt = new MersenneTwister(); // Create a random generator.
+    var rv = new RandomVault(() => mt.NextULong(), x => mt.NextBytes(x)); // Specify NextULong() or NextBytes() or both delegates, and forget about mt.
+    Console.WriteLine("RandomVault:");
+    Console.WriteLine(rv.NextLong());
+    Console.WriteLine(rv.NextDouble());
+}
+```
+
+
+
+### Hash
 
 ```csharp
 var data = new byte[100];
@@ -49,18 +96,6 @@ array = sha3_512.GetHash(data.AsSpan());
 sha3_512.HashInitialize(); // Another way
 sha3_512.HashUpdate(data.AsSpan());
 Assert.True(sha3_512.HashFinal().SequenceEqual(array));
-```
-
-```csharp
-public void QuickStart_MersenneTwister()
-{
-    // MersenneTwister is a pseudo-random number generator.
-    var mt = new MersenneTwister(42);
-    var ul = mt.NextULong(); // [0, 2^64-1]
-    var d = mt.NextDouble(); // [0,1)
-    var bytes = new byte[10];
-    mt.NextBytes(bytes);
-}
 ```
 
 

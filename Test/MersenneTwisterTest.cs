@@ -11,17 +11,6 @@ namespace Test;
 public class MersenneTwisterTest
 {
     [Fact]
-    public void QuickStart_MersenneTwister()
-    {
-        // MersenneTwister is a pseudo-random number generator.
-        var mt = new MersenneTwister(42);
-        var ul = mt.NextULong(); // [0, 2^64-1]
-        var d = mt.NextDouble(); // [0,1)
-        var bytes = new byte[10];
-        mt.NextBytes(bytes);
-    }
-
-    [Fact]
     public void Test1()
     {
         var init = new ulong[] { 0x12345UL, 0x23456UL, 0x34567UL, 0x45678UL };
