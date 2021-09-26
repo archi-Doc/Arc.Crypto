@@ -16,7 +16,7 @@ using BenchmarkDotNet.Attributes;
 namespace Benchmark;
 
 [Config(typeof(BenchmarkConfig))]
-public class RandomPoolBenchmark
+public class RandomVaultBenchmark
 {
     public static void Test1()
     {
@@ -53,7 +53,7 @@ public class RandomPoolBenchmark
 
     internal RandomPoolConcurrentQueue PoolConcurrentQueue { get; set; }
 
-    public RandomPoolBenchmark()
+    public RandomVaultBenchmark()
     {
         this.PoolLock = new(() => this.Mt.NextULong());
         this.Vault = new(() => this.Mt.NextULong(), x => this.Mt.NextBytes(x));

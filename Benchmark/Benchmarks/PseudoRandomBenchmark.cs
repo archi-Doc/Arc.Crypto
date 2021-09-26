@@ -19,8 +19,6 @@ public class PseudoRandomBenchmark
 
     public Xoshiro256StarStar Xo { get; set; } = new();
 
-    public ObjectPool<Random> Pool { get; set; } = new(() => new Random());
-
     public byte[] RandomBytes { get; } = new byte[24];
 
     public PseudoRandomBenchmark()
@@ -123,34 +121,4 @@ public class PseudoRandomBenchmark
         this.Xo.NextBytes(this.RandomBytes);
         return this.RandomBytes;
     }
-
-    /*[Benchmark]
-    public int Random_Lock()
-    {
-        lock (this.Random)
-        {
-            return this.Random.Next();
-        }
-    }
-
-    [Benchmark]
-    public int Random_ObjectPool()
-    {
-        var r = this.Pool.Get();
-        try
-        {
-            return r.Next();
-        }
-        finally
-        {
-            this.Pool.Return(r);
-        }
-    }
-
-    [Benchmark]
-    public int Random_New()
-    {
-        var r = new Random(12);
-        return r.Next();
-    }*/
 }
