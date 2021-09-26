@@ -179,7 +179,7 @@ LockAndGet:
         }
     }
 
-    public Task Generate() => this.GenerateInternal();
+    public Task GenerateRandomForTest() => this.GenerateInternal();
 
     /// <summary>
     /// Gets the number of 64-bit integers stored in <see cref="RandomVault"/>.
@@ -188,47 +188,60 @@ LockAndGet:
 
     private Task GenerateInternal()
     {
+        if (this.isTaskRunning)
+        {
+            return Task.CompletedTask;
+        }
+
+        this.isTaskRunning = true;
         return Task.Run(() =>
         {
-            while (true)
+            try
             {
-                lock (this.syncObject)
+                while (true)
                 {
-                    // Fixed:  this.lowerBound, this.upperBound
-                    // Not fixed: this.position
-                    var position = Volatile.Read(ref this.position);
+                    lock (this.syncObject)
+                    {
+                        // Fixed:  this.lowerBound, this.upperBound
+                        // Not fixed: this.position
+                        var position = Volatile.Read(ref this.position);
 
-                    if (position < this.lowerBound)
-                    {
-                        return;
-                    }
-                    else if (position < (this.lowerBound + this.halfSize))
-                    {
-                        if ((this.upperBound - this.lowerBound) > this.halfSize)
-                        {// Enough
+                        if (position < this.lowerBound)
+                        {
                             return;
                         }
-                        else
-                        {// Extend the upper bound.
-                            var index = (uint)(this.upperBound & this.positionMask);
-                            this.FillArray(index, index + this.halfSize);
-                            Volatile.Write(ref this.upperBound, this.lowerBound + this.VaultSize);
-                        }
-                    }
-                    else
-                    {
-                        if ((this.upperBound - this.lowerBound) <= this.halfSize)
-                        {// Extend the upper bound.
-                            var index = (uint)(this.upperBound & this.positionMask);
-                            this.FillArray(index, index + this.halfSize);
-                            Volatile.Write(ref this.upperBound, this.lowerBound + this.VaultSize);
+                        else if (position < (this.lowerBound + this.halfSize))
+                        {
+                            if ((this.upperBound - this.lowerBound) > this.halfSize)
+                            {// Enough
+                                return;
+                            }
+                            else
+                            {// Extend the upper bound.
+                                var index = (uint)(this.upperBound & this.positionMask);
+                                this.FillArray(index, index + this.halfSize);
+                                Volatile.Write(ref this.upperBound, this.lowerBound + this.VaultSize);
+                            }
                         }
                         else
-                        {// Raise the lower bound.
-                            Volatile.Write(ref this.lowerBound, this.lowerBound + this.halfSize);
+                        {
+                            if ((this.upperBound - this.lowerBound) <= this.halfSize)
+                            {// Extend the upper bound.
+                                var index = (uint)(this.upperBound & this.positionMask);
+                                this.FillArray(index, index + this.halfSize);
+                                Volatile.Write(ref this.upperBound, this.lowerBound + this.VaultSize);
+                            }
+                            else
+                            {// Raise the lower bound.
+                                Volatile.Write(ref this.lowerBound, this.lowerBound + this.halfSize);
+                            }
                         }
                     }
                 }
+            }
+            finally
+            {
+                this.isTaskRunning = false;
             }
         });
     }
@@ -250,4 +263,5 @@ LockAndGet:
     private ulong lowerBound;
     private ulong upperBound;
     private ulong[] array;
+    private bool isTaskRunning = false;
 }
