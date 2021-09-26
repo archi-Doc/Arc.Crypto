@@ -16,7 +16,7 @@ using BenchmarkDotNet.Attributes;
 namespace Benchmark;
 
 [Config(typeof(BenchmarkConfig))]
-public class RandomPoolBenchmark
+public class RandomVaultBenchmark
 {
     public static void Test1()
     {
@@ -53,7 +53,7 @@ public class RandomPoolBenchmark
 
     internal RandomPoolConcurrentQueue PoolConcurrentQueue { get; set; }
 
-    public RandomPoolBenchmark()
+    public RandomVaultBenchmark()
     {
         this.PoolLock = new(() => this.Mt.NextULong());
         this.Vault = new(() => this.Mt.NextULong(), x => this.Mt.NextBytes(x));
@@ -100,7 +100,7 @@ public class RandomPoolBenchmark
     [IterationSetup(Target = "Mt_Vault2")]
     public void SetupMt_Vault2()
     {
-        this.Vault2.Generate().Wait();
+        this.Vault2.GenerateRandomForTest().Wait();
     }
 
     [Benchmark]
@@ -133,7 +133,7 @@ public class RandomPoolBenchmark
     [IterationSetup(Target = "Rng_Vault")]
     public void SetupRng_Vault()
     {
-        this.RngVault.Generate().Wait();
+        this.RngVault.GenerateRandomForTest().Wait();
     }
 
     [Benchmark]
