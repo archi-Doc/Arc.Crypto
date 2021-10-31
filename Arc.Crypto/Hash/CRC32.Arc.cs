@@ -10,11 +10,11 @@ namespace Arc.Crypto
     /// <summary>
     /// CRC32 Hash Class.
     /// </summary>
-    public class CRC32 : IHash
+    public class Crc32 : IHash
     {
-        private const uint CRC32MASK = 0xffffffff;
+        private const uint Crc32Mask = 0xffffffff;
 
-        private static readonly uint[] CRC32Table = new uint[]
+        private static readonly uint[] Crc32Table = new uint[]
         {
             0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
             0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4,
@@ -73,9 +73,9 @@ namespace Arc.Crypto
         private uint crcValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CRC32"/> class.
+        /// Initializes a new instance of the <see cref="Crc32"/> class.
         /// </summary>
-        public CRC32()
+        public Crc32()
         {
             this.HashInitialize();
         }
@@ -97,7 +97,7 @@ namespace Arc.Crypto
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe uint Hash32(ReadOnlySpan<byte> input)
         {
-            uint value = CRC32MASK;
+            uint value = Crc32Mask;
 
             fixed (byte* p = input)
             {
@@ -105,12 +105,12 @@ namespace Arc.Crypto
                 {
                     for (var n = 0; n < input.Length; n++)
                     {
-                        value = CRC32Table[(value ^ p[n]) & 0xFF] ^ (value >> 8);
+                        value = Crc32Table[(value ^ p[n]) & 0xFF] ^ (value >> 8);
                     }
                 }
             }
 
-            value ^= CRC32MASK;
+            value ^= Crc32Mask;
 
             // convert little endian to big endian.
             // return (value & 0xFF) << 24 | ((value >> 8) & 0xFF) << 16 | ((value >> 16) & 0xFF) << 8 | ((value >> 24) & 0xFF);
@@ -134,7 +134,7 @@ namespace Arc.Crypto
         /// <inheritdoc/>
         public void HashInitialize()
         {
-            this.crcValue = CRC32MASK;
+            this.crcValue = Crc32Mask;
         }
 
         /// <inheritdoc/>
@@ -146,7 +146,7 @@ namespace Arc.Crypto
                 var len = input.Length;
                 while (--len >= 0)
                 {
-                    this.crcValue = CRC32Table[(this.crcValue ^ input[position++]) & 0xFF] ^ (this.crcValue >> 8);
+                    this.crcValue = Crc32Table[(this.crcValue ^ input[position++]) & 0xFF] ^ (this.crcValue >> 8);
                 }
             }
         }
@@ -157,7 +157,7 @@ namespace Arc.Crypto
         /// <inheritdoc/>
         public byte[] HashFinal()
         {
-            this.crcValue ^= CRC32MASK;
+            this.crcValue ^= Crc32Mask;
             var result = BitConverter.GetBytes(this.crcValue);
             this.HashInitialize();
             return result;

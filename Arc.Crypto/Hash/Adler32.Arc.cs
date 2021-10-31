@@ -33,7 +33,7 @@ namespace Arc.Crypto
         public bool IsCryptographic => false;
 
         /// <summary>
-        /// Calculates CRC32 hash.
+        /// Calculates Adler-32 hash.
         /// </summary>
         /// <param name="input">The read-only span that contains input data.</param>
         /// <returns>A 32bit hash.</returns>

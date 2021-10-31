@@ -366,6 +366,6 @@ namespace Benchmark
         public ulong ArcAdler32() => Arc.Crypto.Adler32.Hash32(this.data.AsSpan(0, this.Length));
 
         [Benchmark]
-        public ulong ArcCRC32() => Arc.Crypto.CRC32.Hash32(this.data.AsSpan(0, this.Length));
+        public ulong ArcCrc32() => Arc.Crypto.Crc32.Hash32(this.data.AsSpan(0, this.Length));
     }
 }

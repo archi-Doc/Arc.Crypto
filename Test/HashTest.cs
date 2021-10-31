@@ -26,7 +26,7 @@ public class HashTest
         hash32 = Arc.Crypto.XXHash32.Hash32(data.AsSpan()); // Same as above.
         hash32 = unchecked((uint)Arc.Crypto.FarmHash.Hash64(data.AsSpan())); // I recommend getting 64 bit and discarding half.
         hash32 = Arc.Crypto.Adler32.Hash32(data.AsSpan()); // Slow
-        hash32 = Arc.Crypto.CRC32.Hash32(data.AsSpan()); // Slowest
+        hash32 = Arc.Crypto.Crc32.Hash32(data.AsSpan()); // Slowest
 
         // IHash is an interface to get a hash of large data.
         // For XXHash64, IHash version is a bit slower than static method version.
@@ -54,12 +54,12 @@ public class HashTest
         random.NextBytes(data);
 
         // CRC-32
-        var crc32 = new CRC32();
+        var crc32 = new Crc32();
         for (var n = 0; n < 1000; n++)
         {
             var span = data.AsSpan(0, n);
             var h = BitConverter.ToUInt32(crc32.GetHash(span));
-            var h2 = CRC32.Hash32(span);
+            var h2 = Crc32.Hash32(span);
             Assert.Equal(h, h2);
         }
 
@@ -303,16 +303,16 @@ public class HashTest
     }
 
     [Fact]
-    public void TestCRC32()
+    public void TestCrc32()
     {
         uint value;
-        value = CRC32.Hash32(string.Empty);
+        value = Crc32.Hash32(string.Empty);
         Assert.Equal(0U, value);
 
-        this.TestUtf8String_CRC32("123456789", 0xCBF43926);
-        this.TestUtf8String_CRC32("The quick brown fox jumps over the lazy dog", 0x414FA339);
+        this.TestUtf8String_Crc32("123456789", 0xCBF43926);
+        this.TestUtf8String_Crc32("The quick brown fox jumps over the lazy dog", 0x414FA339);
 
-        var crc = new CRC32();
+        var crc = new Crc32();
         this.TestUtf8StringSplit(crc, "123456789", 2, 0xCBF43926);
         this.TestUtf8StringSplit(crc, "123456789", 4, 0xCBF43926);
         this.TestUtf8StringSplit(crc, "The quick brown fox jumps over the lazy dog", 4, 0x414FA339);
@@ -335,10 +335,10 @@ public class HashTest
         Assert.Equal(expected, value);
     }
 
-    private void TestUtf8String_CRC32(string text, uint expected)
+    private void TestUtf8String_Crc32(string text, uint expected)
     {
         var bytes = Encoding.UTF8.GetBytes(text);
-        var value = CRC32.Hash32(bytes);
+        var value = Crc32.Hash32(bytes);
         Assert.Equal(expected, value);
     }
 }
