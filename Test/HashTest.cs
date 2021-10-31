@@ -37,7 +37,7 @@ public class HashTest
         Assert.True(ihash.HashFinal().SequenceEqual(ihash.GetHash(data)));
 
         // Secure Hash Algorithm (SHA1, SHA2, SHA3 supported)
-        var sha3_512 = new Arc.Crypto.SHA3_512();
+        var sha3_512 = new Arc.Crypto.Sha3_512();
         array = sha3_512.GetHash(data.AsSpan());
 
         sha3_512.HashInitialize(); // Another way
@@ -113,32 +113,32 @@ public class HashTest
 
         this.TestHashUpdate_do(xxh64, data, random);
 
-        // SHA1
-        using var sha1 = new Arc.Crypto.SHA1();
+        // Sha1
+        using var sha1 = new Arc.Crypto.Sha1();
         this.TestHashUpdate_do(sha1, data, random);
 
-        // SHA2_256
-        using var sha2_256 = new Arc.Crypto.SHA2_256();
+        // Sha2_256
+        using var sha2_256 = new Arc.Crypto.Sha2_256();
         this.TestHashUpdate_do(sha2_256, data, random);
 
-        // SHA2_384
-        using var sha2_384 = new Arc.Crypto.SHA2_384();
+        // Sha2_384
+        using var sha2_384 = new Arc.Crypto.Sha2_384();
         this.TestHashUpdate_do(sha2_384, data, random);
 
-        // SHA2_512
-        using var sha2_512 = new Arc.Crypto.SHA2_512();
+        // Sha2_512
+        using var sha2_512 = new Arc.Crypto.Sha2_512();
         this.TestHashUpdate_do(sha2_512, data, random);
 
-        // SHA3_256
-        var sha3_256 = new Arc.Crypto.SHA3_256();
+        // Sha3_256
+        var sha3_256 = new Arc.Crypto.Sha3_256();
         this.TestHashUpdate_do(sha3_256, data, random);
 
-        // SHA3_384
-        var sha3_384 = new Arc.Crypto.SHA3_384();
+        // Sha3_384
+        var sha3_384 = new Arc.Crypto.Sha3_384();
         this.TestHashUpdate_do(sha3_384, data, random);
 
-        // SHA3_512
-        var sha3_512 = new Arc.Crypto.SHA3_512();
+        // Sha3_512
+        var sha3_512 = new Arc.Crypto.Sha3_512();
         this.TestHashUpdate_do(sha3_512, data, random);
     }
 
@@ -183,7 +183,7 @@ public class HashTest
     }
 
     [Fact]
-    public void TestSHA3()
+    public void TestSha3()
     {
         var aa = new char[100];
         var utf8_empty = Encoding.UTF8.GetBytes(string.Empty);
@@ -194,7 +194,7 @@ public class HashTest
         var utf8_million = Encoding.UTF8.GetBytes(million_a);
         byte[] hash;
 
-        var sha3_256 = new SHA3_256();
+        var sha3_256 = new Sha3_256();
         hash = sha3_256.GetHash(utf8_empty, 0, utf8_empty.Length);
         Assert.Equal(hash, "a7ffc6f8bf1ed766 51c14756a061d662 f580ff4de43b49fa 82d80a4b80f8434a".HexToByte());
         hash = sha3_256.GetHash(utf8_abc, 0, utf8_abc.Length);
@@ -204,7 +204,7 @@ public class HashTest
         hash = sha3_256.GetHash(utf8_million, 0, utf8_million.Length);
         Assert.Equal(hash, "5c8875ae474a3634 ba4fd55ec85bffd6 61f32aca75c6d699 d0cdcb6c115891c1".HexToByte());
 
-        var sha3_384 = new SHA3_384();
+        var sha3_384 = new Sha3_384();
         hash = sha3_384.GetHash(utf8_empty, 0, utf8_empty.Length);
         Assert.Equal(hash, "0c63a75b845e4f7d 01107d852e4c2485 c51a50aaaa94fc61 995e71bbee983a2a c3713831264adb47 fb6bd1e058d5f004".HexToByte());
         hash = sha3_384.GetHash(utf8_abc, 0, utf8_abc.Length);
@@ -214,7 +214,7 @@ public class HashTest
         hash = sha3_384.GetHash(utf8_million, 0, utf8_million.Length);
         Assert.Equal(hash, "eee9e24d78c18553 37983451df97c8ad 9eedf256c6334f8e 948d252d5e0e7684 7aa0774ddb90a842 190d2c558b4b8340".HexToByte());
 
-        var sha3_512 = new SHA3_512();
+        var sha3_512 = new Sha3_512();
         hash = sha3_512.GetHash(utf8_empty, 0, utf8_empty.Length);
         Assert.Equal(hash, "a69f73cca23a9ac5 c8b567dc185a756e 97c982164fe25859 e0d1dcc1475c80a6 15b2123af1f5f94c 11e3e9402c3ac558 f500199d95b6d3e3 01758586281dcd26".HexToByte());
         hash = sha3_512.GetHash(utf8_abc, 0, utf8_abc.Length);

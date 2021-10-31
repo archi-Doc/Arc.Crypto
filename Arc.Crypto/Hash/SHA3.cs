@@ -13,12 +13,12 @@ namespace Arc.Crypto
     /// <summary>
     /// SHA3-256 Hash Class.
     /// </summary>
-    public class SHA3_256 : SHA3
+    public class Sha3_256 : Sha3
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SHA3_256"/> class.
+        /// Initializes a new instance of the <see cref="Sha3_256"/> class.
         /// </summary>
-        public SHA3_256()
+        public Sha3_256()
         {
             this.Sponge = new KeccakSponge(256);
         }
@@ -55,12 +55,12 @@ namespace Arc.Crypto
     /// <summary>
     /// SHA3-384 Hash Class.
     /// </summary>
-    public class SHA3_384 : SHA3
+    public class Sha3_384 : Sha3
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SHA3_384"/> class.
+        /// Initializes a new instance of the <see cref="Sha3_384"/> class.
         /// </summary>
-        public SHA3_384()
+        public Sha3_384()
         {
             this.Sponge = new KeccakSponge(384);
         }
@@ -78,12 +78,12 @@ namespace Arc.Crypto
     /// <summary>
     /// SHA3-512 Hash Class.
     /// </summary>
-    public class SHA3_512 : SHA3
+    public class Sha3_512 : Sha3
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SHA3_512"/> class.
+        /// Initializes a new instance of the <see cref="Sha3_512"/> class.
         /// </summary>
-        public SHA3_512()
+        public Sha3_512()
         {
             this.Sponge = new KeccakSponge(512);
         }
@@ -101,7 +101,7 @@ namespace Arc.Crypto
     /// <summary>
     /// Wrapper class for SHA3.
     /// </summary>
-    public abstract class SHA3 : IHash
+    public abstract class Sha3 : IHash
     {
         /// <inheritdoc/>
         public virtual string HashName => "SHA3 Wrapper";
@@ -373,7 +373,7 @@ namespace Arc.Crypto
         private static ulong Rotl64(ulong val, int shift) => shift == 0 ? val : (val << shift) | (val >> (64 - shift)); // same
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SHA3_round(Span<ulong> t, ReadOnlySpan<ulong> a, ulong rc)
+        private void Sha3_round(Span<ulong> t, ReadOnlySpan<ulong> a, ulong rc)
         {
             ulong c0 = a[0] ^ a[5] ^ a[10] ^ a[15] ^ a[20];
             ulong c1 = a[1] ^ a[6] ^ a[11] ^ a[16] ^ a[21];
@@ -448,8 +448,8 @@ namespace Arc.Crypto
             Span<ulong> t = stackalloc ulong[25];
             for (var i = 0; i != 24; i += 2)
             {
-                this.SHA3_round(t, a, RoundConstants[i + 0]);
-                this.SHA3_round(a, t, RoundConstants[i + 1]);
+                this.Sha3_round(t, a, RoundConstants[i + 0]);
+                this.Sha3_round(a, t, RoundConstants[i + 1]);
             }
         }
     }
