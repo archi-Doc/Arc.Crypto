@@ -21,7 +21,7 @@ public class HashTest
         byte[] array;
 
         hash64 = Arc.Crypto.FarmHash.Hash64(data.AsSpan()); // The fastest and best algorithm.
-        hash64 = Arc.Crypto.XXHash64.Hash64(data.AsSpan()); // As fast as FarmHash.
+        hash64 = Arc.Crypto.XxHash64.Hash64(data.AsSpan()); // As fast as FarmHash.
         hash32 = Arc.Crypto.FarmHash.Hash32(data.AsSpan()); // 32 bit version is slower than 64 bit version.
         hash32 = Arc.Crypto.XXHash32.Hash32(data.AsSpan()); // Same as above.
         hash32 = unchecked((uint)Arc.Crypto.FarmHash.Hash64(data.AsSpan())); // I recommend getting 64 bit and discarding half.
@@ -29,9 +29,9 @@ public class HashTest
         hash32 = Arc.Crypto.Crc32.Hash32(data.AsSpan()); // Slowest
 
         // IHash is an interface to get a hash of large data.
-        // For XXHash64, IHash version is a bit slower than static method version.
-        // For FarmHash64, IHash version is twice as slow. XXHash64 is recommended.
-        var ihash = new Arc.Crypto.XXHash64();
+        // For XxHash64, IHash version is a bit slower than static method version.
+        // For FarmHash64, IHash version is twice as slow. XxHash64 is recommended.
+        var ihash = new Arc.Crypto.XxHash64();
         ihash.HashInitialize();
         ihash.HashUpdate(data);
         Assert.True(ihash.HashFinal().SequenceEqual(ihash.GetHash(data)));
@@ -102,12 +102,12 @@ public class HashTest
         this.TestHashUpdate_do(xxh32, data, random);
 
         // xxHash64
-        var xxh64 = new XXHash64();
+        var xxh64 = new XxHash64();
         for (var n = 0; n < 1000; n++)
         {
             var span = data.AsSpan(0, n);
             var h = BitConverter.ToUInt64(xxh64.GetHash(span));
-            var h2 = XXHash64.Hash64(span);
+            var h2 = XxHash64.Hash64(span);
             Assert.Equal(h, h2);
         }
 
@@ -226,7 +226,7 @@ public class HashTest
     }
 
     [Fact]
-    public void TestXXHash64()
+    public void TestXxHash64()
     {
         this.TestUtf8String_xxHash64(string.Empty, 0xef46db3751d8e999UL);
         this.TestUtf8String_xxHash64("a", 0xd24ec4f1a98c6e5bUL);
@@ -238,7 +238,7 @@ public class HashTest
     private void TestUtf8String_xxHash64(string text, ulong expected)
     {
         var bytes = Encoding.UTF8.GetBytes(text);
-        var value = XXHash64.Hash64(bytes);
+        var value = XxHash64.Hash64(bytes);
         Assert.Equal(expected, value);
     }
 

@@ -195,7 +195,7 @@ namespace Benchmark
             this.farm = new FarmHash();
             this.farmBeta = new Beta.Crypto.FarmHash(); // System.Numerics.BitOperation
             this.xxh32 = new XXHash32();
-            this.xxh64 = new XXHash64();
+            this.xxh64 = new XxHash64();
             this.sha1 = new Arc.Crypto.SHA1();
             this.sha2_256 = new SHA2_256();
             this.sha2_384 = new SHA2_384();
@@ -216,7 +216,7 @@ namespace Benchmark
         public byte[] XXHash32() => this.xxh32.GetHash(this.data);
 
         [Benchmark]
-        public byte[] XXHash64() => this.xxh64.GetHash(this.data);
+        public byte[] XxHash64() => this.xxh64.GetHash(this.data);
 
         [Benchmark]
         public byte[] SHA1() => this.sha1.GetHash(this.data, 0, this.data.Length);
@@ -302,7 +302,7 @@ namespace Benchmark
         public uint ArcXXHash32_Direct() => Arc.Crypto.XXHash32.Hash32(TestString);
 
         [Benchmark]
-        public ulong ArcXXHash64_Direct() => Arc.Crypto.XXHash64.Hash64(TestString);*/
+        public ulong ArcXxHash64_Direct() => Arc.Crypto.XxHash64.Hash64(TestString);*/
     }
 
     [Config(typeof(BenchmarkConfig))]
@@ -312,7 +312,7 @@ namespace Benchmark
         private readonly byte[] data;
         private FarmHash farm;
         private XXHash32 xxh32;
-        private XXHash64 xxh64;
+        private XxHash64 xxh64;
 
         public HashBenchmark()
         {
@@ -320,7 +320,7 @@ namespace Benchmark
             new Random(42).NextBytes(this.data);
             this.farm = new FarmHash();
             this.xxh32 = new XXHash32();
-            this.xxh64 = new XXHash64();
+            this.xxh64 = new XxHash64();
         }
 
         [Params(10, 100, 200, 1000, 1_000_000)]
@@ -349,10 +349,10 @@ namespace Benchmark
         }
 
         [Benchmark]
-        public ulong ArcXXHash64() => Arc.Crypto.XXHash64.Hash64(this.data.AsSpan(0, this.Length));
+        public ulong ArcXxHash64() => Arc.Crypto.XxHash64.Hash64(this.data.AsSpan(0, this.Length));
 
         [Benchmark]
-        public byte[] ArcXXHash64_IHash()
+        public byte[] ArcXxHash64_IHash()
         {
             this.xxh64.HashInitialize();
             this.xxh64.HashUpdate(this.data.AsSpan(0, this.Length));
