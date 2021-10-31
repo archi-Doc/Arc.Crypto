@@ -15,7 +15,7 @@ namespace Arc.Crypto
     /// <summary>
     /// xxHash 64bit Class.
     /// </summary>
-    public unsafe partial class XXHash64 : XXHash, IHash
+    public unsafe partial class XxHash64 : XXHash, IHash
     {
         private const ulong PRIME64_1 = 11400714785074694791ul;
         private const ulong PRIME64_2 = 14029467366897019727ul;

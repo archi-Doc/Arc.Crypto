@@ -119,7 +119,7 @@ namespace Arc.Crypto
     /// <summary>
     /// SHA1 Hash Class.
     /// </summary>
-    public class SHA1 : HashAlgorithmWrapper
+    public class Sha1 : HashAlgorithmWrapper
     {
         /// <inheritdoc/>
         public override string HashName => "SHA1";
@@ -131,9 +131,9 @@ namespace Arc.Crypto
         public override bool IsCryptographic => true;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SHA1"/> class.
+        /// Initializes a new instance of the <see cref="Sha1"/> class.
         /// </summary>
-        public SHA1()
+        public Sha1()
         {
             this.HashAlgorithm = System.Security.Cryptography.SHA1.Create();
         }
@@ -142,7 +142,7 @@ namespace Arc.Crypto
     /// <summary>
     /// SHA2-256 Hash Class.
     /// </summary>
-    public class SHA2_256 : HashAlgorithmWrapper
+    public class Sha2_256 : HashAlgorithmWrapper
     {
         /// <inheritdoc/>
         public override string HashName => "SHA2-256";
@@ -154,9 +154,9 @@ namespace Arc.Crypto
         public override bool IsCryptographic => true;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SHA2_256"/> class.
+        /// Initializes a new instance of the <see cref="Sha2_256"/> class.
         /// </summary>
-        public SHA2_256()
+        public Sha2_256()
         {
             this.HashAlgorithm = System.Security.Cryptography.SHA256.Create();
         }
@@ -165,7 +165,7 @@ namespace Arc.Crypto
     /// <summary>
     /// SHA2-386 Hash Class.
     /// </summary>
-    public class SHA2_384 : HashAlgorithmWrapper
+    public class Sha2_384 : HashAlgorithmWrapper
     {
         /// <inheritdoc/>
         public override string HashName => "SHA2-384";
@@ -177,9 +177,9 @@ namespace Arc.Crypto
         public override bool IsCryptographic => true;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SHA2_384"/> class.
+        /// Initializes a new instance of the <see cref="Sha2_384"/> class.
         /// </summary>
-        public SHA2_384()
+        public Sha2_384()
         {
             this.HashAlgorithm = System.Security.Cryptography.SHA384.Create();
         }
@@ -188,7 +188,7 @@ namespace Arc.Crypto
     /// <summary>
     /// SHA2-512 Hash Class.
     /// </summary>
-    public class SHA2_512 : HashAlgorithmWrapper
+    public class Sha2_512 : HashAlgorithmWrapper
     {
         /// <inheritdoc/>
         public override string HashName => "SHA2-512";
@@ -200,9 +200,9 @@ namespace Arc.Crypto
         public override bool IsCryptographic => true;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SHA2_512"/> class.
+        /// Initializes a new instance of the <see cref="Sha2_512"/> class.
         /// </summary>
-        public SHA2_512()
+        public Sha2_512()
         {
             this.HashAlgorithm = System.Security.Cryptography.SHA512.Create();
         }

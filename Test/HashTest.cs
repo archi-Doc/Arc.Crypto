@@ -21,23 +21,23 @@ public class HashTest
         byte[] array;
 
         hash64 = Arc.Crypto.FarmHash.Hash64(data.AsSpan()); // The fastest and best algorithm.
-        hash64 = Arc.Crypto.XXHash64.Hash64(data.AsSpan()); // As fast as FarmHash.
+        hash64 = Arc.Crypto.XxHash64.Hash64(data.AsSpan()); // As fast as FarmHash.
         hash32 = Arc.Crypto.FarmHash.Hash32(data.AsSpan()); // 32 bit version is slower than 64 bit version.
         hash32 = Arc.Crypto.XXHash32.Hash32(data.AsSpan()); // Same as above.
         hash32 = unchecked((uint)Arc.Crypto.FarmHash.Hash64(data.AsSpan())); // I recommend getting 64 bit and discarding half.
         hash32 = Arc.Crypto.Adler32.Hash32(data.AsSpan()); // Slow
-        hash32 = Arc.Crypto.CRC32.Hash32(data.AsSpan()); // Slowest
+        hash32 = Arc.Crypto.Crc32.Hash32(data.AsSpan()); // Slowest
 
         // IHash is an interface to get a hash of large data.
-        // For XXHash64, IHash version is a bit slower than static method version.
-        // For FarmHash64, IHash version is twice as slow. XXHash64 is recommended.
-        var ihash = new Arc.Crypto.XXHash64();
+        // For XxHash64, IHash version is a bit slower than static method version.
+        // For FarmHash64, IHash version is twice as slow. XxHash64 is recommended.
+        var ihash = new Arc.Crypto.XxHash64();
         ihash.HashInitialize();
         ihash.HashUpdate(data);
         Assert.True(ihash.HashFinal().SequenceEqual(ihash.GetHash(data)));
 
         // Secure Hash Algorithm (SHA1, SHA2, SHA3 supported)
-        var sha3_512 = new Arc.Crypto.SHA3_512();
+        var sha3_512 = new Arc.Crypto.Sha3_512();
         array = sha3_512.GetHash(data.AsSpan());
 
         sha3_512.HashInitialize(); // Another way
@@ -54,12 +54,12 @@ public class HashTest
         random.NextBytes(data);
 
         // CRC-32
-        var crc32 = new CRC32();
+        var crc32 = new Crc32();
         for (var n = 0; n < 1000; n++)
         {
             var span = data.AsSpan(0, n);
             var h = BitConverter.ToUInt32(crc32.GetHash(span));
-            var h2 = CRC32.Hash32(span);
+            var h2 = Crc32.Hash32(span);
             Assert.Equal(h, h2);
         }
 
@@ -102,43 +102,43 @@ public class HashTest
         this.TestHashUpdate_do(xxh32, data, random);
 
         // xxHash64
-        var xxh64 = new XXHash64();
+        var xxh64 = new XxHash64();
         for (var n = 0; n < 1000; n++)
         {
             var span = data.AsSpan(0, n);
             var h = BitConverter.ToUInt64(xxh64.GetHash(span));
-            var h2 = XXHash64.Hash64(span);
+            var h2 = XxHash64.Hash64(span);
             Assert.Equal(h, h2);
         }
 
         this.TestHashUpdate_do(xxh64, data, random);
 
-        // SHA1
-        using var sha1 = new Arc.Crypto.SHA1();
+        // Sha1
+        using var sha1 = new Arc.Crypto.Sha1();
         this.TestHashUpdate_do(sha1, data, random);
 
-        // SHA2_256
-        using var sha2_256 = new Arc.Crypto.SHA2_256();
+        // Sha2_256
+        using var sha2_256 = new Arc.Crypto.Sha2_256();
         this.TestHashUpdate_do(sha2_256, data, random);
 
-        // SHA2_384
-        using var sha2_384 = new Arc.Crypto.SHA2_384();
+        // Sha2_384
+        using var sha2_384 = new Arc.Crypto.Sha2_384();
         this.TestHashUpdate_do(sha2_384, data, random);
 
-        // SHA2_512
-        using var sha2_512 = new Arc.Crypto.SHA2_512();
+        // Sha2_512
+        using var sha2_512 = new Arc.Crypto.Sha2_512();
         this.TestHashUpdate_do(sha2_512, data, random);
 
-        // SHA3_256
-        var sha3_256 = new Arc.Crypto.SHA3_256();
+        // Sha3_256
+        var sha3_256 = new Arc.Crypto.Sha3_256();
         this.TestHashUpdate_do(sha3_256, data, random);
 
-        // SHA3_384
-        var sha3_384 = new Arc.Crypto.SHA3_384();
+        // Sha3_384
+        var sha3_384 = new Arc.Crypto.Sha3_384();
         this.TestHashUpdate_do(sha3_384, data, random);
 
-        // SHA3_512
-        var sha3_512 = new Arc.Crypto.SHA3_512();
+        // Sha3_512
+        var sha3_512 = new Arc.Crypto.Sha3_512();
         this.TestHashUpdate_do(sha3_512, data, random);
     }
 
@@ -183,7 +183,7 @@ public class HashTest
     }
 
     [Fact]
-    public void TestSHA3()
+    public void TestSha3()
     {
         var aa = new char[100];
         var utf8_empty = Encoding.UTF8.GetBytes(string.Empty);
@@ -194,7 +194,7 @@ public class HashTest
         var utf8_million = Encoding.UTF8.GetBytes(million_a);
         byte[] hash;
 
-        var sha3_256 = new SHA3_256();
+        var sha3_256 = new Sha3_256();
         hash = sha3_256.GetHash(utf8_empty, 0, utf8_empty.Length);
         Assert.Equal(hash, "a7ffc6f8bf1ed766 51c14756a061d662 f580ff4de43b49fa 82d80a4b80f8434a".HexToByte());
         hash = sha3_256.GetHash(utf8_abc, 0, utf8_abc.Length);
@@ -204,7 +204,7 @@ public class HashTest
         hash = sha3_256.GetHash(utf8_million, 0, utf8_million.Length);
         Assert.Equal(hash, "5c8875ae474a3634 ba4fd55ec85bffd6 61f32aca75c6d699 d0cdcb6c115891c1".HexToByte());
 
-        var sha3_384 = new SHA3_384();
+        var sha3_384 = new Sha3_384();
         hash = sha3_384.GetHash(utf8_empty, 0, utf8_empty.Length);
         Assert.Equal(hash, "0c63a75b845e4f7d 01107d852e4c2485 c51a50aaaa94fc61 995e71bbee983a2a c3713831264adb47 fb6bd1e058d5f004".HexToByte());
         hash = sha3_384.GetHash(utf8_abc, 0, utf8_abc.Length);
@@ -214,7 +214,7 @@ public class HashTest
         hash = sha3_384.GetHash(utf8_million, 0, utf8_million.Length);
         Assert.Equal(hash, "eee9e24d78c18553 37983451df97c8ad 9eedf256c6334f8e 948d252d5e0e7684 7aa0774ddb90a842 190d2c558b4b8340".HexToByte());
 
-        var sha3_512 = new SHA3_512();
+        var sha3_512 = new Sha3_512();
         hash = sha3_512.GetHash(utf8_empty, 0, utf8_empty.Length);
         Assert.Equal(hash, "a69f73cca23a9ac5 c8b567dc185a756e 97c982164fe25859 e0d1dcc1475c80a6 15b2123af1f5f94c 11e3e9402c3ac558 f500199d95b6d3e3 01758586281dcd26".HexToByte());
         hash = sha3_512.GetHash(utf8_abc, 0, utf8_abc.Length);
@@ -226,7 +226,7 @@ public class HashTest
     }
 
     [Fact]
-    public void TestXXHash64()
+    public void TestXxHash64()
     {
         this.TestUtf8String_xxHash64(string.Empty, 0xef46db3751d8e999UL);
         this.TestUtf8String_xxHash64("a", 0xd24ec4f1a98c6e5bUL);
@@ -238,7 +238,7 @@ public class HashTest
     private void TestUtf8String_xxHash64(string text, ulong expected)
     {
         var bytes = Encoding.UTF8.GetBytes(text);
-        var value = XXHash64.Hash64(bytes);
+        var value = XxHash64.Hash64(bytes);
         Assert.Equal(expected, value);
     }
 
@@ -303,16 +303,16 @@ public class HashTest
     }
 
     [Fact]
-    public void TestCRC32()
+    public void TestCrc32()
     {
         uint value;
-        value = CRC32.Hash32(string.Empty);
+        value = Crc32.Hash32(string.Empty);
         Assert.Equal(0U, value);
 
-        this.TestUtf8String_CRC32("123456789", 0xCBF43926);
-        this.TestUtf8String_CRC32("The quick brown fox jumps over the lazy dog", 0x414FA339);
+        this.TestUtf8String_Crc32("123456789", 0xCBF43926);
+        this.TestUtf8String_Crc32("The quick brown fox jumps over the lazy dog", 0x414FA339);
 
-        var crc = new CRC32();
+        var crc = new Crc32();
         this.TestUtf8StringSplit(crc, "123456789", 2, 0xCBF43926);
         this.TestUtf8StringSplit(crc, "123456789", 4, 0xCBF43926);
         this.TestUtf8StringSplit(crc, "The quick brown fox jumps over the lazy dog", 4, 0x414FA339);
@@ -335,10 +335,10 @@ public class HashTest
         Assert.Equal(expected, value);
     }
 
-    private void TestUtf8String_CRC32(string text, uint expected)
+    private void TestUtf8String_Crc32(string text, uint expected)
     {
         var bytes = Encoding.UTF8.GetBytes(text);
-        var value = CRC32.Hash32(bytes);
+        var value = Crc32.Hash32(bytes);
         Assert.Equal(expected, value);
     }
 }
