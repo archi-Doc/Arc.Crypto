@@ -109,6 +109,11 @@ namespace Arc.Crypto
         /// <inheritdoc/>
         public virtual uint HashBits => 0;
 
+        /// <summary>
+        /// Gets the number of hash bytes. e.g. 32, 64.
+        /// </summary>
+        public virtual uint HashBytes => this.HashBits / 8;
+
         /// <inheritdoc/>
         public virtual bool IsCryptographic => false;
 
@@ -133,8 +138,17 @@ namespace Arc.Crypto
             return this.HashFinal();
         }
 
+        public void GetHash(ReadOnlySpan<byte> input, Span<byte> output)
+        {
+            this.HashInitialize();
+            this.HashUpdate(input);
+            this.HashFinal(output);
+        }
+
         /// <inheritdoc/>
         public byte[] HashFinal() => this.Sponge!.Squeeze();
+
+        public void HashFinal(Span<byte> output) => this.Sponge!.SqueezeTo(output);
 
         /// <inheritdoc/>
         public void HashInitialize() => this.Sponge!.Initialize();
@@ -294,6 +308,35 @@ namespace Arc.Crypto
             this.Initialize();
 
             return result;
+        }
+
+        /// <summary>
+        /// Squeezes the hash out of the sponge state.
+        /// </summary>
+        /// <param name="result">When this method returns, the bytes representing the hash of the input data (Length >= (OutputBits / 8)).</param>
+        public unsafe void SqueezeTo(Span<byte> result)
+        { // state 0..(this.Bitrate / 8) : data, (this.Bitrate / 8)..100
+            this.state[this.statePosition / 8] ^= 0x06UL << (8 * (this.statePosition % 8));
+            this.state[(this.Bitrate / 64) - 1] ^= 0x80UL << 56;
+            this.Permute(this.state);
+
+            // copy result from this.state.
+            var resultSize = this.OutputBits / 8;
+            if (result.Length < resultSize)
+            {
+                throw new ArgumentException("The length of the result must be greater than or equal to (OutputBits / 8).");
+            }
+
+            unsafe
+            {
+                fixed (void* source = this.state, destination = result)
+                {
+                    Buffer.MemoryCopy(source, destination, resultSize, resultSize);
+                }
+            }
+
+            this.statePosition = -1; // force initialize.
+            this.Initialize();
         }
 
         internal unsafe (ulong hash0, ulong hash1, ulong hash2, ulong hash3) SqueezeToULong4()
