@@ -14,20 +14,30 @@ namespace Arc.Crypto;
 /// <summary>
 /// Represents a class which encrypts data with a password.<br/>
 /// Since <see cref="PasswordEncrypt"/> uses SHA3, it's inappropriate for password authentication.<br/>
-/// SHA3-384(Salt(8) + Password(n) + Previous Hash(48)) x Stretching => AES Key(32), IV(16).
+/// SHA3-384(Salt[8] + Password[PasswordLength] + Previous Hash[48]) x StretchingCount => AES Key(32), IV(16).
 /// </summary>
 public static class PasswordEncrypt
 {
-    public const int DefaultStretchingCount = 32;
-    public const int SaltLength = 8;
-    public const PaddingMode DefaultPaddingMode = PaddingMode.PKCS7;
+    /// <summary>
+    /// Encrypts data using the specified password.
+    /// </summary>
+    /// <param name="data">The data to encrypt.</param>
+    /// <param name="password">The password.</param>
+    /// <returns>The encrypted data.</returns>
+    public static byte[] Encrypt(ReadOnlySpan<byte> data, string password) => Encrypt(data, Encoding.UTF8.GetBytes(password));
 
-    public static byte[] Encrypt(byte[] data, string password) => Encrypt(data, Encoding.UTF8.GetBytes(password));
-
-    public static byte[] Encrypt(byte[] data, byte[] password)
+    /// <summary>
+    /// Encrypts data using the specified password.
+    /// </summary>
+    /// <param name="data">The data to encrypt.</param>
+    /// <param name="password">The password.</param>
+    /// <returns>The encrypted data.</returns>
+    public static byte[] Encrypt(ReadOnlySpan<byte> data, ReadOnlySpan<byte> password)
     {
-        // Salt: Random[SaltLength]
-        var salt = RandomNumberGenerator.GetBytes(SaltLength);
+        // Salt: Random[SaltLength], Random: Random[RandomLength]
+        var randomBuffer = RandomNumberGenerator.GetBytes(SaltLength + RandomLength);
+        var salt = randomBuffer.AsSpan(0, SaltLength);
+        var random = randomBuffer.AsSpan(SaltLength, RandomLength);
 
         // Hash: Sha3_384 => Key(32) + IV(16)
         var keyIV = GetKeyIV(salt, password);
@@ -38,37 +48,50 @@ public static class PasswordEncrypt
         // AES
         var aes = Aes.Create();
         aes.Key = keyIV.Slice(0, aes.KeySize / 8).ToArray();
-        var plainLength = sizeof(ulong) + data.Length;
-        var cipherLength = aes.GetCiphertextLengthCbc(plainLength, PaddingMode.PKCS7);
+        var plainLength = RandomLength + ChecksumLength + data.Length;
+        var cipherLength = aes.GetCiphertextLengthCbc(plainLength, DefaultPaddingMode);
         if (keyIV.Length != ((aes.KeySize / 8) + (aes.BlockSize / 8)))
         {
             throw new InvalidOperationException();
         }
 
-        // Salt(8), Encrypted(n) [Checksum(8), Data(n - 8)]
-        var bufferPosition = 0;
+        // Salt[8], Encrypted[8 + 8 + DataLength] (Random[8], Checksum[8 = FarmHash64], Data[DataLength])
         var bufferLength = SaltLength + cipherLength;
         var buffer = new byte[bufferLength];
-        Array.Copy(salt, 0, buffer, 0, SaltLength);
-        bufferPosition += SaltLength;
-        BitConverter.TryWriteBytes(buffer.AsSpan(bufferPosition), checksum);
-        bufferPosition += sizeof(ulong);
-        Array.Copy(data, 0, buffer, bufferPosition, data.Length);
+        var bufferSpan = buffer.AsSpan();
+        salt.CopyTo(bufferSpan);
+        bufferSpan = bufferSpan.Slice(SaltLength);
+        random.CopyTo(bufferSpan);
+        bufferSpan = bufferSpan.Slice(RandomLength);
+        BitConverter.TryWriteBytes(bufferSpan, checksum);
+        bufferSpan = bufferSpan.Slice(ChecksumLength);
+        data.CopyTo(bufferSpan);
 
-        // var iv = new byte[16];
-        // Array.Copy(previousHash, 32, iv, 0, 16);
-        // aes.IV = iv;
-        // var e = aes.CreateEncryptor(keyIV.Slice(0, aes.KeySize / 8).ToArray(), keyIV.Slice(aes.KeySize / 8).ToArray());
+        // Encrypt
         var written = aes.EncryptCbc(buffer.AsSpan(SaltLength, plainLength), keyIV.Slice(aes.KeySize / 8), buffer.AsSpan(SaltLength), DefaultPaddingMode);
         Debug.Assert(written == cipherLength, "Encrypted length mismatch.");
 
         return buffer;
     }
 
-    public static bool TryDecrypt(byte[] encrypted, string password, out Memory<byte> data) => TryDecrypt(encrypted, Encoding.UTF8.GetBytes(password), out data);
+    /// <summary>
+    /// Decrypts data using the specified password.
+    /// </summary>
+    /// <param name="encrypted">The encrypted data.</param>
+    /// <param name="password">The password.</param>
+    /// <param name="data">The decrypted data.</param>
+    /// <returns><see langword="true"/> if the decryption was successful; otherwise, <see langword="false"/>.</returns>
+    public static bool TryDecrypt(ReadOnlySpan<byte> encrypted, string password, out Memory<byte> data) => TryDecrypt(encrypted, Encoding.UTF8.GetBytes(password), out data);
 
-    public static bool TryDecrypt(byte[] encrypted, byte[] password, out Memory<byte> data)
-    {// [MaybeNullWhen(false)]
+    /// <summary>
+    /// Decrypts data using the specified password.
+    /// </summary>
+    /// <param name="encrypted">The encrypted data.</param>
+    /// <param name="password">The password.</param>
+    /// <param name="data">The decrypted data.</param>
+    /// <returns><see langword="true"/> if the decryption was successful; otherwise, <see langword="false"/>.</returns>
+    public static bool TryDecrypt(ReadOnlySpan<byte> encrypted, ReadOnlySpan<byte> password, out Memory<byte> data)
+    {
         data = default;
         if (encrypted.Length < SaltLength)
         {
@@ -76,7 +99,7 @@ public static class PasswordEncrypt
         }
 
         // Hash: Sha3_384 => Key(32) + IV(16)
-        var keyIV = GetKeyIV(encrypted, password);
+        var keyIV = GetKeyIV(encrypted.Slice(0, SaltLength), password);
 
         // AES
         var aes = Aes.Create();
@@ -86,62 +109,61 @@ public static class PasswordEncrypt
             throw new InvalidOperationException();
         }
 
-        var decrypted = aes.DecryptCbc(encrypted.AsSpan(sizeof(ulong)), keyIV.Slice(aes.KeySize / 8), DefaultPaddingMode);
-        if (decrypted.Length < sizeof(ulong))
+        // Salt[8], Encrypted[8 + 8 + DataLength] (Random[8], Checksum[8 = FarmHash64], Data[DataLength])
+        byte[] decrypted;
+        try
+        {
+            decrypted = aes.DecryptCbc(encrypted.Slice(SaltLength), keyIV.Slice(aes.KeySize / 8), DefaultPaddingMode);
+        }
+        catch
+        {
+            return false;
+        }
+
+        var dataPosition = RandomLength + ChecksumLength;
+        if (decrypted.Length < dataPosition)
         {
             return false;
         }
 
         // Checksum: FarmHash64
-        var checksum = FarmHash.Hash64(decrypted.AsSpan(sizeof(ulong)));
-        if (BitConverter.ToUInt64(decrypted) != checksum)
+        var checksum = FarmHash.Hash64(decrypted.AsSpan(dataPosition));
+        if (BitConverter.ToUInt64(decrypted.AsSpan(RandomLength)) != checksum)
         {
             return false;
         }
 
-        data = decrypted.AsMemory(sizeof(ulong));
+        data = decrypted.AsMemory(dataPosition);
 
         return true;
     }
 
-    public static int StretchingCount
-    {
-        get => stretchingCount;
-        set
-        {
-            if (value <= 0)
-            {
-                throw new InvalidOperationException("StretchingCount must be greater than 0.");
-            }
-
-            stretchingCount = value;
-        }
-    }
-
-    private static Span<byte> GetKeyIV(byte[] salt, byte[] password)
+    private static Span<byte> GetKeyIV(ReadOnlySpan<byte> salt, ReadOnlySpan<byte> password)
     {
         // Hash: Sha3_384
         var hash = new Sha3_384();
-        var hashLength = hash.HashBytes;
 
-        // SHA3-384(Salt(8) + Password(n) + Previous Hash(48)) x StretchingCount => AES Key(32), IV(16).
-        var bufferPosition = 0;
-        var bufferLength = SaltLength + password.Length + hashLength;
+        // SHA3-384(Salt[8] + Password[PasswordLength] + Previous Hash[48]) x StretchingCount => AES Key(32), IV(16).
+        var bufferLength = SaltLength + password.Length + hash.HashBytes;
         var buffer = new byte[bufferLength];
-        Array.Copy(salt, 0, buffer, 0, SaltLength);
-        bufferPosition += SaltLength;
-        Array.Copy(password, 0, buffer, bufferPosition, password.Length);
-        bufferPosition += password.Length;
+        var bufferSpan = buffer.AsSpan();
+        salt.CopyTo(bufferSpan);
+        bufferSpan = bufferSpan.Slice(SaltLength);
+        password.CopyTo(bufferSpan);
+        bufferSpan = bufferSpan.Slice(password.Length);
 
-        var hashSpan = buffer.AsSpan(bufferPosition);
+        var hashSpan = bufferSpan;
         for (var i = 0; i < StretchingCount; i++)
         {
             hash.GetHash(buffer, hashSpan);
-            // Array.Copy(previousHash, 0, buffer, bufferPosition, hashLength);
         }
 
         return hashSpan;
     }
 
-    private static int stretchingCount = DefaultStretchingCount;
+    private const int StretchingCount = 4;
+    private const int SaltLength = 8;
+    private const int RandomLength = 8;
+    private const int ChecksumLength = 8;
+    private const PaddingMode DefaultPaddingMode = PaddingMode.PKCS7;
 }
