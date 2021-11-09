@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Represents a class which encrypts data with a password.<br/>
+/// Represents a class which encrypts data with the specified password.<br/>
 /// Since <see cref="PasswordEncrypt"/> uses SHA3, it's inappropriate for password authentication.<br/>
 /// SHA3-384(Salt[8] + Password[PasswordLength] + Previous Hash[48]) x StretchingCount => AES Key(32), IV(16).
 /// </summary>
@@ -134,7 +134,6 @@ public static class PasswordEncrypt
         }
 
         data = decrypted.AsMemory(dataPosition);
-
         return true;
     }
 
