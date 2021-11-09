@@ -109,6 +109,11 @@ namespace Arc.Crypto
         /// <inheritdoc/>
         public virtual uint HashBits => 0;
 
+        /// <summary>
+        /// Gets the number of hash bytes. e.g. 32, 64.
+        /// </summary>
+        public virtual uint HashBytes => this.HashBits / 8;
+
         /// <inheritdoc/>
         public virtual bool IsCryptographic => false;
 
