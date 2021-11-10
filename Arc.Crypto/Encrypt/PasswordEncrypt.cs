@@ -14,7 +14,8 @@ namespace Arc.Crypto;
 /// <summary>
 /// Represents a class which encrypts data with the specified password.<br/>
 /// Since <see cref="PasswordEncrypt"/> uses SHA3, it's inappropriate for password authentication.<br/>
-/// SHA3-384(Salt[8] + Password[PasswordLength] + Previous Hash[48]) x StretchingCount => AES Key(32), IV(16).
+/// Key: SHA3-384(Salt[8] + Password[PasswordLength] + Hash[48]) x StretchingCount => AES Key(32), IV(16).<br/>
+/// Output: Salt[8], Encrypted[8 + 8 + DataLength] (Random[8], Checksum[8 = FarmHash64], Data[DataLength]).
 /// </summary>
 public static class PasswordEncrypt
 {
