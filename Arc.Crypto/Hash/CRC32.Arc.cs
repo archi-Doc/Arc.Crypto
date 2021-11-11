@@ -5,17 +5,17 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
-namespace Arc.Crypto
-{
-    /// <summary>
-    /// CRC32 Hash Class.
-    /// </summary>
-    public class Crc32 : IHash
-    {
-        private const uint Crc32Mask = 0xffffffff;
+namespace Arc.Crypto;
 
-        private static readonly uint[] Crc32Table = new uint[]
-        {
+/// <summary>
+/// CRC32 Hash Class.
+/// </summary>
+public class Crc32 : IHash
+{
+    private const uint Crc32Mask = 0xffffffff;
+
+    private static readonly uint[] Crc32Table = new uint[]
+    {
             0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
             0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4,
             0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07,
@@ -68,99 +68,98 @@ namespace Arc.Crypto
             0xcdd70693, 0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8,
             0x5d681b02, 0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b,
             0x2d02ef8d,
-        };
+    };
 
-        private uint crcValue;
+    private uint crcValue;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Crc32"/> class.
-        /// </summary>
-        public Crc32()
-        {
-            this.HashInitialize();
-        }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Crc32"/> class.
+    /// </summary>
+    public Crc32()
+    {
+        this.HashInitialize();
+    }
 
-        /// <inheritdoc/>
-        public string HashName => "CRC-32";
+    /// <inheritdoc/>
+    public string HashName => "CRC-32";
 
-        /// <inheritdoc/>
-        public uint HashBits => 32;
+    /// <inheritdoc/>
+    public uint HashBits => 32;
 
-        /// <inheritdoc/>
-        public bool IsCryptographic => false;
+    /// <inheritdoc/>
+    public bool IsCryptographic => false;
 
-        /// <summary>
-        /// Calculates CRC32 hash.
-        /// </summary>
-        /// <param name="input">The read-only span that contains input data.</param>
-        /// <returns>A 32bit hash.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe uint Hash32(ReadOnlySpan<byte> input)
-        {
-            uint value = Crc32Mask;
+    /// <summary>
+    /// Calculates CRC32 hash.
+    /// </summary>
+    /// <param name="input">The read-only span that contains input data.</param>
+    /// <returns>A 32bit hash.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe uint Hash32(ReadOnlySpan<byte> input)
+    {
+        uint value = Crc32Mask;
 
-            fixed (byte* p = input)
-            {
-                unchecked
-                {
-                    for (var n = 0; n < input.Length; n++)
-                    {
-                        value = Crc32Table[(value ^ p[n]) & 0xFF] ^ (value >> 8);
-                    }
-                }
-            }
-
-            value ^= Crc32Mask;
-
-            // convert little endian to big endian.
-            // return (value & 0xFF) << 24 | ((value >> 8) & 0xFF) << 16 | ((value >> 16) & 0xFF) << 8 | ((value >> 24) & 0xFF);
-            return value;
-        }
-
-        /// <summary>
-        /// Calculates a 32bit hash from the given string.
-        /// </summary>
-        /// <param name="str">The string containing the characters to calculate.</param>
-        /// <returns>A 32bit hash.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe uint Hash32(string str) => Hash32(MemoryMarshal.Cast<char, byte>(str));
-
-        /// <inheritdoc/>
-        public byte[] GetHash(ReadOnlySpan<byte> input) => BitConverter.GetBytes(Hash32(input));
-
-        /// <inheritdoc/>
-        public byte[] GetHash(byte[] input, int inputOffset, int inputCount) => BitConverter.GetBytes(Hash32(input.AsSpan(inputOffset, inputCount)));
-
-        /// <inheritdoc/>
-        public void HashInitialize()
-        {
-            this.crcValue = Crc32Mask;
-        }
-
-        /// <inheritdoc/>
-        public void HashUpdate(ReadOnlySpan<byte> input)
+        fixed (byte* p = input)
         {
             unchecked
             {
-                int position = 0;
-                var len = input.Length;
-                while (--len >= 0)
+                for (var n = 0; n < input.Length; n++)
                 {
-                    this.crcValue = Crc32Table[(this.crcValue ^ input[position++]) & 0xFF] ^ (this.crcValue >> 8);
+                    value = Crc32Table[(value ^ p[n]) & 0xFF] ^ (value >> 8);
                 }
             }
         }
 
-        /// <inheritdoc/>
-        public void HashUpdate(byte[] input, int inputOffset, int inputCount) => this.HashUpdate(input.AsSpan(inputOffset, inputCount));
+        value ^= Crc32Mask;
 
-        /// <inheritdoc/>
-        public byte[] HashFinal()
+        // convert little endian to big endian.
+        // return (value & 0xFF) << 24 | ((value >> 8) & 0xFF) << 16 | ((value >> 16) & 0xFF) << 8 | ((value >> 24) & 0xFF);
+        return value;
+    }
+
+    /// <summary>
+    /// Calculates a 32bit hash from the given string.
+    /// </summary>
+    /// <param name="str">The string containing the characters to calculate.</param>
+    /// <returns>A 32bit hash.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe uint Hash32(string str) => Hash32(MemoryMarshal.Cast<char, byte>(str));
+
+    /// <inheritdoc/>
+    public byte[] GetHash(ReadOnlySpan<byte> input) => BitConverter.GetBytes(Hash32(input));
+
+    /// <inheritdoc/>
+    public byte[] GetHash(byte[] input, int inputOffset, int inputCount) => BitConverter.GetBytes(Hash32(input.AsSpan(inputOffset, inputCount)));
+
+    /// <inheritdoc/>
+    public void HashInitialize()
+    {
+        this.crcValue = Crc32Mask;
+    }
+
+    /// <inheritdoc/>
+    public void HashUpdate(ReadOnlySpan<byte> input)
+    {
+        unchecked
         {
-            this.crcValue ^= Crc32Mask;
-            var result = BitConverter.GetBytes(this.crcValue);
-            this.HashInitialize();
-            return result;
+            int position = 0;
+            var len = input.Length;
+            while (--len >= 0)
+            {
+                this.crcValue = Crc32Table[(this.crcValue ^ input[position++]) & 0xFF] ^ (this.crcValue >> 8);
+            }
         }
+    }
+
+    /// <inheritdoc/>
+    public void HashUpdate(byte[] input, int inputOffset, int inputCount) => this.HashUpdate(input.AsSpan(inputOffset, inputCount));
+
+    /// <inheritdoc/>
+    public byte[] HashFinal()
+    {
+        this.crcValue ^= Crc32Mask;
+        var result = BitConverter.GetBytes(this.crcValue);
+        this.HashInitialize();
+        return result;
     }
 }
