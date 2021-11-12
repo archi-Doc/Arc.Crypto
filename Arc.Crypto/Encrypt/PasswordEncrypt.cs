@@ -25,7 +25,7 @@ public static class PasswordEncrypt
     /// <param name="data">The data to encrypt.</param>
     /// <param name="password">The password.</param>
     /// <returns>The encrypted data.</returns>
-    public static byte[] Encrypt(ReadOnlySpan<byte> data, string password) => Encrypt(data, Encoding.UTF8.GetBytes(password));
+    public static byte[] Encrypt(ReadOnlySpan<byte> data, string? password) => Encrypt(data, password == null ? Array.Empty<byte>() : Encoding.UTF8.GetBytes(password));
 
     /// <summary>
     /// Encrypts data using the specified password.
@@ -35,9 +35,29 @@ public static class PasswordEncrypt
     /// <returns>The encrypted data.</returns>
     public static byte[] Encrypt(ReadOnlySpan<byte> data, ReadOnlySpan<byte> password)
     {
-        // Salt: Random[SaltLength], Random: Random[RandomLength]
+// Salt: Random[SaltLength], Random: Random[RandomLength]
+GenerateRandom:
         var randomBuffer = RandomNumberGenerator.GetBytes(SaltLength + RandomLength);
         var salt = randomBuffer.AsSpan(0, SaltLength);
+        if (password.Length == 0)
+        {// NO password. Set salt 0.
+            salt.Fill(0);
+        }
+        else
+        {// salt is not 0.
+            foreach (var x in salt)
+            {
+                if (x != 0)
+                {
+                    goto ValidSalt;
+                }
+            }
+
+            // salt is 0. Regenerate.
+            goto GenerateRandom;
+        }
+
+ValidSalt:
         var random = randomBuffer.AsSpan(SaltLength, RandomLength);
 
         // Hash: Sha3_384 => Key(32) + IV(16)
@@ -76,13 +96,37 @@ public static class PasswordEncrypt
     }
 
     /// <summary>
+    /// Determines if the data is encrypted with a password.
+    /// </summary>
+    /// <param name="encrypted">The data.</param>
+    /// <returns><see langword="true"/> if the data is encrypted; otherwise (not encrypted or invalid data), <see langword="false"/>.</returns>
+    public static bool IsEncryptedWithPassword(ReadOnlySpan<byte> encrypted)
+    {
+        if (encrypted.Length < SaltLength)
+        {
+            return false;
+        }
+
+        var salt = encrypted.Slice(SaltLength);
+        foreach (var x in salt)
+        {
+            if (x != 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Decrypts data using the specified password.
     /// </summary>
     /// <param name="encrypted">The encrypted data.</param>
     /// <param name="password">The password.</param>
     /// <param name="data">The decrypted data.</param>
     /// <returns><see langword="true"/> if the decryption was successful; otherwise, <see langword="false"/>.</returns>
-    public static bool TryDecrypt(ReadOnlySpan<byte> encrypted, string password, out Memory<byte> data) => TryDecrypt(encrypted, Encoding.UTF8.GetBytes(password), out data);
+    public static bool TryDecrypt(ReadOnlySpan<byte> encrypted, string? password, out Memory<byte> data) => TryDecrypt(encrypted, password == null ? Array.Empty<byte>() : Encoding.UTF8.GetBytes(password), out data);
 
     /// <summary>
     /// Decrypts data using the specified password.
@@ -97,6 +141,10 @@ public static class PasswordEncrypt
         if (encrypted.Length < SaltLength)
         {
             return false;
+        }
+        else if (IsEncryptedWithPassword(encrypted))
+        {// NO password.
+            password = Array.Empty<byte>();
         }
 
         // Hash: Sha3_384 => Key(32) + IV(16)

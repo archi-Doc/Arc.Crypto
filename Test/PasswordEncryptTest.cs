@@ -43,4 +43,28 @@ public class PasswordEncryptTest
             }
         }
     }
+
+    [Fact]
+    public void Test2()
+    {
+        var data = new byte[] { 0, 1, 2, 3, };
+        byte[] encrypted;
+
+        encrypted = PasswordEncrypt.Encrypt(data, "1");
+        PasswordEncrypt.IsEncryptedWithPassword(encrypted).IsTrue();
+        PasswordEncrypt.TryDecrypt(encrypted, "1", out _).IsTrue();
+        PasswordEncrypt.TryDecrypt(encrypted, "2", out _).IsFalse();
+
+        encrypted = PasswordEncrypt.Encrypt(data, string.Empty);
+        PasswordEncrypt.IsEncryptedWithPassword(encrypted).IsFalse();
+        PasswordEncrypt.TryDecrypt(encrypted, "1", out _).IsTrue();
+        PasswordEncrypt.TryDecrypt(encrypted, string.Empty, out _).IsTrue();
+        PasswordEncrypt.TryDecrypt(encrypted, null, out _).IsTrue();
+
+        encrypted = PasswordEncrypt.Encrypt(data, null);
+        PasswordEncrypt.IsEncryptedWithPassword(encrypted).IsFalse();
+        PasswordEncrypt.TryDecrypt(encrypted, "1", out _).IsTrue();
+        PasswordEncrypt.TryDecrypt(encrypted, string.Empty, out _).IsTrue();
+        PasswordEncrypt.TryDecrypt(encrypted, null, out _).IsTrue();
+    }
 }
