@@ -20,6 +20,7 @@ namespace Arc.Crypto;
 public static class PasswordEncrypt
 {
     // Implementation of no-password methods causes ambiguous method call (string?/ReadOnlySpan<byte>).
+    // So we need to call TryDecrypt(data, string.Empty, out _) first to handle no-password data.
 
     /// <summary>
     /// Encrypts data using the specified password.
