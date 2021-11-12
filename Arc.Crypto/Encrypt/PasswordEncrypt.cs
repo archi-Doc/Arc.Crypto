@@ -19,6 +19,9 @@ namespace Arc.Crypto;
 /// </summary>
 public static class PasswordEncrypt
 {
+    // Implementation of no-password methods causes ambiguous method call (string?/ReadOnlySpan<byte>).
+    // So we need to call TryDecrypt(data, string.Empty, out _) first to handle no-password data.
+
     /// <summary>
     /// Encrypts data using the specified password.
     /// </summary>
@@ -47,30 +50,33 @@ public static class PasswordEncrypt
         var checksum = FarmHash.Hash64(data);
 
         // AES
-        var aes = Aes.Create();
-        aes.Key = keyIV.Slice(0, aes.KeySize / 8).ToArray();
-        var plainLength = RandomLength + ChecksumLength + data.Length;
-        var cipherLength = aes.GetCiphertextLengthCbc(plainLength, DefaultPaddingMode);
-        if (keyIV.Length != ((aes.KeySize / 8) + (aes.BlockSize / 8)))
+        byte[] buffer;
+        using (var aes = Aes.Create())
         {
-            throw new InvalidOperationException();
+            aes.Key = keyIV.Slice(0, aes.KeySize / 8).ToArray();
+            var plainLength = RandomLength + ChecksumLength + data.Length;
+            var cipherLength = aes.GetCiphertextLengthCbc(plainLength, DefaultPaddingMode);
+            if (keyIV.Length != ((aes.KeySize / 8) + (aes.BlockSize / 8)))
+            {
+                throw new InvalidOperationException();
+            }
+
+            // Salt[8], Encrypted[8 + 8 + DataLength] (Random[8], Checksum[8 = FarmHash64], Data[DataLength])
+            var bufferLength = SaltLength + cipherLength;
+            buffer = new byte[bufferLength];
+            var bufferSpan = buffer.AsSpan();
+            salt.CopyTo(bufferSpan);
+            bufferSpan = bufferSpan.Slice(SaltLength);
+            random.CopyTo(bufferSpan);
+            bufferSpan = bufferSpan.Slice(RandomLength);
+            BitConverter.TryWriteBytes(bufferSpan, checksum);
+            bufferSpan = bufferSpan.Slice(ChecksumLength);
+            data.CopyTo(bufferSpan);
+
+            // Encrypt
+            var written = aes.EncryptCbc(buffer.AsSpan(SaltLength, plainLength), keyIV.Slice(aes.KeySize / 8), buffer.AsSpan(SaltLength), DefaultPaddingMode);
+            Debug.Assert(written == cipherLength, "Encrypted length mismatch.");
         }
-
-        // Salt[8], Encrypted[8 + 8 + DataLength] (Random[8], Checksum[8 = FarmHash64], Data[DataLength])
-        var bufferLength = SaltLength + cipherLength;
-        var buffer = new byte[bufferLength];
-        var bufferSpan = buffer.AsSpan();
-        salt.CopyTo(bufferSpan);
-        bufferSpan = bufferSpan.Slice(SaltLength);
-        random.CopyTo(bufferSpan);
-        bufferSpan = bufferSpan.Slice(RandomLength);
-        BitConverter.TryWriteBytes(bufferSpan, checksum);
-        bufferSpan = bufferSpan.Slice(ChecksumLength);
-        data.CopyTo(bufferSpan);
-
-        // Encrypt
-        var written = aes.EncryptCbc(buffer.AsSpan(SaltLength, plainLength), keyIV.Slice(aes.KeySize / 8), buffer.AsSpan(SaltLength), DefaultPaddingMode);
-        Debug.Assert(written == cipherLength, "Encrypted length mismatch.");
 
         return buffer;
     }
@@ -103,22 +109,24 @@ public static class PasswordEncrypt
         var keyIV = GetKeyIV(encrypted.Slice(0, SaltLength), password);
 
         // AES
-        var aes = Aes.Create();
-        aes.Key = keyIV.Slice(0, aes.KeySize / 8).ToArray();
-        if (keyIV.Length != ((aes.KeySize / 8) + (aes.BlockSize / 8)))
-        {
-            throw new InvalidOperationException();
-        }
-
-        // Salt[8], Encrypted[8 + 8 + DataLength] (Random[8], Checksum[8 = FarmHash64], Data[DataLength])
         byte[] decrypted;
-        try
+        using (var aes = Aes.Create())
         {
-            decrypted = aes.DecryptCbc(encrypted.Slice(SaltLength), keyIV.Slice(aes.KeySize / 8), DefaultPaddingMode);
-        }
-        catch
-        {
-            return false;
+            aes.Key = keyIV.Slice(0, aes.KeySize / 8).ToArray();
+            if (keyIV.Length != ((aes.KeySize / 8) + (aes.BlockSize / 8)))
+            {
+                throw new InvalidOperationException();
+            }
+
+            // Salt[8], Encrypted[8 + 8 + DataLength] (Random[8], Checksum[8 = FarmHash64], Data[DataLength])
+            try
+            {
+                decrypted = aes.DecryptCbc(encrypted.Slice(SaltLength), keyIV.Slice(aes.KeySize / 8), DefaultPaddingMode);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         var dataPosition = RandomLength + ChecksumLength;
