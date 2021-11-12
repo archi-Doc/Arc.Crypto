@@ -19,6 +19,8 @@ namespace Arc.Crypto;
 /// </summary>
 public static class PasswordEncrypt
 {
+    // Implementation of no-password methods causes ambiguous method call (string?/ReadOnlySpan<byte>).
+
     /// <summary>
     /// Encrypts data using the specified password.
     /// </summary>
