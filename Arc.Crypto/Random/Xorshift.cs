@@ -26,6 +26,19 @@ public class Xorshift : RandomULong
         x ^= x << 5;
     }
 
+    public static uint Xor32(uint x)
+    {
+        if (x == 0)
+        {
+            return 2463534242;
+        }
+
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        return x;
+    }
+
     public static void Xor64(ref ulong x)
     {
         if (x == 0)
@@ -37,6 +50,19 @@ public class Xorshift : RandomULong
         x ^= x << 13;
         x ^= x >> 7;
         x ^= x << 17;
+    }
+
+    public static ulong Xor64(ulong x)
+    {
+        if (x == 0)
+        {
+            return 88172645463325252UL;
+        }
+
+        x ^= x << 13;
+        x ^= x >> 7;
+        x ^= x << 17;
+        return x;
     }
 
     /// <summary>
