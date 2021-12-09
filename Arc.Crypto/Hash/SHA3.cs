@@ -23,23 +23,23 @@ public class Sha3_256 : Sha3
         this.Sponge = new KeccakSponge(256);
     }
 
-    public (ulong hash0, ulong hash1, ulong hash2, ulong hash3) GetHashULong(ReadOnlySpan<byte> input)
+    public (ulong hash0, ulong hash1, ulong hash2, ulong hash3) GetHashUInt64(ReadOnlySpan<byte> input)
     {
         this.HashInitialize();
         this.HashUpdate(input);
-        return this.Sponge!.SqueezeToULong4();
+        return this.Sponge!.SqueezeToUInt64_4();
     }
 
-    public (ulong hash0, ulong hash1, ulong hash2, ulong hash3) GetHashULong(byte[] input, int inputOffset, int inputCount)
+    public (ulong hash0, ulong hash1, ulong hash2, ulong hash3) GetHashUInt64(byte[] input, int inputOffset, int inputCount)
     {
         this.HashInitialize();
         this.HashUpdate(input, inputOffset, inputCount);
-        return this.Sponge!.SqueezeToULong4();
+        return this.Sponge!.SqueezeToUInt64_4();
     }
 
-    public (ulong hash0, ulong hash1, ulong hash2, ulong hash3) HashFinalULong()
+    public (ulong hash0, ulong hash1, ulong hash2, ulong hash3) HashFinalUInt64()
     {
-        return this.Sponge!.SqueezeToULong4();
+        return this.Sponge!.SqueezeToUInt64_4();
     }
 
     /// <inheritdoc/>
@@ -339,7 +339,7 @@ internal unsafe class KeccakSponge
         this.Initialize();
     }
 
-    internal unsafe (ulong hash0, ulong hash1, ulong hash2, ulong hash3) SqueezeToULong4()
+    internal unsafe (ulong hash0, ulong hash1, ulong hash2, ulong hash3) SqueezeToUInt64_4()
     {
         if (this.OutputBits < 256)
         {
@@ -361,7 +361,7 @@ internal unsafe class KeccakSponge
         return (h0, h1, h2, h3);
     }
 
-    internal unsafe (ulong hash0, ulong hash1, ulong hash2, ulong hash3, ulong hash4, ulong hash5) SqueezeToULong6()
+    internal unsafe (ulong hash0, ulong hash1, ulong hash2, ulong hash3, ulong hash4, ulong hash5) SqueezeToUInt64_6()
     {
         if (this.OutputBits < 384)
         {
@@ -385,7 +385,7 @@ internal unsafe class KeccakSponge
         return (h0, h1, h2, h3, h4, h5);
     }
 
-    internal unsafe (ulong hash0, ulong hash1, ulong hash2, ulong hash3, ulong hash4, ulong hash5, ulong hash6, ulong hash7) SqueezeToULong8()
+    internal unsafe (ulong hash0, ulong hash1, ulong hash2, ulong hash3, ulong hash4, ulong hash5, ulong hash6, ulong hash7) SqueezeToUInt64_8()
     {
         if (this.OutputBits < 512)
         {

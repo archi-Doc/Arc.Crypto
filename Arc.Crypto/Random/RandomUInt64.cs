@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Arc.Crypto;
 
-public abstract class RandomULong
+public abstract class RandomUInt64
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int Log2Ceiling(ulong value)
@@ -38,7 +38,7 @@ public abstract class RandomULong
     /// Returns a random integer.
     /// </summary>
     /// <returns>A 64-bit unsigned integer [0, 2^64-1].</returns>
-    public abstract ulong NextULong();
+    public abstract ulong NextUInt64();
 
     /// <summary>
     /// [0, long.MaxValue]<br/>
@@ -46,7 +46,7 @@ public abstract class RandomULong
     /// </summary>
     /// <returns>A 64-bit signed integer [0, long.MaxValue].</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public long NextLong() => (long)(this.NextULong() >> 1);
+    public long NextInt64() => (long)(this.NextUInt64() >> 1);
 
     /// <summary>
     /// [0, 2^32-1]<br/>
@@ -54,7 +54,7 @@ public abstract class RandomULong
     /// </summary>
     /// <returns>A 32-bit unsigned integer [0, 2^32-1].</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public uint NextUInt() => (uint)(this.NextULong() >> 32);
+    public uint NextUInt32() => (uint)(this.NextUInt64() >> 32);
 
     /// <summary>
     /// [0, int.MaxValue]<br/>
@@ -62,7 +62,7 @@ public abstract class RandomULong
     /// </summary>
     /// <returns>A 32-bit signed integer [0, int.MaxValue].</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int NextInt() => (int)(this.NextULong() >> 33);
+    public int NextInt32() => (int)(this.NextUInt64() >> 33);
 
     /// <summary>
     /// [0, maxValue)<br/>
@@ -71,14 +71,14 @@ public abstract class RandomULong
     /// <param name="maxValue">The exclusive upper bound of the random number to be generated.<br/>
     /// maxValue must be greater than or equal to 0.</param>
     /// <returns>A 32-bit unsigned integer [0, maxValue).</returns>
-    public int NextInt(int maxValue)
+    public int NextInt32(int maxValue)
     {
         if (maxValue > 1)
         {
             int bits = Log2Ceiling((uint)maxValue);
             while (true)
             {
-                ulong result = this.NextULong() >> ((sizeof(ulong) * 8) - bits);
+                ulong result = this.NextUInt64() >> ((sizeof(ulong) * 8) - bits);
                 if (result < (uint)maxValue)
                 {
                     return (int)result;
@@ -97,7 +97,7 @@ public abstract class RandomULong
     /// <param name="maxValue">The exclusive upper bound of the random number returned.<br/>
     /// maxValue must be greater than or equal to minValue.</param>
     /// <returns>A 32-bit signed integer [minValue, maxValue).</returns>
-    public int NextInt(int minValue, int maxValue)
+    public int NextInt32(int minValue, int maxValue)
     {
         ulong exclusiveRange = (ulong)((long)maxValue - minValue);
 
@@ -106,7 +106,7 @@ public abstract class RandomULong
             int bits = Log2Ceiling(exclusiveRange);
             while (true)
             {
-                ulong result = this.NextULong() >> ((sizeof(ulong) * 8) - bits);
+                ulong result = this.NextUInt64() >> ((sizeof(ulong) * 8) - bits);
                 if (result < exclusiveRange)
                 {
                     return (int)result + minValue;
@@ -124,14 +124,14 @@ public abstract class RandomULong
     /// <param name="maxValue">The exclusive upper bound of the random number to be generated.<br/>
     /// maxValue must be greater than or equal to 0.</param>
     /// <returns>A 64-bit unsigned integer [0, maxValue).</returns>
-    public long NextLong(long maxValue)
+    public long NextInt64(long maxValue)
     {
         if (maxValue > 1)
         {
             int bits = Log2Ceiling((ulong)maxValue);
             while (true)
             {
-                ulong result = this.NextULong() >> ((sizeof(ulong) * 8) - bits);
+                ulong result = this.NextUInt64() >> ((sizeof(ulong) * 8) - bits);
                 if (result < (ulong)maxValue)
                 {
                     return (long)result;
@@ -150,7 +150,7 @@ public abstract class RandomULong
     /// <param name="maxValue">The exclusive upper bound of the random number returned.<br/>
     /// maxValue must be greater than or equal to minValue.</param>
     /// <returns>A 64-bit signed integer [minValue, maxValue).</returns>
-    public long NextLong(long minValue, long maxValue)
+    public long NextInt64(long minValue, long maxValue)
     {
         var exclusiveRange = (ulong)(maxValue - minValue);
 
@@ -159,7 +159,7 @@ public abstract class RandomULong
             var bits = Log2Ceiling(exclusiveRange);
             while (true)
             {
-                var result = this.NextULong() >> ((sizeof(ulong) * 8) - bits);
+                var result = this.NextUInt64() >> ((sizeof(ulong) * 8) - bits);
                 if (result < exclusiveRange)
                 {
                     return (long)result + minValue;
@@ -176,7 +176,7 @@ public abstract class RandomULong
     /// </summary>
     /// <returns>A double-precision floating point number that is greater than or equal to 0.0, and less than 1.0.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double NextDouble() => (this.NextULong() >> 11) * (1.0 / 9007199254740992.0);
+    public double NextDouble() => (this.NextUInt64() >> 11) * (1.0 / 9007199254740992.0);
 
     /// <summary>
     /// [0,1]<br/>
@@ -184,7 +184,7 @@ public abstract class RandomULong
     /// </summary>
     /// <returns>A double-precision floating-point number that is greater than or equal to 0.0, and less than or equal to 1.0.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double NextDouble2() => (this.NextULong() >> 11) * (1.0 / 9007199254740991.0);
+    public double NextDouble2() => (this.NextUInt64() >> 11) * (1.0 / 9007199254740991.0);
 
     /// <summary>
     /// (0,1)<br/>
@@ -192,7 +192,7 @@ public abstract class RandomULong
     /// </summary>
     /// <returns>A double-precision floating-point number that is greater than 0.0, and less than 1.0.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double NextDouble3() => ((this.NextULong() >> 12) + 0.5) * (1.0 / 4503599627370496.0);
+    public double NextDouble3() => ((this.NextUInt64() >> 12) + 0.5) * (1.0 / 4503599627370496.0);
 
     /// <summary>
     /// [0,1)<br/>
@@ -200,7 +200,7 @@ public abstract class RandomULong
     /// </summary>
     /// <returns>A single-precision floating point number that is greater than or equal to 0.0, and less than 1.0.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float NextSingle() => (this.NextULong() >> 40) * (1.0f / 16777216.0f);
+    public float NextSingle() => (this.NextUInt64() >> 40) * (1.0f / 16777216.0f);
 
     /// <summary>
     /// Fills the elements of a specified span of bytes with random numbers.
@@ -214,7 +214,7 @@ public abstract class RandomULong
             byte* dest = pb;
             while (remaining >= sizeof(ulong))
             {
-                *(ulong*)dest = this.NextULong();
+                *(ulong*)dest = this.NextUInt64();
                 dest += sizeof(ulong);
                 remaining -= sizeof(ulong);
             }
@@ -225,7 +225,7 @@ public abstract class RandomULong
             }
 
             // 0 < remaining < 8
-            var u = this.NextULong();
+            var u = this.NextUInt64();
             if (remaining >= sizeof(uint))
             {
                 *(uint*)dest = (uint)u;

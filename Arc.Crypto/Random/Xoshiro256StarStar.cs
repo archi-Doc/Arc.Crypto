@@ -13,7 +13,7 @@ namespace Arc.Crypto;
 /// This class is NOT thread-safe.<br/>
 /// Consider using <see langword="lock"/> statement or <see cref="RandomVault"/> in multi-threaded application.
 /// </summary>
-public class Xoshiro256StarStar : RandomULong
+public class Xoshiro256StarStar : RandomUInt64
 {
     // xoshiro256** is based on the algorithm from http://prng.di.unimi.it/xoshiro256starstar.c:
     //
@@ -89,7 +89,7 @@ public class Xoshiro256StarStar : RandomULong
 
     /// <inheritdoc/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override ulong NextULong()
+    public override ulong NextUInt64()
     {
         var s0 = this.ss0;
         var s1 = this.ss1;

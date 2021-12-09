@@ -22,7 +22,7 @@ namespace Arc.Crypto;
 /// <see cref="RandomVault"/> generates random integers using random generator<br/>
 /// specified by constructor parameters, and takes out integers from the buffer as needed.<br/>
 /// </summary>
-public class RandomVault : RandomULong
+public class RandomVault : RandomUInt64
 {
     public const uint MinimumVaultSize = 32;
     public const uint DefaultVaultSize = 128;
@@ -31,7 +31,7 @@ public class RandomVault : RandomULong
     /// Defines the type of delegate that returns a 64-bit unsigned random integer.
     /// </summary>
     /// <returns>A 64-bit unsigned integer [0, 2^64-1].</returns>
-    public delegate ulong NextULongDelegate();
+    public delegate ulong NextUInt64Delegate();
 
     /// <summary>
     /// Defines the type of delegate that fills the elements of a specified span of bytes with random numbers.
@@ -39,7 +39,7 @@ public class RandomVault : RandomULong
     /// <param name="data">The array to be filled with random numbers.</param>
     public delegate void NextBytesDelegate(Span<byte> data);
 
-    private static unsafe ulong NextBytesToULong(NextBytesDelegate nextBytes)
+    private static unsafe ulong NextBytesToUInt64(NextBytesDelegate nextBytes)
     {
         ulong u;
         Span<byte> b = stackalloc byte[8];
@@ -52,7 +52,7 @@ public class RandomVault : RandomULong
         return u;
     }
 
-    private static unsafe void ULongToNextBytes(NextULongDelegate nextULongFunc, Span<byte> buffer)
+    private static unsafe void UInt64ToNextBytes(NextUInt64Delegate nextUInt64Func, Span<byte> buffer)
     {
         var remaining = buffer.Length;
         fixed (byte* pb = buffer)
@@ -60,7 +60,7 @@ public class RandomVault : RandomULong
             byte* dest = pb;
             while (remaining >= sizeof(ulong))
             {
-                *(ulong*)dest = nextULongFunc();
+                *(ulong*)dest = nextUInt64Func();
                 dest += sizeof(ulong);
                 remaining -= sizeof(ulong);
             }
@@ -71,7 +71,7 @@ public class RandomVault : RandomULong
             }
 
             // 0 < remaining < 8
-            var u = nextULongFunc();
+            var u = nextUInt64Func();
             if (remaining >= sizeof(uint))
             {
                 *(uint*)dest = (uint)u;
@@ -91,16 +91,16 @@ public class RandomVault : RandomULong
 
     /// <summary>
     ///  Initializes a new instance of the <see cref="RandomVault"/> class.<br/>
-    ///  Either <paramref name="nextULong"/> or <paramref name="nextBytes"/> must be a valid value.
+    ///  Either <paramref name="nextUInt64"/> or <paramref name="nextBytes"/> must be a valid value.
     /// </summary>
-    /// <param name="nextULong">Delegate that returns a 64-bit unsigned random integer.</param>
+    /// <param name="nextUInt64">Delegate that returns a 64-bit unsigned random integer.</param>
     /// <param name="nextBytes">Delegate that fills the elements of a specified span of bytes with random numbers.</param>
     /// <param name="vaultSize">The number of 64-bit integers stored in <see cref="RandomVault"/>.</param>
-    public RandomVault(NextULongDelegate? nextULong, NextBytesDelegate? nextBytes, uint vaultSize = DefaultVaultSize)
+    public RandomVault(NextUInt64Delegate? nextUInt64, NextBytesDelegate? nextBytes, uint vaultSize = DefaultVaultSize)
     {
-        if (nextULong == null && nextBytes == null)
+        if (nextUInt64 == null && nextBytes == null)
         {
-            throw new ArgumentNullException("Valid nextULong or nextBytes is required.");
+            throw new ArgumentNullException("Valid nextUInt64 or nextBytes is required.");
         }
 
         this.VaultSize = BitOperations.RoundUpToPowerOf2(vaultSize);
@@ -117,18 +117,18 @@ public class RandomVault : RandomULong
             this.nextBytesFunc = nextBytes;
         }
         else
-        {// nextULong is not null.
-            this.nextBytesFunc = (x) => ULongToNextBytes(this.nextULongFunc!, x);
+        {// nextUInt64 is not null.
+            this.nextBytesFunc = (x) => UInt64ToNextBytes(this.nextUInt64Func!, x);
         }
 
-        if (nextULong != null)
+        if (nextUInt64 != null)
         {
-            this.nextULongFunc = nextULong;
+            this.nextUInt64Func = nextUInt64;
         }
         else
         {// nextBytes is not null.
-            this.nextULongFunc = () => NextBytesToULong(this.nextBytesFunc);
-            /*this.nextULongFunc = () =>
+            this.nextUInt64Func = () => NextBytesToUInt64(this.nextBytesFunc);
+            /*this.nextUInt64Func = () =>
             {// Same as above.
                 Span<byte> b = stackalloc byte[8];
                 this.nextBytesFunc(b);
@@ -144,7 +144,7 @@ public class RandomVault : RandomULong
     }
 
     /// <inheritdoc/>
-    public override ulong NextULong()
+    public override ulong NextUInt64()
     {
         var upper = Volatile.Read(ref this.upperBound);
         if (this.position > upper)
@@ -175,7 +175,7 @@ public class RandomVault : RandomULong
 LockAndGet:
         lock (this.syncObject)
         {
-            return this.nextULongFunc();
+            return this.nextUInt64Func();
         }
     }
 
@@ -252,7 +252,7 @@ LockAndGet:
         this.nextBytesFunc(span);
     }
 
-    private NextULongDelegate nextULongFunc;
+    private NextUInt64Delegate nextUInt64Func;
     private NextBytesDelegate nextBytesFunc;
     private object syncObject = new();
     private ulong positionMask;

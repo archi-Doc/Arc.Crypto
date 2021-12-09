@@ -30,10 +30,10 @@ public class Xoshiro256StarStarTest
 
         string DoubleToString(double d) => d.ToString("F16");
 
-        xo.NextULong().Is(14199186830065750584ul);
-        xo.NextULong().Is(13267978908934200754ul);
-        xo.NextULong().Is(15679888225317814407ul);
-        xo.NextULong().Is(14044878350692344958ul);
-        xo.NextULong().Is(10760895422300929085ul);
+        xo.NextUInt64().Is(14199186830065750584ul);
+        xo.NextUInt64().Is(13267978908934200754ul);
+        xo.NextUInt64().Is(15679888225317814407ul);
+        xo.NextUInt64().Is(14044878350692344958ul);
+        xo.NextUInt64().Is(10760895422300929085ul);
     }
 }

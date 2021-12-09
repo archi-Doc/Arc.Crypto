@@ -11,7 +11,7 @@ namespace Arc.Crypto;
 /// <summary>
 /// Represents a pseudo-random number generator based on Xorshift.<br/>
 /// </summary>
-public class Xorshift : RandomULong
+public class Xorshift : RandomUInt64
 {
     public static void Xor32(ref uint x)
     {
@@ -90,7 +90,7 @@ public class Xorshift : RandomULong
         }
     }
 
-    public override ulong NextULong()
+    public override ulong NextUInt64()
     {
         this.seed ^= this.seed << 13;
         this.seed ^= this.seed >> 7;

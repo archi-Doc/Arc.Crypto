@@ -44,25 +44,25 @@ public class PseudoRandomBenchmark
     [Benchmark]
     public int MT_Int()
     {
-        return this.Mt.NextInt();
+        return this.Mt.NextInt32();
     }
 
     [Benchmark]
     public int Xo_Int()
     {
-        return this.Xo.NextInt();
+        return this.Xo.NextInt32();
     }
 
     [Benchmark]
     public ulong MT_ULong()
     {
-        return this.Mt.NextULong();
+        return this.Mt.NextUInt64();
     }
 
     [Benchmark]
     public ulong Xo_ULong()
     {
-        return this.Xo.NextULong();
+        return this.Xo.NextUInt64();
     }
 
     [Benchmark]
@@ -92,13 +92,13 @@ public class PseudoRandomBenchmark
     [Benchmark]
     public double MT_Range()
     {
-        return this.Mt.NextInt(int.MinValue, int.MaxValue);
+        return this.Mt.NextInt32(int.MinValue, int.MaxValue);
     }
 
     [Benchmark]
     public double Xo_Range()
     {
-        return this.Xo.NextInt(int.MinValue, int.MaxValue);
+        return this.Xo.NextInt32(int.MinValue, int.MaxValue);
     }
 
     [Benchmark]
