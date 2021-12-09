@@ -85,7 +85,7 @@ public class CryptoRandomBenchmark
     {// Pseudo-random
         lock (this.Mt)
         {
-            return this.Mt.NextULong();
+            return this.Mt.NextUInt64();
         }
     }
 

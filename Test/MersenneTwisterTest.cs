@@ -17,22 +17,22 @@ public class MersenneTwisterTest
         var mt = new MersenneTwister(init);
 
         // NextULong test
-        mt.NextULong().Is(7266447313870364031UL);
-        mt.NextULong().Is(4946485549665804864UL);
-        mt.NextULong().Is(16945909448695747420UL);
-        mt.NextULong().Is(16394063075524226720UL);
-        mt.NextULong().Is(4873882236456199058UL);
+        mt.NextUInt64().Is(7266447313870364031UL);
+        mt.NextUInt64().Is(4946485549665804864UL);
+        mt.NextUInt64().Is(16945909448695747420UL);
+        mt.NextUInt64().Is(16394063075524226720UL);
+        mt.NextUInt64().Is(4873882236456199058UL);
 
         for (var i = 0; i < 990; i++)
         {
-            mt.NextULong();
+            mt.NextUInt64();
         }
 
-        mt.NextULong().Is(10197035660403006684UL);
-        mt.NextULong().Is(13004818533162292132UL);
-        mt.NextULong().Is(9831652587047067687UL);
-        mt.NextULong().Is(7619315254749630976UL);
-        mt.NextULong().Is(994412663058993407UL);
+        mt.NextUInt64().Is(10197035660403006684UL);
+        mt.NextUInt64().Is(13004818533162292132UL);
+        mt.NextUInt64().Is(9831652587047067687UL);
+        mt.NextUInt64().Is(7619315254749630976UL);
+        mt.NextUInt64().Is(994412663058993407UL);
 
         // NextDouble test
         DoubleToString(mt.NextDouble()).Is("0.35252031");
@@ -49,11 +49,11 @@ public class MersenneTwisterTest
         Buffer.BlockCopy(init, 0, seed, 0, size);
         mt.Reset(init);
 
-        mt.NextULong().Is(7266447313870364031UL);
-        mt.NextULong().Is(4946485549665804864UL);
-        mt.NextULong().Is(16945909448695747420UL);
-        mt.NextULong().Is(16394063075524226720UL);
-        mt.NextULong().Is(4873882236456199058UL);
+        mt.NextUInt64().Is(7266447313870364031UL);
+        mt.NextUInt64().Is(4946485549665804864UL);
+        mt.NextUInt64().Is(16945909448695747420UL);
+        mt.NextUInt64().Is(16394063075524226720UL);
+        mt.NextUInt64().Is(4873882236456199058UL);
 
         // NextBytes test
         var bytes = new byte[24];

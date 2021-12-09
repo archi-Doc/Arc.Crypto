@@ -13,7 +13,7 @@ namespace Arc.Crypto;
 /// This class is NOT thread-safe.<br/>
 /// Consider using <see langword="lock"/> statement or <see cref="RandomVault"/> in multi-threaded application.
 /// </summary>
-public class MersenneTwister : RandomULong
+public class MersenneTwister : RandomUInt64
 {
     public const int BufferSize = NN * sizeof(ulong);
     private const int NN = 312;
@@ -119,7 +119,7 @@ public class MersenneTwister : RandomULong
     /// </summary>
     /// <returns>A 64-bit unsigned integer [0, 2^64-1].</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override ulong NextULong()
+    public override ulong NextUInt64()
     {
         if (this.mti >= NN)
         {
