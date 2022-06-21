@@ -23,6 +23,37 @@ public static class PasswordEncrypt
     // So we need to call TryDecrypt(data, string.Empty, out _) first to handle no-password data.
 
     /// <summary>
+    /// Calculates the deterministic number from a password.<br/>
+    /// SHA3-384(Password[PasswordLength] x RepeatCount) => int.
+    /// </summary>
+    /// <param name="password">The password.</param>
+    /// <returns>The deterministic number calculated from the password.</returns>
+    public static int GetPasswordHint(string password) => GetPasswordHint(Encoding.UTF8.GetBytes(password));
+
+    /// <summary>
+    /// Calculates the deterministic number from a password.<br/>
+    /// SHA3-384(Password[PasswordLength] x RepeatCount) => int.
+    /// </summary>
+    /// <param name="password">The password.</param>
+    /// <returns>The deterministic number calculated from the password.</returns>
+    public static int GetPasswordHint(ReadOnlySpan<byte> password)
+    {
+        var length = password.Length * RepeatCount;
+        Span<byte> buffer = (length <= 1024) ? stackalloc byte[length] : new byte[length];
+
+        var span = buffer;
+        for (var i = 0; i < RepeatCount; i++)
+        {
+            password.CopyTo(span);
+            span = span.Slice(password.Length);
+        }
+
+        var hash = new Sha3_384();
+        var bytes = hash.GetHash(buffer);
+        return BitConverter.ToInt32(bytes.AsSpan());
+    }
+
+    /// <summary>
     /// Encrypts data using the specified password.
     /// </summary>
     /// <param name="data">The data to encrypt.</param>
@@ -170,6 +201,7 @@ public static class PasswordEncrypt
     }
 
     private const int StretchingCount = 4;
+    private const int RepeatCount = 8;
     private const int SaltLength = 8;
     private const int RandomLength = 8;
     private const int ChecksumLength = 8;
