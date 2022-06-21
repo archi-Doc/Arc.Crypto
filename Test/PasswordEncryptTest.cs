@@ -43,4 +43,20 @@ public class PasswordEncryptTest
             }
         }
     }
+
+    [Fact]
+    public void Test2()
+    {
+        var a = PasswordEncrypt.GetPasswordHint("a");
+        var a2 = PasswordEncrypt.GetPasswordHint("a");
+        a.Is(a2);
+
+        var b = PasswordEncrypt.GetPasswordHint("b");
+        b.IsNot(a);
+
+        var c = PasswordEncrypt.GetPasswordHint("a1b2c3d4");
+        var c2 = PasswordEncrypt.GetPasswordHint("a1b2c3d4");
+        c.IsNot(a);
+        c.Is(c2);
+    }
 }
