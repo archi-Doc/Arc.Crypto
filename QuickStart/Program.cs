@@ -29,6 +29,7 @@ internal class Program
         Console.WriteLine();
 
         QuickStart_RandomVault();
+        QuickStart_PasswordEncrypt();
     }
 
     public static void QuickStart_Xoshiro256StarStar()
@@ -51,14 +52,37 @@ internal class Program
         mt.NextBytes(bytes);
     }
 
-public static void QuickStart_RandomVault()
-{
-    // RandomVault is a random number pool.
-    // It's thread-safe and faster than lock in most cases.
-    var mt = new MersenneTwister(); // Create a random generator.
-    var rv = new RandomVault(() => mt.NextUInt64(), x => mt.NextBytes(x)); // Specify NextULong() or NextBytes() or both delegates, and forget about mt.
-    Console.WriteLine("RandomVault:");
-    Console.WriteLine(rv.NextInt64());
-    Console.WriteLine(rv.NextDouble());
-}
+    public static void QuickStart_RandomVault()
+    {
+        // RandomVault is a random number pool.
+        // It's thread-safe and faster than lock in most cases.
+        var mt = new MersenneTwister(); // Create a random generator.
+        var rv = new RandomVault(() => mt.NextUInt64(), x => mt.NextBytes(x)); // Specify NextULong() or NextBytes() or both delegates, and forget about mt.
+        Console.WriteLine("RandomVault:");
+        Console.WriteLine(rv.NextInt64());
+        Console.WriteLine(rv.NextDouble());
+        Console.WriteLine();
+    }
+
+    public static void QuickStart_PasswordEncrypt()
+    {
+        // PasswordEncrypt encrypts data with the specified password.
+        var data = new byte[] { 0, 1, 2, };
+        var encrypted = PasswordEncrypt.Encrypt(data, "correct");
+        Console.WriteLine("PasswordEncrypt:");
+        Console.WriteLine($"Encrypted: byte[{encrypted.Length}]");
+
+        // Decrypt with the correct password.
+        var result = PasswordEncrypt.TryDecrypt(encrypted, "correct", out var data2);
+        Console.WriteLine($"Password: correct, Result: {result}, {BitConverter.ToString(data2.ToArray())}");
+
+        // Incorrect password.
+        result = PasswordEncrypt.TryDecrypt(encrypted, "incorrect", out data2);
+        Console.WriteLine($"Password: incorrect, Result: {result}, {BitConverter.ToString(data2.ToArray())}");
+        Console.WriteLine();
+
+        // Calculates the deterministic number from a password.
+        var password = "pass";
+        Console.WriteLine($"Password hint for \"{password}\": {PasswordEncrypt.GetPasswordHint(password)}");
+    }
 }

@@ -6,6 +6,7 @@ Arc.Crypto is a collection of classes used in cryptography, which includes
 - Hash functions (XXHash, FarmHash, SHA3)
 - Pseudo-random generator (xoshiro256**, Mersenne Twister)
 - Random number pool (RandomVault)
+- Password-encryption class (PasswordEncrypt)
 
 
 
@@ -60,6 +61,34 @@ public static void QuickStart_RandomVault()
     Console.WriteLine("RandomVault:");
     Console.WriteLine(rv.NextLong());
     Console.WriteLine(rv.NextDouble());
+}
+```
+
+
+
+### PasswordEncrypt
+
+```csharp
+public static void QuickStart_PasswordEncrypt()
+{
+    // PasswordEncrypt encrypts data with the specified password.
+    var data = new byte[] { 0, 1, 2, };
+    var encrypted = PasswordEncrypt.Encrypt(data, "correct");
+    Console.WriteLine("PasswordEncrypt:");
+    Console.WriteLine($"Encrypted: byte[{encrypted.Length}]");
+
+    // Decrypt with the correct password.
+    var result = PasswordEncrypt.TryDecrypt(encrypted, "correct", out var data2);
+    Console.WriteLine($"Password: correct, Result: {result}, {BitConverter.ToString(data2.ToArray())}");
+
+    // Incorrect password.
+    result = PasswordEncrypt.TryDecrypt(encrypted, "incorrect", out data2);
+    Console.WriteLine($"Password: incorrect, Result: {result}, {BitConverter.ToString(data2.ToArray())}");
+    Console.WriteLine();
+
+    // Calculates the deterministic number from a password.
+    var password = "pass";
+    Console.WriteLine($"Password hint for \"{password}\": {PasswordEncrypt.GetPasswordHint(password)}");
 }
 ```
 
