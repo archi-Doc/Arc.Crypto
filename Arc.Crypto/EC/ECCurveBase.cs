@@ -79,17 +79,7 @@ public abstract class ECCurveBase
 
     public abstract void ElementNegate(ReadOnlySpan<uint> x, Span<uint> z);
 
-    public byte[]? TryDecompressY(byte[] x, uint y)
-    {
-        if (x.Length != this.ByteLength)
-        {
-            return null;
-        }
-
-        return this.DecompressPoint(y, x.AsSpan());
-    }
-
-    public uint CompressY(byte[] y)
+    public uint CompressY(ReadOnlySpan<byte> y)
     {
         if (y.Length == 0)
         {
@@ -97,6 +87,16 @@ public abstract class ECCurveBase
         }
 
         return (uint)y[y.Length - 1] & 1;
+    }
+
+    public byte[]? TryDecompressY(ReadOnlySpan<byte> x, uint y)
+    {
+        if (x.Length != this.ByteLength)
+        {
+            return null;
+        }
+
+        return this.DecompressPoint(y, x);
     }
 
     private byte[]? DecompressPoint(uint yTilde, ReadOnlySpan<byte> x1)
