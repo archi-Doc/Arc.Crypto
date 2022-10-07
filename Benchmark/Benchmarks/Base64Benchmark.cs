@@ -20,7 +20,7 @@ public class Base64Benchmark
     private readonly byte[] testUtf8;
     private readonly string testString;
 
-    [Params(10, 32, MaxLength)]
+    // [Params(10, 32, MaxLength)]
     public int Length { get; set; }
 
     public ReadOnlySpan<byte> TestArray => this.testArray.AsSpan(0, this.Length);
@@ -53,7 +53,7 @@ public class Base64Benchmark
     {
     }
 
-    [Benchmark]
+    /*[Benchmark]
     public byte[] Base64_ByteArrayToUtf8()
         => Base64.Default.FromByteArrayToUtf8(this.TestArray);
 
@@ -76,9 +76,9 @@ public class Base64Benchmark
 
     [Benchmark]
     public string Convert_ToBase64String()
-        => Convert.ToBase64String(this.TestArray);
+        => Convert.ToBase64String(this.TestArray);*/
 
-    /*[Benchmark]
+    [Benchmark]
     public byte[]? Base64_Utf8ToByteArray()
         => Base64.Default.FromUtf8ToByteArray(this.testUtf8);
 
@@ -92,5 +92,5 @@ public class Base64Benchmark
 
     [Benchmark]
     public byte[] Convert_StringToByteArray()
-        => Convert.FromBase64String(this.testString);*/
+        => Convert.FromBase64String(this.testString);
 }

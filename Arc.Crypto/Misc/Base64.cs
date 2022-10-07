@@ -2,6 +2,10 @@
 
 using System;
 using System.Buffers;
+using System.Diagnostics;
+using System.Text.Unicode;
+
+#pragma warning disable SA1405
 
 namespace Arc.Crypto;
 
@@ -10,8 +14,6 @@ namespace Arc.Crypto;
 /// </summary>
 public static class Base64
 {
-    private const int StackallocThreshold = 4096;
-
     public static class Default
     {
         /// <summary>
@@ -21,30 +23,15 @@ public static class Base64
         /// <returns>A Base64 (UTF-8) string.</returns>
         public static byte[] FromByteArrayToUtf8(ReadOnlySpan<byte> bytes)
         {
-            byte[]? pooledName = null;
             var length = gfoidl.Base64.Base64.Default.GetEncodedLength(bytes.Length);
-
-            scoped Span<byte> span = length <= StackallocThreshold ?
-                stackalloc byte[length] :
-                (pooledName = ArrayPool<byte>.Shared.Rent(length));
-
-            if (gfoidl.Base64.Base64.Default.Encode(bytes, span, out var consumed, out var written) != OperationStatus.Done)
+            var buffer = new byte[length];
+            if (gfoidl.Base64.Base64.Default.Encode(bytes, buffer, out var consumed, out var written) != OperationStatus.Done)
             {
-                if (pooledName != null)
-                {
-                    ArrayPool<byte>.Shared.Return(pooledName);
-                }
-
-                return Array.Empty<byte>();
+                Array.Empty<byte>();
             }
 
-            var result = span.Slice(0, written).ToArray();
-            if (pooledName != null)
-            {
-                ArrayPool<byte>.Shared.Return(pooledName);
-            }
-
-            return result;
+            Debug.Assert(written == length);
+            return buffer;
         }
 
         /// <summary>
@@ -62,30 +49,15 @@ public static class Base64
         /// <returns>A byte array. Returns null if the Base64 string is invalid.</returns>
         public static byte[]? FromUtf8ToByteArray(ReadOnlySpan<byte> utf8)
         {
-            byte[]? pooledName = null;
             var length = gfoidl.Base64.Base64.Default.GetDecodedLength(utf8);
-
-            scoped Span<byte> span = length <= StackallocThreshold ?
-                stackalloc byte[length] :
-                (pooledName = ArrayPool<byte>.Shared.Rent(length));
-
-            if (gfoidl.Base64.Base64.Default.Decode(utf8, span, out var consumed, out var written) != OperationStatus.Done)
+            var buffer = new byte[length];
+            if (gfoidl.Base64.Base64.Default.Decode(utf8, buffer, out var consumed, out var written) != OperationStatus.Done)
             {
-                if (pooledName != null)
-                {
-                    ArrayPool<byte>.Shared.Return(pooledName);
-                }
-
                 return null;
             }
 
-            var result = span.Slice(0, written).ToArray();
-            if (pooledName != null)
-            {
-                ArrayPool<byte>.Shared.Return(pooledName);
-            }
-
-            return result;
+            Debug.Assert(written == length);
+            return buffer;
         }
 
         /// <summary>
@@ -106,30 +78,15 @@ public static class Base64
         /// <returns>A Base64 Url (UTF-8) string.</returns>
         public static byte[] FromByteArrayToUtf8(ReadOnlySpan<byte> bytes)
         {
-            byte[]? pooledName = null;
             var length = gfoidl.Base64.Base64.Url.GetEncodedLength(bytes.Length);
-
-            scoped Span<byte> span = length <= StackallocThreshold ?
-                stackalloc byte[length] :
-                (pooledName = ArrayPool<byte>.Shared.Rent(length));
-
-            if (gfoidl.Base64.Base64.Url.Encode(bytes, span, out var consumed, out var written) != OperationStatus.Done)
+            var buffer = new byte[length];
+            if (gfoidl.Base64.Base64.Url.Encode(bytes, buffer, out var consumed, out var written) != OperationStatus.Done)
             {
-                if (pooledName != null)
-                {
-                    ArrayPool<byte>.Shared.Return(pooledName);
-                }
-
-                return Array.Empty<byte>();
+                Array.Empty<byte>();
             }
 
-            var result = span.Slice(0, written).ToArray();
-            if (pooledName != null)
-            {
-                ArrayPool<byte>.Shared.Return(pooledName);
-            }
-
-            return result;
+            Debug.Assert(written == length);
+            return buffer;
         }
 
         /// <summary>
@@ -147,30 +104,15 @@ public static class Base64
         /// <returns>A byte array. Returns null if the Base64 string is invalid.</returns>
         public static byte[]? FromUtf8ToByteArray(ReadOnlySpan<byte> utf8)
         {
-            byte[]? pooledName = null;
             var length = gfoidl.Base64.Base64.Url.GetDecodedLength(utf8);
-
-            scoped Span<byte> span = length <= StackallocThreshold ?
-                stackalloc byte[length] :
-                (pooledName = ArrayPool<byte>.Shared.Rent(length));
-
-            if (gfoidl.Base64.Base64.Url.Decode(utf8, span, out var consumed, out var written) != OperationStatus.Done)
+            var buffer = new byte[length];
+            if (gfoidl.Base64.Base64.Url.Decode(utf8, buffer, out var consumed, out var written) != OperationStatus.Done)
             {
-                if (pooledName != null)
-                {
-                    ArrayPool<byte>.Shared.Return(pooledName);
-                }
-
                 return null;
             }
 
-            var result = span.Slice(0, written).ToArray();
-            if (pooledName != null)
-            {
-                ArrayPool<byte>.Shared.Return(pooledName);
-            }
-
-            return result;
+            Debug.Assert(written == length);
+            return buffer;
         }
 
         /// <summary>
