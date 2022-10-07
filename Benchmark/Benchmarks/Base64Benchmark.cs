@@ -1,5 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System;
 using System.Linq;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
@@ -18,6 +19,15 @@ public class Base64Benchmark
         var utf8 = Base64.EncodeToBase64Utf8(this.testArray);
         var utf8b = Base64b.FromByteArrayToUtf8(this.testArray);
         var eq = utf8.SequenceEqual(utf8b);
+
+        var st = Base64.EncodeToBase64Utf16(this.testArray);
+        var st2 = Base64b.FromByteArrayToString(this.testArray);
+        eq = st.Equals(st2);
+
+        st2 = this.Convert_ToBase64String();
+        eq = st.Equals(st2);
+        st2 = this.Convert_ToBase64StringSpan();
+        eq = st.Equals(st2);
     }
 
     [GlobalSetup]
@@ -41,4 +51,16 @@ public class Base64Benchmark
     [Benchmark]
     public string Base64_ByteArrayToString()
         => Base64.EncodeToBase64Utf16(this.testArray);
+
+    [Benchmark]
+    public string Base64b_ByteArrayToString()
+        => Base64b.FromByteArrayToString(this.testArray);
+
+    [Benchmark]
+    public string Convert_ToBase64String()
+        => Convert.ToBase64String(this.testArray);
+
+    [Benchmark]
+    public string Convert_ToBase64StringSpan()
+        => Convert.ToBase64String(this.testArray.AsSpan());
 }
