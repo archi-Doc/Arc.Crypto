@@ -196,33 +196,33 @@ public class HashTest
 
         var sha3_256 = new Sha3_256();
         hash = sha3_256.GetHash(utf8_empty, 0, utf8_empty.Length);
-        Assert.Equal(hash, "a7ffc6f8bf1ed766 51c14756a061d662 f580ff4de43b49fa 82d80a4b80f8434a".HexToByte());
+        Assert.Equal(hash, Hex.FromStringToByteArray("a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a"));
         hash = sha3_256.GetHash(utf8_abc, 0, utf8_abc.Length);
-        Assert.Equal(hash, "3a985da74fe225b2 045c172d6bd390bd 855f086e3e9d525b 46bfe24511431532".HexToByte());
+        Assert.Equal(hash, Hex.FromStringToByteArray("3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532"));
         hash = sha3_256.GetHash(utf8_alphabet, 0, utf8_alphabet.Length);
-        Assert.Equal(hash, "41c0dba2a9d62408 49100376a8235e2c 82e1b9998a999e21 db32dd97496d3376".HexToByte());
+        Assert.Equal(hash, Hex.FromStringToByteArray("41c0dba2a9d6240849100376a8235e2c82e1b9998a999e21db32dd97496d3376"));
         hash = sha3_256.GetHash(utf8_million, 0, utf8_million.Length);
-        Assert.Equal(hash, "5c8875ae474a3634 ba4fd55ec85bffd6 61f32aca75c6d699 d0cdcb6c115891c1".HexToByte());
+        Assert.Equal(hash, Hex.FromStringToByteArray("5c8875ae474a3634ba4fd55ec85bffd661f32aca75c6d699d0cdcb6c115891c1"));
 
         var sha3_384 = new Sha3_384();
         hash = sha3_384.GetHash(utf8_empty, 0, utf8_empty.Length);
-        Assert.Equal(hash, "0c63a75b845e4f7d 01107d852e4c2485 c51a50aaaa94fc61 995e71bbee983a2a c3713831264adb47 fb6bd1e058d5f004".HexToByte());
+        Assert.Equal(hash, Hex.FromStringToByteArray("0c63a75b845e4f7d01107d852e4c2485c51a50aaaa94fc61995e71bbee983a2ac3713831264adb47fb6bd1e058d5f004"));
         hash = sha3_384.GetHash(utf8_abc, 0, utf8_abc.Length);
-        Assert.Equal(hash, "ec01498288516fc9 26459f58e2c6ad8d f9b473cb0fc08c25 96da7cf0e49be4b2 98d88cea927ac7f5 39f1edf228376d25".HexToByte());
+        Assert.Equal(hash, Hex.FromStringToByteArray("ec01498288516fc926459f58e2c6ad8df9b473cb0fc08c2596da7cf0e49be4b298d88cea927ac7f539f1edf228376d25"));
         hash = sha3_384.GetHash(utf8_alphabet, 0, utf8_alphabet.Length);
-        Assert.Equal(hash, "991c665755eb3a4b 6bbdfb75c78a492e 8c56a22c5c4d7e42 9bfdbc32b9d4ad5a a04a1f076e62fea1 9eef51acd0657c22".HexToByte());
+        Assert.Equal(hash, Hex.FromStringToByteArray("991c665755eb3a4b6bbdfb75c78a492e8c56a22c5c4d7e429bfdbc32b9d4ad5aa04a1f076e62fea19eef51acd0657c22"));
         hash = sha3_384.GetHash(utf8_million, 0, utf8_million.Length);
-        Assert.Equal(hash, "eee9e24d78c18553 37983451df97c8ad 9eedf256c6334f8e 948d252d5e0e7684 7aa0774ddb90a842 190d2c558b4b8340".HexToByte());
+        Assert.Equal(hash, Hex.FromStringToByteArray("eee9e24d78c1855337983451df97c8ad9eedf256c6334f8e948d252d5e0e76847aa0774ddb90a842190d2c558b4b8340"));
 
         var sha3_512 = new Sha3_512();
         hash = sha3_512.GetHash(utf8_empty, 0, utf8_empty.Length);
-        Assert.Equal(hash, "a69f73cca23a9ac5 c8b567dc185a756e 97c982164fe25859 e0d1dcc1475c80a6 15b2123af1f5f94c 11e3e9402c3ac558 f500199d95b6d3e3 01758586281dcd26".HexToByte());
+        Assert.Equal(hash, Hex.FromStringToByteArray("a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26"));
         hash = sha3_512.GetHash(utf8_abc, 0, utf8_abc.Length);
-        Assert.Equal(hash, "b751850b1a57168a 5693cd924b6b096e 08f621827444f70d 884f5d0240d2712e 10e116e9192af3c9 1a7ec57647e39340 57340b4cf408d5a5 6592f8274eec53f0".HexToByte());
+        Assert.Equal(hash, Hex.FromStringToByteArray("b751850b1a57168a5693cd924b6b096e08f621827444f70d884f5d0240d2712e10e116e9192af3c91a7ec57647e3934057340b4cf408d5a56592f8274eec53f0"));
         hash = sha3_512.GetHash(utf8_alphabet, 0, utf8_alphabet.Length);
-        Assert.Equal(hash, "04a371e84ecfb5b8 b77cb48610fca818 2dd457ce6f326a0f d3d7ec2f1e91636d ee691fbe0c985302 ba1b0d8dc78c0863 46b533b49c030d99 a27daf1139d6e75e".HexToByte());
+        Assert.Equal(hash, Hex.FromStringToByteArray("04a371e84ecfb5b8b77cb48610fca8182dd457ce6f326a0fd3d7ec2f1e91636dee691fbe0c985302ba1b0d8dc78c086346b533b49c030d99a27daf1139d6e75e"));
         hash = sha3_512.GetHash(utf8_million, 0, utf8_million.Length);
-        Assert.Equal(hash, "	3c3a876da14034ab 60627c077bb98f7e 120a2a5370212dff b3385a18d4f38859 ed311d0a9d5141ce 9cc5c66ee689b266 a8aa18ace8282a0e 0db596c90b0a7b87".HexToByte());
+        Assert.Equal(hash, Hex.FromStringToByteArray("3c3a876da14034ab60627c077bb98f7e120a2a5370212dffb3385a18d4f38859ed311d0a9d5141ce9cc5c66ee689b266a8aa18ace8282a0e0db596c90b0a7b87"));
     }
 
     [Fact]

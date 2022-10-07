@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
+    <PackageReference Include="gfoidl.Base64" Version="1.1.2" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -30,6 +31,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arc.Crypto\Arc.Crypto.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Obsolete\" />
   </ItemGroup>
 
 </Project>

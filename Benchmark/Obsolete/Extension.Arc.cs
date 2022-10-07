@@ -4,7 +4,7 @@ using System;
 
 #pragma warning disable SA1649 // File name should match first type name
 
-namespace Arc.Crypto;
+namespace Arc.Crypto.Obsolete;
 
 /// <summary>
 /// String extensions.
@@ -16,7 +16,7 @@ public static class String
     /// </summary>
     /// <param name="hex">The hex string.</param>
     /// <returns>A byte array.</returns>
-    public static byte[] HexToByte(this string hex)
+    public static byte[] HexToByte(string hex)
     {
         ReadOnlySpan<char> c = hex;
         var maxLength = (c.Length / 2) + 1;
