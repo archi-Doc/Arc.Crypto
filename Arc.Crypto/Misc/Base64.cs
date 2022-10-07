@@ -49,15 +49,22 @@ public static class Base64
         /// <returns>A byte array. Returns null if the Base64 string is invalid.</returns>
         public static byte[]? FromUtf8ToByteArray(ReadOnlySpan<byte> utf8)
         {
-            var length = gfoidl.Base64.Base64.Default.GetDecodedLength(utf8);
-            var buffer = new byte[length];
-            if (gfoidl.Base64.Base64.Default.Decode(utf8, buffer, out var consumed, out var written) != OperationStatus.Done)
+            try
+            {
+                var length = gfoidl.Base64.Base64.Default.GetDecodedLength(utf8);
+                var buffer = new byte[length];
+                if (gfoidl.Base64.Base64.Default.Decode(utf8, buffer, out var consumed, out var written) != OperationStatus.Done)
+                {
+                    return null;
+                }
+
+                Debug.Assert(written == length);
+                return buffer;
+            }
+            catch
             {
                 return null;
             }
-
-            Debug.Assert(written == length);
-            return buffer;
         }
 
         /// <summary>
@@ -66,7 +73,16 @@ public static class Base64
         /// <param name="base64">The source Base64 (UTF-16).</param>
         /// <returns>A Byte array. Returns null if the base64 string is invalid.</returns>
         public static byte[] FromStringToByteArray(string base64)
-            => gfoidl.Base64.Base64.Default.Decode(base64);
+        {
+            try
+            {
+                return gfoidl.Base64.Base64.Default.Decode(base64);
+            }
+            catch
+            {
+                return Array.Empty<byte>();
+            }
+        }
     }
 
     public static class Url
@@ -104,15 +120,22 @@ public static class Base64
         /// <returns>A byte array. Returns null if the Base64 string is invalid.</returns>
         public static byte[]? FromUtf8ToByteArray(ReadOnlySpan<byte> utf8)
         {
-            var length = gfoidl.Base64.Base64.Url.GetDecodedLength(utf8);
-            var buffer = new byte[length];
-            if (gfoidl.Base64.Base64.Url.Decode(utf8, buffer, out var consumed, out var written) != OperationStatus.Done)
+            try
+            {
+                var length = gfoidl.Base64.Base64.Url.GetDecodedLength(utf8);
+                var buffer = new byte[length];
+                if (gfoidl.Base64.Base64.Url.Decode(utf8, buffer, out var consumed, out var written) != OperationStatus.Done)
+                {
+                    return null;
+                }
+
+                Debug.Assert(written == length);
+                return buffer;
+            }
+            catch
             {
                 return null;
             }
-
-            Debug.Assert(written == length);
-            return buffer;
         }
 
         /// <summary>
@@ -121,6 +144,15 @@ public static class Base64
         /// <param name="base64">The source Base64 Url (UTF-16).</param>
         /// <returns>A Byte array. Returns null if the base64 string is invalid.</returns>
         public static byte[] FromStringToByteArray(string base64)
-            => gfoidl.Base64.Base64.Url.Decode(base64);
+        {
+            try
+            {
+                return gfoidl.Base64.Base64.Url.Decode(base64);
+            }
+            catch
+            {
+                return Array.Empty<byte>();
+            }
+        }
     }
 }
