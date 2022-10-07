@@ -182,7 +182,7 @@ public static unsafe class Base64b
             var inputPosition = 0;
             var outputPosition = 0;
 
-            if (Ssse3.IsSupported)
+            if (Sse41.IsSupported)
             {
                 if (!DecodeBase64ByteSse(input, ref inputPosition, ref inputRemaining, output, ref outputPosition))
                 {
@@ -481,9 +481,9 @@ public static unsafe class Base64b
         // SSE2
         var output = (byte*)outBytes;
         var shuf = Vector128.Create((byte)1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10);
-        while (inputRemaining >= 12)
+        while (inputRemaining >= 16)
         {
-            var in0 = Sse2.LoadVector128(input);
+            var in0 = Sse2.LoadVector128(input); // 16 bytes
             in0 = Ssse3.Shuffle(in0, shuf);
 
             var t0 = Sse2.And(in0, Vector128.Create(0x0fc0fc00).AsByte());
@@ -518,9 +518,9 @@ public static unsafe class Base64b
         // SSE2
         var output = (byte*)outChars;
         var shuf = Vector128.Create((byte)1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10);
-        while (inputRemaining >= 12)
+        while (inputRemaining >= 16)
         {
-            var in0 = Sse2.LoadVector128(input);
+            var in0 = Sse2.LoadVector128(input); // 16 bytes
             in0 = Ssse3.Shuffle(in0, shuf);
 
             var t0 = Sse2.And(in0, Vector128.Create(0x0fc0fc00).AsByte());
@@ -647,13 +647,15 @@ public static unsafe class Base64b
         // SSE2
         var output = (byte*)outBytes;
         var shuf = Vector128.Create((byte)2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 0xff, 0xff, 0xff, 0xff);
-        while (inputRemaining >= 16)
-        {
-            var in0 = Sse2.LoadVector128(input);
+        while (inputRemaining >= 20)
+        {// 16 = 15 + '#'
             var values = Sse2.LoadVector128(input);
 
             // lookup
-            DecodeLookup(ref values);
+            if (!DecodeLookup(ref values))
+            {
+                return false;
+            }
 
             // pack
             var m0 = Ssse3.MultiplyAddAdjacent(values, Vector128.Create(0x01400140).AsSByte());
@@ -673,15 +675,30 @@ public static unsafe class Base64b
         return true;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool DecodeLookup(ref Vector128<byte> input)
     {
         var higher_nibble = Sse2.And(Sse2.ShiftRightLogical(input.AsUInt32(), 4).AsByte(), Vector128.Create((byte)0x0f));
+        var lower_nibble = Sse2.And(input, Vector128.Create((byte)0x0f));
 
-        var shift = Vector128.Create(0, 0, 19, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0);
-        var mask = Vector128.Create(0xa8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf0, 0x54, 0x50, 0x50, 0x50, 0x54);
-        var bitpos = Vector128.Create(0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+        var shiftLUT = Vector128.Create(0, 0, 19, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0).AsByte();
+        var maskLUT = Vector128.Create(0xa8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf0, 0x54, 0x50, 0x50, 0x50, 0x54);
+        var bitposLUT = Vector128.Create(0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
 
+        var sh = Ssse3.Shuffle(shiftLUT, higher_nibble);
+        var eq_2f = Sse2.CompareEqual(input, Vector128.Create((byte)0x2f));
+        var shift = Sse41.BlendVariable(sh, Vector128.Create((byte)16), eq_2f);
+
+        var m = Ssse3.Shuffle(maskLUT, lower_nibble);
+        var bit = Ssse3.Shuffle(bitposLUT, higher_nibble);
+
+        var nonMatch = Sse2.CompareEqual(Sse2.And(m, bit), Vector128<byte>.Zero);
+        var mask = Sse2.MoveMask(nonMatch);
+        if (mask != 0)
+        {
+            return false;
+        }
+
+        input = Sse2.Add(input, shift);
         return true;
     }
 

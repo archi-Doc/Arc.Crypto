@@ -1,9 +1,14 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Buffers;
+using System.Globalization;
 using System.Linq;
+using System.Text.Unicode;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
+
+#pragma warning disable SA1300 // Element should begin with upper-case letter
 
 namespace Benchmark;
 
@@ -45,6 +50,15 @@ public class Base64Benchmark
 
         var array = Base64b.FromUtf8ToByteArray(utf8);
         eq = array!.SequenceEqual(this.testArray);
+
+        st2 = gfoidl.Base64.Base64.Default.Encode(this.testArray);
+        eq = st.Equals(st2);
+
+        int length = gfoidl.Base64.Base64.Default.GetEncodedLength(this.testArray.Length);
+        Span<byte> buffer = stackalloc byte[length];
+        gfoidl.Base64.Base64.Default.Encode(this.testArray, buffer, out int consumed, out int written);
+        utf8b = buffer.Slice(0, written).ToArray();
+        eq = utf8.SequenceEqual(utf8b);
     }
 
     [GlobalSetup]
@@ -57,13 +71,22 @@ public class Base64Benchmark
     {
     }
 
-    /*[Benchmark]
+    [Benchmark]
     public byte[] Base64_ByteArrayToUtf8()
         => Base64.EncodeToBase64Utf8(this.TestArray);
 
     [Benchmark]
     public byte[] Base64b_ByteArrayToUtf8()
         => Base64b.FromByteArrayToUtf8(this.TestArray);
+
+    [Benchmark]
+    public byte[] gfoidl_ByteArrayToUtf8()
+    {
+        var length = gfoidl.Base64.Base64.Default.GetEncodedLength(this.TestArray.Length);
+        Span<byte> buffer = stackalloc byte[length];
+        gfoidl.Base64.Base64.Default.Encode(this.TestArray, buffer, out int consumed, out int written);
+        return buffer.Slice(0, written).ToArray();
+    }
 
     [Benchmark]
     public string Base64_ByteArrayToString()
@@ -74,14 +97,22 @@ public class Base64Benchmark
         => Base64b.FromByteArrayToString(this.TestArray);
 
     [Benchmark]
-    public string Convert_ToBase64String()
-        => Convert.ToBase64String(this.TestArray);*/
+    public string gfoidl_ToBase64String()
+        => gfoidl.Base64.Base64.Default.Encode(this.TestArray);
 
     [Benchmark]
+    public string Convert_ToBase64String()
+        => Convert.ToBase64String(this.TestArray);
+
+    /*[Benchmark]
     public byte[]? Base64_Utf8ToByteArray()
-        => Base64.DecodeFromBase64Utf8(this.TestUtf8);
+        => Base64.DecodeFromBase64Utf8(this.testUtf8);
+
+    [Benchmark]
+    public byte[]? Base64b_Utf8ToByteArray()
+        => Base64b.FromUtf8ToByteArray(this.testUtf8);
 
     [Benchmark]
     public byte[]? Base64_CharsToByteArray()
-        => Base64.DecodeFromBase64Utf16(this.TestChars);
+        => Base64.DecodeFromBase64Utf16(this.testString);*/
 }

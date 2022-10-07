@@ -25,15 +25,21 @@ public class Base64Test
             {
                 rv.NextBytes(bytes);
 
+                // Byte array to utf8
                 var utf = Base64.EncodeToBase64Utf8(bytes);
                 var utf2 = Base64b.FromByteArrayToUtf8(bytes);
                 utf.SequenceEqual(utf2).IsTrue();
 
+                // Byte array to string
                 var st = Base64.EncodeToBase64Utf16(bytes);
                 var st2 = Base64b.FromByteArrayToString(bytes);
                 st.Equals(st2).IsTrue();
 
+                // Convert.ToBase64String
                 Convert.ToBase64String(bytes).Equals(st2).IsTrue();
+
+                var bytes2 = Base64b.FromUtf8ToByteArray(utf);
+                bytes.SequenceEqual(bytes2!).IsTrue();
             }
         }
     }
