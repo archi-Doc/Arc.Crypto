@@ -1,5 +1,6 @@
 // Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System;
 using System.Linq;
 using Arc.Crypto;
 using Xunit;
@@ -16,11 +17,11 @@ public class Base64Test
         var xo = new Xoshiro256StarStar(42);
         var rv = new RandomVault(() => xo.NextUInt64(), x => xo.NextBytes(x));
 
-        for (var i = 0; i < 1000; i++)
+        for (var i = 0; i < 500; i++)
         {
             var bytes = new byte[i];
 
-            for (var j = 0; j < ((i * 2) + 1); j++)
+            for (var j = 0; j < ((i / 2) + 1); j++)
             {
                 rv.NextBytes(bytes);
 
@@ -28,9 +29,11 @@ public class Base64Test
                 var utf2 = Base64b.FromByteArrayToUtf8(bytes);
                 utf.SequenceEqual(utf2).IsTrue();
 
-                var st = Base64.EncodeToBase64Utf8(bytes);
-                var st2 = Base64b.FromByteArrayToUtf8(bytes);
-                st.SequenceEqual(st2).IsTrue();
+                var st = Base64.EncodeToBase64Utf16(bytes);
+                var st2 = Base64b.FromByteArrayToString(bytes);
+                st.Equals(st2).IsTrue();
+
+                Convert.ToBase64String(bytes).Equals(st2).IsTrue();
             }
         }
     }
