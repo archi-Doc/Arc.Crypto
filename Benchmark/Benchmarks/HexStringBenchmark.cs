@@ -13,7 +13,7 @@ public class HexStringBenchmark
 
     public HexStringBenchmark()
     {
-        this.testArray = Hex.StringToByteArray(this.testHex);
+        this.testArray = Hex.FromStringToByteArray(this.testHex);
     }
 
     [GlobalSetup]
@@ -32,9 +32,9 @@ public class HexStringBenchmark
 
     [Benchmark]
     public byte[] Hex_StringToByteArray()
-        => Hex.StringToByteArray(this.testHex);
+        => Hex.FromStringToByteArray(this.testHex);
 
     [Benchmark]
     public string Hex_ByteArrayToString()
-        => Hex.ByteArrayToString(this.testArray);
+        => Hex.FromByteArrayToString(this.testArray);
 }

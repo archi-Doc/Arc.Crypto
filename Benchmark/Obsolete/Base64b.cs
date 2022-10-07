@@ -9,7 +9,7 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Xml.Linq;
 
-namespace Arc.Crypto;
+namespace Arc.Crypto.Obsolete;
 
 public static unsafe class Base64b
 {

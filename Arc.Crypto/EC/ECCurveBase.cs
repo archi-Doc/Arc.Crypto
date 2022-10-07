@@ -13,19 +13,19 @@ public abstract class ECCurveBase
 
         this.UIntLength = uintLength;
 
-        bytes = Hex.StringToByteArray(hexQ);
+        bytes = Hex.FromStringToByteArray(hexQ);
         this.Q = new BigInteger(bytes, true, true);
         this.UIntQ = BytesToUInt(bytes);
 
-        bytes = Hex.StringToByteArray(hexA);
+        bytes = Hex.FromStringToByteArray(hexA);
         this.A = new BigInteger(bytes, true, true);
         this.UIntA = BytesToUInt(bytes);
 
-        bytes = Hex.StringToByteArray(hexB);
+        bytes = Hex.FromStringToByteArray(hexB);
         this.B = new BigInteger(bytes, true, true);
         this.UIntB = BytesToUInt(bytes);
 
-        bytes = Hex.StringToByteArray(hexOrder);
+        bytes = Hex.FromStringToByteArray(hexOrder);
         this.Order = new BigInteger(bytes, true, true);
         this.UIntOrder = BytesToUInt(bytes);
 

@@ -37,28 +37,10 @@ public class Base64Benchmark
         this.testArray = new byte[MaxLength];
         rv.NextBytes(this.testArray);
 
-        var utf8 = Base64.EncodeToBase64Utf8(this.testArray);
-        var utf8b = Base64b.FromByteArrayToUtf8(this.testArray);
-        var eq = utf8.SequenceEqual(utf8b);
-
-        var st = Base64.EncodeToBase64Utf16(this.testArray);
-        var st2 = Base64b.FromByteArrayToString(this.testArray);
-        eq = st.Equals(st2);
-
-        this.testUtf8 = utf8;
+        this.testUtf8 = Base64.Default.FromByteArrayToUtf8(this.testArray);
         this.testString = Convert.ToBase64String(this.testArray);
 
-        var array = Base64b.FromUtf8ToByteArray(utf8);
-        eq = array!.SequenceEqual(this.testArray);
-
-        st2 = gfoidl.Base64.Base64.Default.Encode(this.testArray);
-        eq = st.Equals(st2);
-
-        int length = gfoidl.Base64.Base64.Default.GetEncodedLength(this.testArray.Length);
-        Span<byte> buffer = stackalloc byte[length];
-        gfoidl.Base64.Base64.Default.Encode(this.testArray, buffer, out int consumed, out int written);
-        utf8b = buffer.Slice(0, written).ToArray();
-        eq = utf8.SequenceEqual(utf8b);
+        var array = gfoidl.Base64.Base64.Default.Decode(this.testString);
     }
 
     [GlobalSetup]
@@ -73,11 +55,7 @@ public class Base64Benchmark
 
     [Benchmark]
     public byte[] Base64_ByteArrayToUtf8()
-        => Base64.EncodeToBase64Utf8(this.TestArray);
-
-    [Benchmark]
-    public byte[] Base64b_ByteArrayToUtf8()
-        => Base64b.FromByteArrayToUtf8(this.TestArray);
+        => Base64.Default.FromByteArrayToUtf8(this.TestArray);
 
     [Benchmark]
     public byte[] gfoidl_ByteArrayToUtf8()
@@ -90,11 +68,7 @@ public class Base64Benchmark
 
     [Benchmark]
     public string Base64_ByteArrayToString()
-        => Base64.EncodeToBase64Utf16(this.TestArray);
-
-    [Benchmark]
-    public string Base64b_ByteArrayToString()
-        => Base64b.FromByteArrayToString(this.TestArray);
+        => Base64.Default.FromByteArrayToString(this.TestArray);
 
     [Benchmark]
     public string gfoidl_ToBase64String()
@@ -106,13 +80,17 @@ public class Base64Benchmark
 
     /*[Benchmark]
     public byte[]? Base64_Utf8ToByteArray()
-        => Base64.DecodeFromBase64Utf8(this.testUtf8);
+        => Base64.Default.FromUtf8ToByteArray(this.testUtf8);
 
     [Benchmark]
-    public byte[]? Base64b_Utf8ToByteArray()
-        => Base64b.FromUtf8ToByteArray(this.testUtf8);
+    public byte[] Base64_StringToByteArray()
+        => Base64.Default.FromStringToByteArray(this.testString);
 
     [Benchmark]
-    public byte[]? Base64_CharsToByteArray()
-        => Base64.DecodeFromBase64Utf16(this.testString);*/
+    public byte[] gfoidl_StringToByteArray()
+        => gfoidl.Base64.Base64.Default.Decode(this.testString);
+
+    [Benchmark]
+    public byte[] Convert_StringToByteArray()
+        => Convert.FromBase64String(this.testString);*/
 }

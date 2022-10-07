@@ -33,4 +33,8 @@
     <ProjectReference Include="..\Arc.Crypto\Arc.Crypto.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Obsolete\" />
+  </ItemGroup>
+
 </Project>

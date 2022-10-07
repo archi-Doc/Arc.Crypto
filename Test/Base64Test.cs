@@ -2,6 +2,7 @@
 
 using System;
 using System.Linq;
+using System.Text;
 using Arc.Crypto;
 using Xunit;
 
@@ -25,21 +26,32 @@ public class Base64Test
             {
                 rv.NextBytes(bytes);
 
-                // Byte array to utf8
-                var utf = Base64.EncodeToBase64Utf8(bytes);
-                var utf2 = Base64b.FromByteArrayToUtf8(bytes);
-                utf.SequenceEqual(utf2).IsTrue();
+                // Convert.ToBase64String
+                var st = Convert.ToBase64String(bytes);
 
                 // Byte array to string
-                var st = Base64.EncodeToBase64Utf16(bytes);
-                var st2 = Base64b.FromByteArrayToString(bytes);
+                var st2 = Base64.Default.FromByteArrayToString(bytes);
                 st.Equals(st2).IsTrue();
 
-                // Convert.ToBase64String
-                Convert.ToBase64String(bytes).Equals(st2).IsTrue();
+                // Byte array to utf8
+                var utf8 = Base64.Default.FromByteArrayToUtf8(bytes);
+                var st3 = Encoding.UTF8.GetString(utf8);
+                st.Equals(st3).IsTrue();
 
-                var bytes2 = Base64b.FromUtf8ToByteArray(utf);
-                bytes.SequenceEqual(bytes2!).IsTrue();
+                var bytes2 = Base64.Default.FromStringToByteArray(st);
+                bytes.SequenceEqual(bytes2).IsTrue();
+
+                var bytes3 = Base64.Default.FromUtf8ToByteArray(utf8);
+                bytes.SequenceEqual(bytes3!).IsTrue();
+
+                // Url
+                utf8 = Base64.Url.FromByteArrayToUtf8(bytes);
+                bytes3 = Base64.Url.FromUtf8ToByteArray(utf8);
+                bytes.SequenceEqual(bytes3!).IsTrue();
+
+                st = Base64.Url.FromByteArrayToString(bytes);
+                bytes3 = Base64.Url.FromStringToByteArray(st);
+                bytes.SequenceEqual(bytes3!).IsTrue();
             }
         }
     }
