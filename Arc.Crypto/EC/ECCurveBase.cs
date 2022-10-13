@@ -1,7 +1,10 @@
 // Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Buffers;
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Arc.Crypto.EC;
 
@@ -9,25 +12,23 @@ public abstract class ECCurveBase
 {
     public ECCurveBase(int uintLength, string hexQ, string hexA, string hexB, string hexOrder)
     {
-        byte[] bytes;
-
         this.UIntLength = uintLength;
 
-        bytes = Hex.FromStringToByteArray(hexQ);
-        this.Q = new BigInteger(bytes, true, true);
-        this.UIntQ = BytesToUInt(bytes);
+        this.ByteQ = Hex.FromStringToByteArray(hexQ);
+        // this.Q = new BigInteger(this.ByteQ, true, true);
+        this.UIntQ = BytesToUInt(this.ByteQ);
 
-        bytes = Hex.FromStringToByteArray(hexA);
-        this.A = new BigInteger(bytes, true, true);
-        this.UIntA = BytesToUInt(bytes);
+        this.ByteA = Hex.FromStringToByteArray(hexA);
+        // this.A = new BigInteger(this.ByteA, true, true);
+        this.UIntA = BytesToUInt(this.ByteA);
 
-        bytes = Hex.FromStringToByteArray(hexB);
-        this.B = new BigInteger(bytes, true, true);
-        this.UIntB = BytesToUInt(bytes);
+        this.ByteB = Hex.FromStringToByteArray(hexB);
+        // this.B = new BigInteger(this.ByteB, true, true);
+        this.UIntB = BytesToUInt(this.ByteB);
 
-        bytes = Hex.FromStringToByteArray(hexOrder);
-        this.Order = new BigInteger(bytes, true, true);
-        this.UIntOrder = BytesToUInt(bytes);
+        this.ByteOrder = Hex.FromStringToByteArray(hexOrder);
+        // this.Order = new BigInteger(this.ByteOrder, true, true);
+        this.UIntOrder = BytesToUInt(this.ByteOrder);
 
         uint[] BytesToUInt(ReadOnlySpan<byte> b)
         {
@@ -51,13 +52,23 @@ public abstract class ECCurveBase
 
     public int ByteLength => this.UIntLength * sizeof(uint);
 
-    public BigInteger Q { get; }
+    public int BitLength => this.UIntLength * sizeof(uint) * 8;
+
+    /*public BigInteger Q { get; }
 
     public BigInteger A { get; }
 
     public BigInteger B { get; }
 
-    public BigInteger Order { get; }
+    public BigInteger Order { get; }*/
+
+    public byte[] ByteQ { get; }
+
+    public byte[] ByteA { get; }
+
+    public byte[] ByteB { get; }
+
+    public byte[] ByteOrder { get; }
 
     public uint[] UIntQ { get; }
 
@@ -78,6 +89,71 @@ public abstract class ECCurveBase
     public abstract bool ElementSqrt(ReadOnlySpan<uint> x, Span<uint> z);
 
     public abstract void ElementNegate(ReadOnlySpan<uint> x, Span<uint> z);
+
+    public bool IsValidSeed(ReadOnlySpan<byte> seed)
+    {
+        if (seed.Length != this.ByteLength)
+        {
+            return false;
+        }
+
+        if (IsZero(seed) || !IsBelow(seed, this.ByteOrder))
+        {
+            return false;
+        }
+
+        var weight = GetWeight(seed);
+        if (weight < (this.BitLength >> 2))
+        {
+            return false;
+        }
+
+        return true;
+
+        static bool IsZero(ReadOnlySpan<byte> value)
+        {
+            foreach (var x in value)
+            {
+                if (x != 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        static bool IsBelow(ReadOnlySpan<byte> value, ReadOnlySpan<byte> target)
+        {
+            for (var i = 0; i < value.Length; i++)
+            {
+                if (value[i] < target[i])
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        static int GetWeight(ReadOnlySpan<byte> value)
+        {
+            var v = new BigInteger(value, true, true);
+            var d = ((v << 1) + v) ^ v;
+
+            var length = (d.GetByteCount(true) + (sizeof(ulong) - sizeof(byte))) / sizeof(ulong);
+            var u = new ulong[length];
+            d.TryWriteBytes(MemoryMarshal.AsBytes<ulong>(u), out _, true, true);
+
+            var sum = 0;
+            foreach (var x in u)
+            {
+                sum += BitOperations.PopCount(x);
+            }
+
+            return sum;
+        }
+    }
 
     public uint CompressY(ReadOnlySpan<byte> y)
     {
