@@ -72,7 +72,7 @@ public static class Base64
         /// </summary>
         /// <param name="base64">The source Base64 (UTF-16).</param>
         /// <returns>A Byte array. Returns null if the base64 string is invalid.</returns>
-        public static byte[] FromStringToByteArray(string base64)
+        public static byte[] FromStringToByteArray(ReadOnlySpan<char> base64)
         {
             try
             {
@@ -143,7 +143,7 @@ public static class Base64
         /// </summary>
         /// <param name="base64">The source Base64 Url (UTF-16).</param>
         /// <returns>A Byte array. Returns null if the base64 string is invalid.</returns>
-        public static byte[] FromStringToByteArray(string base64)
+        public static byte[] FromStringToByteArray(ReadOnlySpan<char> base64)
         {
             try
             {
