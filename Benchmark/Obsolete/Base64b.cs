@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
-using System.Xml.Linq;
 
 namespace Arc.Crypto.Obsolete;
 
@@ -176,32 +175,34 @@ public static unsafe class Base64b
     public static bool InternalFromToUtf8ToByteArray(ReadOnlySpan<byte> utf8, Span<byte> bytes, out int bytesWritten)
     {
         fixed (byte* input = &MemoryMarshal.GetReference(utf8))
-        fixed (byte* output = &MemoryMarshal.GetReference(bytes))
         {
-            var inputRemaining = utf8.Length;
-            var inputPosition = 0;
-            var outputPosition = 0;
-
-            if (Sse41.IsSupported)
+            fixed (byte* output = &MemoryMarshal.GetReference(bytes))
             {
-                if (!DecodeBase64ByteSse(input, ref inputPosition, ref inputRemaining, output, ref outputPosition))
-                {
-                    bytesWritten = 0;
-                    return false;
-                }
-            }
+                var inputRemaining = utf8.Length;
+                var inputPosition = 0;
+                var outputPosition = 0;
 
-            if (inputRemaining > 0)
-            {
-                if (!DecodeBase64ByteTable(input, ref inputPosition, ref inputRemaining, output, ref outputPosition, Base64DecodeTable))
+                if (Sse41.IsSupported)
                 {
-                    bytesWritten = 0;
-                    return false;
+                    if (!DecodeBase64ByteSse(input, ref inputPosition, ref inputRemaining, output, ref outputPosition))
+                    {
+                        bytesWritten = 0;
+                        return false;
+                    }
                 }
-            }
 
-            bytesWritten = outputPosition;
-            return true;
+                if (inputRemaining > 0)
+                {
+                    if (!DecodeBase64ByteTable(input, ref inputPosition, ref inputRemaining, output, ref outputPosition, Base64DecodeTable))
+                    {
+                        bytesWritten = 0;
+                        return false;
+                    }
+                }
+
+                bytesWritten = outputPosition;
+                return true;
+            }
         }
     }
 
@@ -215,57 +216,63 @@ public static unsafe class Base64b
     public static bool InternalFromToCharsToByteArray(ReadOnlySpan<char> chars, Span<byte> bytes, out int bytesWritten)
     {
         fixed (char* input = &MemoryMarshal.GetReference(chars))
-        fixed (byte* output = &MemoryMarshal.GetReference(bytes))
         {
-            return DecodeBase64Core(input, output, 0, chars.Length, Base64DecodeTable, out bytesWritten);
+            fixed (byte* output = &MemoryMarshal.GetReference(bytes))
+            {
+                return DecodeBase64Core(input, output, 0, chars.Length, Base64DecodeTable, out bytesWritten);
+            }
         }
     }
 
     private static bool InternalFromByteArrayToUtf8(ReadOnlySpan<byte> bytes, Span<byte> utf8, out int bytesWritten)
     {
         fixed (byte* input = &MemoryMarshal.GetReference(bytes))
-        fixed (byte* output = &MemoryMarshal.GetReference(utf8))
         {
-            var inputRemaining = bytes.Length;
-            var inputPosition = 0;
-            var outputPosition = 0;
-
-            if (Ssse3.IsSupported)
+            fixed (byte* output = &MemoryMarshal.GetReference(utf8))
             {
-                EncodeBase64ByteSse(input, ref inputPosition, ref inputRemaining, output, ref outputPosition);
-            }
+                var inputRemaining = bytes.Length;
+                var inputPosition = 0;
+                var outputPosition = 0;
 
-            if (inputRemaining > 0)
-            {
-                EncodeBase64ByteTable(input, ref inputPosition, ref inputRemaining, output, ref outputPosition, Base64Utf8EncodeTable);
-            }
+                if (Ssse3.IsSupported)
+                {
+                    EncodeBase64ByteSse(input, ref inputPosition, ref inputRemaining, output, ref outputPosition);
+                }
 
-            bytesWritten = outputPosition;
-            return true;
+                if (inputRemaining > 0)
+                {
+                    EncodeBase64ByteTable(input, ref inputPosition, ref inputRemaining, output, ref outputPosition, Base64Utf8EncodeTable);
+                }
+
+                bytesWritten = outputPosition;
+                return true;
+            }
         }
     }
 
     private static bool InternalFromByteArrayToUtf16(ReadOnlySpan<byte> bytes, Span<char> chars, out int charsWritten)
     {
         fixed (byte* input = &MemoryMarshal.GetReference(bytes))
-        fixed (char* output = &MemoryMarshal.GetReference(chars))
         {
-            var inputRemaining = bytes.Length;
-            var inputPosition = 0;
-            var outputPosition = 0;
-
-            if (Ssse3.IsSupported)
+            fixed (char* output = &MemoryMarshal.GetReference(chars))
             {
-                EncodeBase64CharSse(input, ref inputPosition, ref inputRemaining, output, ref outputPosition);
-            }
+                var inputRemaining = bytes.Length;
+                var inputPosition = 0;
+                var outputPosition = 0;
 
-            if (inputRemaining > 0)
-            {
-                EncodeBase64CharTable(input, ref inputPosition, ref inputRemaining, output, ref outputPosition, Base64EncodeTable);
-            }
+                if (Ssse3.IsSupported)
+                {
+                    EncodeBase64CharSse(input, ref inputPosition, ref inputRemaining, output, ref outputPosition);
+                }
 
-            charsWritten = outputPosition;
-            return true;
+                if (inputRemaining > 0)
+                {
+                    EncodeBase64CharTable(input, ref inputPosition, ref inputRemaining, output, ref outputPosition, Base64EncodeTable);
+                }
+
+                charsWritten = outputPosition;
+                return true;
+            }
         }
     }
 

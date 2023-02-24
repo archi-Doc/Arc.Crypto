@@ -3,7 +3,6 @@
 using System;
 using System.Buffers;
 using System.Diagnostics;
-using System.Text.Unicode;
 
 #pragma warning disable SA1405
 

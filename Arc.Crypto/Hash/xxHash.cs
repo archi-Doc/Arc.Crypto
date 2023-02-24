@@ -75,9 +75,11 @@ public unsafe partial class XxHash64 : XXHash, IHash
     public void HashUpdate(ReadOnlySpan<byte> input)
     {
         fixed (void* p = input)
-        fixed (XXH64_state* state = &this.state)
         {
-            XXH64_update(state, p, input.Length);
+            fixed (XXH64_state* state = &this.state)
+            {
+                XXH64_update(state, p, input.Length);
+            }
         }
     }
 
@@ -370,9 +372,11 @@ public unsafe class XXHash32 : XXHash, IHash
     public void HashUpdate(ReadOnlySpan<byte> input)
     {
         fixed (void* p = input)
-        fixed (XXH32_state* state = &this.state)
         {
-            XXH32_update(state, p, input.Length);
+            fixed (XXH32_state* state = &this.state)
+            {
+                XXH32_update(state, p, input.Length);
+            }
         }
     }
 

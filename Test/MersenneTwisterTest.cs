@@ -2,7 +2,6 @@
 
 using System;
 using System.Linq;
-using System.Text;
 using Arc.Crypto;
 using Xunit;
 
