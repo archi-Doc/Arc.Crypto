@@ -1,9 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
-using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 #pragma warning disable SA1402 // File may only contain a single type
 #pragma warning disable SA1649 // File name should match first type name
@@ -23,21 +21,21 @@ public class Sha3_256 : Sha3
         this.Sponge = new KeccakSponge(256);
     }
 
-    public (ulong hash0, ulong hash1, ulong hash2, ulong hash3) GetHashUInt64(ReadOnlySpan<byte> input)
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) GetHashUInt64(ReadOnlySpan<byte> input)
     {
         this.HashInitialize();
         this.HashUpdate(input);
         return this.Sponge!.SqueezeToUInt64_4();
     }
 
-    public (ulong hash0, ulong hash1, ulong hash2, ulong hash3) GetHashUInt64(byte[] input, int inputOffset, int inputCount)
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) GetHashUInt64(byte[] input, int inputOffset, int inputCount)
     {
         this.HashInitialize();
         this.HashUpdate(input, inputOffset, inputCount);
         return this.Sponge!.SqueezeToUInt64_4();
     }
 
-    public (ulong hash0, ulong hash1, ulong hash2, ulong hash3) HashFinalUInt64()
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) HashFinalUInt64()
     {
         return this.Sponge!.SqueezeToUInt64_4();
     }
@@ -234,49 +232,51 @@ internal unsafe class KeccakSponge
         {
             var length = bytes.Length;
             fixed (byte* b = bytes)
-            fixed (ulong* stateHead = this.state)
             {
-                byte* input = b;
-                byte* s = (byte*)stateHead + this.statePosition;
-                while (length > 0)
+                fixed (ulong* stateHead = this.state)
                 {
-                    int to_take = Math.Min(length, (this.Bitrate / 8) - this.statePosition);
-                    length -= to_take;
-
-                    while (to_take != 0 & (this.statePosition % 8) != 0)
+                    byte* input = b;
+                    byte* s = (byte*)stateHead + this.statePosition;
+                    while (length > 0)
                     {
-                        /*this.state[this.statePosition / 8] ^= (ulong)input[0] << (8 * (this.statePosition % 8));
-                        s++;
-                        input++;*/
-                        *s++ ^= *input++;
-                        this.statePosition++;
-                        to_take--;
-                    }
+                        int to_take = Math.Min(length, (this.Bitrate / 8) - this.statePosition);
+                        length -= to_take;
 
-                    while (to_take != 0 && to_take % 8 == 0)
-                    {
-                        *(ulong*)s ^= *(ulong*)input;
-                        s += 8;
-                        input += 8;
-                        this.statePosition += 8;
-                        to_take -= 8;
-                    }
+                        while (to_take != 0 & (this.statePosition % 8) != 0)
+                        {
+                            /*this.state[this.statePosition / 8] ^= (ulong)input[0] << (8 * (this.statePosition % 8));
+                            s++;
+                            input++;*/
+                            *s++ ^= *input++;
+                            this.statePosition++;
+                            to_take--;
+                        }
 
-                    while (to_take != 0)
-                    {
-                        /*this.state[this.statePosition / 8] ^= (ulong)input[0] << (8 * (this.statePosition % 8));
-                        s++;
-                        input++;*/
-                        *s++ ^= *input++;
-                        this.statePosition++;
-                        to_take--;
-                    }
+                        while (to_take != 0 && to_take % 8 == 0)
+                        {
+                            *(ulong*)s ^= *(ulong*)input;
+                            s += 8;
+                            input += 8;
+                            this.statePosition += 8;
+                            to_take -= 8;
+                        }
 
-                    if (this.statePosition == (this.Bitrate / 8))
-                    {
-                        this.Permute(this.state);
-                        s = (byte*)stateHead;
-                        this.statePosition = 0;
+                        while (to_take != 0)
+                        {
+                            /*this.state[this.statePosition / 8] ^= (ulong)input[0] << (8 * (this.statePosition % 8));
+                            s++;
+                            input++;*/
+                            *s++ ^= *input++;
+                            this.statePosition++;
+                            to_take--;
+                        }
+
+                        if (this.statePosition == (this.Bitrate / 8))
+                        {
+                            this.Permute(this.state);
+                            s = (byte*)stateHead;
+                            this.statePosition = 0;
+                        }
                     }
                 }
             }
@@ -339,7 +339,7 @@ internal unsafe class KeccakSponge
         this.Initialize();
     }
 
-    internal unsafe (ulong hash0, ulong hash1, ulong hash2, ulong hash3) SqueezeToUInt64_4()
+    internal unsafe (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) SqueezeToUInt64_4()
     {
         if (this.OutputBits < 256)
         {
@@ -361,7 +361,7 @@ internal unsafe class KeccakSponge
         return (h0, h1, h2, h3);
     }
 
-    internal unsafe (ulong hash0, ulong hash1, ulong hash2, ulong hash3, ulong hash4, ulong hash5) SqueezeToUInt64_6()
+    internal unsafe (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) SqueezeToUInt64_6()
     {
         if (this.OutputBits < 384)
         {
@@ -385,7 +385,7 @@ internal unsafe class KeccakSponge
         return (h0, h1, h2, h3, h4, h5);
     }
 
-    internal unsafe (ulong hash0, ulong hash1, ulong hash2, ulong hash3, ulong hash4, ulong hash5, ulong hash6, ulong hash7) SqueezeToUInt64_8()
+    internal unsafe (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) SqueezeToUInt64_8()
     {
         if (this.OutputBits < 512)
         {

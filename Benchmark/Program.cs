@@ -1,12 +1,9 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Text;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;

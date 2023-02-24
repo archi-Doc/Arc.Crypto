@@ -2,7 +2,6 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 #pragma warning disable SA1402 // File may only contain a single type
 #pragma warning disable SA1649 // File name should match first type name
@@ -206,7 +205,8 @@ internal unsafe class KeccakSponge
         {
             var length = bytes.Length;
             fixed (byte* b = bytes)
-            fixed (ulong* stateHead = this.state)
+            {
+                fixed (ulong* stateHead = this.state)
             {
                 byte* input = b;
                 byte* s = (byte*)stateHead + this.statePosition;
@@ -251,6 +251,7 @@ internal unsafe class KeccakSponge
                         this.statePosition = 0;
                     }
                 }
+            }
             }
         }
     }

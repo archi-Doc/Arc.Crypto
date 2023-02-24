@@ -1,17 +1,11 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-
-#pragma warning disable SA1124 // Do not use regions
-#pragma warning disable SA1401 // Fields should be private
 
 namespace Arc.Crypto;
 
@@ -26,6 +20,23 @@ public class RandomVault : RandomUInt64
 {
     public const uint MinimumVaultSize = 32;
     public const uint DefaultVaultSize = 128;
+
+    static RandomVault()
+    {
+        var xo = new Xoshiro256StarStar();
+        Pseudo = new RandomVault(() => xo.NextUInt64(), x => xo.NextBytes(x), 1024);
+        Crypto = new RandomVault(null, x => RandomNumberGenerator.Fill(x), 1024);
+    }
+
+    /// <summary>
+    ///  Gets the cryptographically secure pseudo random number pool.
+    /// </summary>
+    public static RandomVault Crypto { get; }
+
+    /// <summary>
+    ///  Gets the pseudo random number pool.
+    /// </summary>
+    public static RandomVault Pseudo { get; }
 
     /// <summary>
     /// Defines the type of delegate that returns a 64-bit unsigned random integer.
