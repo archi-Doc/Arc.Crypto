@@ -74,9 +74,9 @@ public class Base64Benchmark
     public string Convert_ToBase64String()
         => Convert.ToBase64String(this.TestArray);*/
 
-    [Benchmark]
+    /*[Benchmark]
     public byte[]? Base64_Utf8ToByteArray()
-        => Base64.Default.FromUtf8ToByteArray(this.testUtf8);
+        => Base64.Default.FromUtf8ToByteArray(this.testUtf8);*/
 
     [Benchmark]
     public byte[] Base64_StringToByteArray()
@@ -89,4 +89,8 @@ public class Base64Benchmark
     [Benchmark]
     public byte[] Convert_StringToByteArray()
         => Convert.FromBase64String(this.testString);
+
+    [Benchmark]
+    public byte[]? Base64Obsolete_StringToByteArray()
+        => Benchmark.Design.Base64.FromCharsToByteArray(this.testString);
 }
