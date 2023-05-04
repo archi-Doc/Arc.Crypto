@@ -70,7 +70,7 @@ public static class Base64
         /// Decode from a Base64 (UTF-16) string to a byte array.
         /// </summary>
         /// <param name="base64">The source Base64 (UTF-16).</param>
-        /// <returns>A Byte array. Returns null if the base64 string is invalid.</returns>
+        /// <returns>A Byte array. Returns an empty array if the base64 string is invalid.</returns>
         public static byte[] FromStringToByteArray(ReadOnlySpan<char> base64)
         {
             try

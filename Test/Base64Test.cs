@@ -6,8 +6,6 @@ using System.Text;
 using Arc.Crypto;
 using Xunit;
 
-#pragma warning disable SA1202 // Elements should be ordered by access
-
 namespace Test;
 
 public class Base64Test
