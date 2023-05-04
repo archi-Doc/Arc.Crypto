@@ -6,56 +6,9 @@ using System.Runtime.CompilerServices;
 
 namespace Arc.Crypto;
 
-public interface IBase32
+internal class Base32SortReference : IBaseConverter
 {
-    static abstract byte[] FromStringToByteArray(ReadOnlySpan<char> base32);
-}
-
-public class Base32SortReference : IBase32
-{
-    public static byte[] FromStringToByteArray(ReadOnlySpan<char> base32)
-    {
-        nint byteCount = Base32Sort.GetDecodedLength(base32.Length);
-        byte[] returnArray = new byte[byteCount];
-
-        byte current = 0;
-        var remaining = 8;
-        nint mask;
-        nint arrayIndex = 0;
-
-        foreach (char c in base32)
-        {
-            nint v = CharToValue(c);
-            if (v < 0)
-            {// Invalid character
-                return Array.Empty<byte>();
-            }
-
-            if (remaining > 5)
-            {
-                mask = v << (remaining - 5);
-                current = (byte)(current | mask);
-                remaining -= 5;
-            }
-            else
-            {
-                mask = v >> (5 - remaining);
-                current = (byte)(current | mask);
-                returnArray[arrayIndex++] = current;
-                current = (byte)(v << (3 + remaining));
-                remaining += 3;
-            }
-        }
-
-        if (arrayIndex != byteCount)
-        {
-            returnArray[arrayIndex] = current;
-        }
-
-        return returnArray;
-    }
-
-    public static unsafe string FromByteArrayToString(ReadOnlySpan<byte> bytes)
+    public unsafe string FromByteArrayToString(ReadOnlySpan<byte> bytes)
     {
         var length = Base32Sort.GetEncodedLength(bytes.Length);
         char[]? pooledName = null;
@@ -97,6 +50,58 @@ public class Base32SortReference : IBase32
         }
 
         return result;
+    }
+
+    public byte[] FromByteArrayToUtf8(ReadOnlySpan<byte> bytes)
+    {
+        throw new NotImplementedException();
+    }
+
+    public byte[] FromStringToByteArray(ReadOnlySpan<char> base32)
+    {
+        nint byteCount = Base32Sort.GetDecodedLength(base32.Length);
+        byte[] returnArray = new byte[byteCount];
+
+        byte current = 0;
+        var remaining = 8;
+        nint mask;
+        nint arrayIndex = 0;
+
+        foreach (char c in base32)
+        {
+            nint v = CharToValue(c);
+            if (v < 0)
+            {// Invalid character
+                return Array.Empty<byte>();
+            }
+
+            if (remaining > 5)
+            {
+                mask = v << (remaining - 5);
+                current = (byte)(current | mask);
+                remaining -= 5;
+            }
+            else
+            {
+                mask = v >> (5 - remaining);
+                current = (byte)(current | mask);
+                returnArray[arrayIndex++] = current;
+                current = (byte)(v << (3 + remaining));
+                remaining += 3;
+            }
+        }
+
+        if (arrayIndex != byteCount)
+        {
+            returnArray[arrayIndex] = current;
+        }
+
+        return returnArray;
+    }
+
+    public byte[]? FromUtf8ToByteArray(ReadOnlySpan<byte> utf8)
+    {
+        throw new NotImplementedException();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
