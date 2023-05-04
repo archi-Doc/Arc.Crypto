@@ -53,19 +53,19 @@ public class Base64Benchmark
     {
     }
 
-    [Benchmark]
+    // [Benchmark]
     public string Base64_ByteArrayToString()
         => Base64.Default.FromByteArrayToString(this.TestArray);
 
-    // [Benchmark]
+    /*[Benchmark]
     public string gfoidl_ByteArrayToString()
         => gfoidl.Base64.Base64.Default.Encode(this.TestArray);
 
-    // [Benchmark]
-    public string Convert_ByteArrayToString()
-        => Convert.ToBase64String(this.TestArray);
-
     [Benchmark]
+    public string Convert_ByteArrayToString()
+        => Convert.ToBase64String(this.TestArray);*/
+
+    // [Benchmark]
     public string Base64Obsolete_ByteArrayToString()
        => Benchmark.Design.Base64.FromByteArrayToString(this.TestArray);
 
@@ -73,19 +73,19 @@ public class Base64Benchmark
     public string Base32Reference_ByteArrayToString()
         => Base32Sort.Reference.FromByteArrayToString(this.TestArray);
 
-    [Benchmark]
+    // [Benchmark]
     public byte[] Base64_StringToByteArray()
         => Base64.Default.FromStringToByteArray(this.testString);
 
-    // [Benchmark]
+    /*[Benchmark]
     public byte[] gfoidl_StringToByteArray()
         => gfoidl.Base64.Base64.Default.Decode(this.testString);
 
-    // [Benchmark]
-    public byte[] Convert_StringToByteArray()
-        => Convert.FromBase64String(this.testString);
-
     [Benchmark]
+    public byte[] Convert_StringToByteArray()
+        => Convert.FromBase64String(this.testString);*/
+
+    // [Benchmark]
     public byte[]? Base64Obsolete_StringToByteArray()
         => Benchmark.Design.Base64.FromCharsToByteArray(this.testString);
 
