@@ -79,7 +79,8 @@ public class Base32Test
 
         // String to byte array
         var b = Base32Sort.Reference.FromStringToByteArray(st);
-
+        bytes.SequenceEqual(b).IsTrue();
+        b = Base32Sort.Reference.FromStringToByteArray(st.ToLower()); // Lower case
         bytes.SequenceEqual(b).IsTrue();
 
         // Utf8
@@ -92,6 +93,8 @@ public class Base32Test
         var st2 = Base32Sort.Table.FromByteArrayToString(bytes);
         st2.Is(st);
         b2 = Base32Sort.Table.FromStringToByteArray(st);
+        b2.SequenceEqual(b).IsTrue();
+        b2 = Base32Sort.Reference.FromStringToByteArray(st.ToLower()); // Lower case
         b2.SequenceEqual(b).IsTrue();
 
         utf8 = Base32Sort.Table.FromByteArrayToUtf8(bytes);

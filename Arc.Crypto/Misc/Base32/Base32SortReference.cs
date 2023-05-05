@@ -99,7 +99,7 @@ internal class Base32SortReference : IBaseConverter
         foreach (char c in utf16)
         {
             nint v = CharToValue(c);
-            if (v < 0)
+            if (v >= byte.MaxValue)
             {// Invalid character
                 return Array.Empty<byte>();
             }
@@ -141,7 +141,7 @@ internal class Base32SortReference : IBaseConverter
         foreach (var c in utf8)
         {
             nint v = ByteToValue(c);
-            if (v < 0)
+            if (v >= byte.MaxValue)
             {// Invalid character
                 return Array.Empty<byte>();
             }
@@ -173,7 +173,16 @@ internal class Base32SortReference : IBaseConverter
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static nint CharToValue(char c)
     {
-        var value = (nint)c;
+        if (c > byte.MaxValue)
+        {
+            return -1;
+        }
+        else
+        {
+            return Base32Sort.DecodeTable[c];
+        }
+
+        /*var value = (nint)c;
 
         if (value >= 50 && value <= 55)
         {// '2' 50 - '7' 55 -> 0-5
@@ -188,13 +197,22 @@ internal class Base32SortReference : IBaseConverter
             return value - 91;
         }
 
-        return -1;
+        return -1;*/
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static nint ByteToValue(byte c)
     {
-        var value = (nint)c;
+        if (c > byte.MaxValue)
+        {
+            return -1;
+        }
+        else
+        {
+            return Base32Sort.DecodeTable[c];
+        }
+
+        /*var value = (nint)c;
 
         if (value >= 50 && value <= 55)
         {// '2' 50 - '7' 55 -> 0-5
@@ -209,13 +227,15 @@ internal class Base32SortReference : IBaseConverter
             return value - 91;
         }
 
-        return -1;
+        return -1;*/
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static char ValueToChar(byte b)
     {
-        if (b < 6)
+        return Base32Sort.Utf16EncodeTable[b];
+
+        /*if (b < 6)
         {// 0-5 -> '2' 50 - '7' 55
             return (char)(b + 50);
         }
@@ -224,13 +244,15 @@ internal class Base32SortReference : IBaseConverter
             return (char)(b + 59);
         }
 
-        return (char)0;
+        return (char)0;*/
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static byte ValueToByte(byte b)
     {
-        if (b < 6)
+        return Base32Sort.Utf8EncodeTable[b];
+
+        /*if (b < 6)
         {// 0-5 -> '2' 50 - '7' 55
             return (byte)(b + 50);
         }
@@ -239,6 +261,6 @@ internal class Base32SortReference : IBaseConverter
             return (byte)(b + 59);
         }
 
-        return 0;
+        return 0;*/
     }
 }

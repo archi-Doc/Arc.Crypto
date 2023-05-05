@@ -67,7 +67,7 @@ public class Base64Benchmark
     public string Base64Obsolete_ByteArrayToString()
        => Benchmark.Design.Base64.FromByteArrayToString(this.TestArray);
 
-    // [Benchmark]
+    [Benchmark]
     public string Base32Reference_ByteArrayToString()
         => Base32Sort.Reference.FromByteArrayToString(this.TestArray);
 
@@ -91,7 +91,7 @@ public class Base64Benchmark
     public byte[]? Base64Obsolete_StringToByteArray()
         => Benchmark.Design.Base64.FromCharsToByteArray(this.testString);
 
-    // [Benchmark]
+    [Benchmark]
     public byte[] Base32Reference_StringToByteArray()
         => Base32Sort.Reference.FromStringToByteArray(this.testStringB);
 
