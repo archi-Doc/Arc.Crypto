@@ -9,11 +9,9 @@ public static class Base32Sort
 {
     internal static readonly char[] Utf16EncodeTable =
     {
-        '2', '3', '4', '5', '6', '7',
-        'A', 'B', 'C', 'D', 'E', 'F',
-        'G', 'H', 'I', 'J', 'K', 'L',
-        'M', 'N', 'O', 'P', 'Q', 'R',
-        'S', 'T', 'U', 'V', 'W', 'X',
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+        'A', 'B', 'C', 'E', 'F', 'G', 'H', 'J', 'K', 'M',
+        'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
         'Y', 'Z',
     };
 
@@ -48,6 +46,12 @@ public static class Base32Sort
                 DecodeTable[x - (byte)'A' + (byte)'a'] = DecodeTable[x];
             }
         }
+
+        DecodeTable['I'] = DecodeTable['1']; // I -> 1
+        DecodeTable['i'] = DecodeTable['1']; // i -> 1
+        DecodeTable['l'] = DecodeTable['1']; // l -> 1
+        DecodeTable['O'] = DecodeTable['0']; // O -> 0
+        DecodeTable['o'] = DecodeTable['0']; // o -> 0
     }
 
     public static readonly IBaseConverter Default;
