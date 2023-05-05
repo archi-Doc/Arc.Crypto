@@ -2,47 +2,13 @@
 
 using System;
 using System.Buffers;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Arc.Crypto;
 
 internal class Base32SortTable : IBaseConverter
 {
-    private static readonly char[] Utf16EncodeTable =
-    {
-        '2', '3', '4', '5', '6', '7',
-        'A', 'B', 'C', 'D', 'E', 'F',
-        'G', 'H', 'I', 'J', 'K', 'L',
-        'M', 'N', 'O', 'P', 'Q', 'R',
-        'S', 'T', 'U', 'V', 'W', 'X',
-        'Y', 'Z',
-    };
-
-    private static readonly byte[] Utf8EncodeTable =
-    {
-        (byte)'2', (byte)'3', (byte)'4', (byte)'5', (byte)'6', (byte)'7',
-        (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F',
-        (byte)'G', (byte)'H', (byte)'I', (byte)'J', (byte)'K', (byte)'L',
-        (byte)'M', (byte)'N', (byte)'O', (byte)'P', (byte)'Q', (byte)'R',
-        (byte)'S', (byte)'T', (byte)'U', (byte)'V', (byte)'W', (byte)'X',
-        (byte)'Y', (byte)'Z',
-    };
-
-    private static readonly byte[] DecodeTable;
-
-    static Base32SortTable()
-    {
-        DecodeTable = new byte[byte.MaxValue];
-        for (byte i = 0; i < DecodeTable.Length; i++)
-        {
-            var v = Base32SortReference.ByteToValue(i);
-            if (v >= 0)
-            {
-                DecodeTable[i] = (byte)v;
-            }
-        }
-    }
-
     public unsafe string FromByteArrayToString(ReadOnlySpan<byte> bytes)
     {
         var length = Base32Sort.GetEncodedLength(bytes.Length);
@@ -56,7 +22,7 @@ internal class Base32SortTable : IBaseConverter
         {
             fixed (char* utf = &MemoryMarshal.GetReference(span))
             {
-                this.EncodeUtf16Core(data, utf, bytes.Length, Utf16EncodeTable);
+                this.EncodeUtf16Core(data, utf, bytes.Length, Base32Sort.Utf16EncodeTable);
             }
         }
 
@@ -80,7 +46,7 @@ internal class Base32SortTable : IBaseConverter
         {
             fixed (byte* b = &MemoryMarshal.GetReference(span))
             {
-                this.EncodeUtf8Core(data, b, bytes.Length, Utf8EncodeTable);
+                this.EncodeUtf8Core(data, b, bytes.Length, Base32Sort.Utf8EncodeTable);
             }
         }
 
@@ -96,14 +62,17 @@ internal class Base32SortTable : IBaseConverter
         {
             fixed (byte* outData = &MemoryMarshal.GetReference(bytes.AsSpan()))
             {
-                this.DecodeUtf16Core(inChars, outData, utf16.Length, DecodeTable);
+                if (!this.DecodeUtf16Core(inChars, outData, utf16.Length, Base32Sort.DecodeTable))
+                {
+                    return Array.Empty<byte>();
+                }
             }
         }
 
         return bytes;
     }
 
-    public unsafe byte[]? FromUtf8ToByteArray(ReadOnlySpan<byte> utf8)
+    public unsafe byte[] FromUtf8ToByteArray(ReadOnlySpan<byte> utf8)
     {
         nint length = Base32Sort.GetDecodedLength(utf8.Length);
         byte[] bytes = new byte[length];
@@ -112,7 +81,10 @@ internal class Base32SortTable : IBaseConverter
         {
             fixed (byte* outData = &MemoryMarshal.GetReference(bytes.AsSpan()))
             {
-                this.DecodeUtf8Core(inChars, outData, utf8.Length, DecodeTable);
+                if (!this.DecodeUtf8Core(inChars, outData, utf8.Length, Base32Sort.DecodeTable))
+                {
+                    return Array.Empty<byte>();
+                }
             }
         }
 
@@ -242,7 +214,7 @@ internal class Base32SortTable : IBaseConverter
         }
     }
 
-    private unsafe void DecodeUtf16Core(char* inChars, byte* outData, int length, byte[] decodeTable)
+    private unsafe bool DecodeUtf16Core(char* inChars, byte* outData, int length, byte[] decodeTable)
     {
         var n = length & ~7;
         var i = 0;
@@ -259,6 +231,10 @@ internal class Base32SortTable : IBaseConverter
                 var i5 = table[inChars[i + 5] & 0xFF];
                 var i6 = table[inChars[i + 6] & 0xFF];
                 var i7 = table[inChars[i + 7] & 0xFF];
+                if (IsInvalid(i0, i1, i2, i3, i4, i5, i6, i7))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
                 outData[j + 1] = (byte)(((i1 & 0b00000011) << 6) | (i2 << 1) | ((i3 & 0b00010000) >> 4));
@@ -279,6 +255,10 @@ internal class Base32SortTable : IBaseConverter
                 var i4 = table[inChars[i + 4] & 0xFF];
                 var i5 = table[inChars[i + 5] & 0xFF];
                 var i6 = table[inChars[i + 6] & 0xFF];
+                if (IsInvalid(i0, i1, i2, i3, i4, i5, i6))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
                 outData[j + 1] = (byte)(((i1 & 0b00000011) << 6) | (i2 << 1) | ((i3 & 0b00010000) >> 4));
@@ -293,6 +273,10 @@ internal class Base32SortTable : IBaseConverter
                 var i3 = table[inChars[i + 3] & 0xFF];
                 var i4 = table[inChars[i + 4] & 0xFF];
                 var i5 = table[inChars[i + 5] & 0xFF];
+                if (IsInvalid(i0, i1, i2, i3, i4, i5))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
                 outData[j + 1] = (byte)(((i1 & 0b00000011) << 6) | (i2 << 1) | ((i3 & 0b00010000) >> 4));
@@ -305,6 +289,10 @@ internal class Base32SortTable : IBaseConverter
                 var i2 = table[inChars[i + 2] & 0xFF];
                 var i3 = table[inChars[i + 3] & 0xFF];
                 var i4 = table[inChars[i + 4] & 0xFF];
+                if (IsInvalid(i0, i1, i2, i3, i4))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
                 outData[j + 1] = (byte)(((i1 & 0b00000011) << 6) | (i2 << 1) | ((i3 & 0b00010000) >> 4));
@@ -316,6 +304,10 @@ internal class Base32SortTable : IBaseConverter
                 var i1 = table[inChars[i + 1] & 0xFF];
                 var i2 = table[inChars[i + 2] & 0xFF];
                 var i3 = table[inChars[i + 3] & 0xFF];
+                if (IsInvalid(i0, i1, i2, i3))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
                 outData[j + 1] = (byte)(((i1 & 0b00000011) << 6) | (i2 << 1) | ((i3 & 0b00010000) >> 4));
@@ -325,6 +317,10 @@ internal class Base32SortTable : IBaseConverter
                 var i0 = table[inChars[i] & 0xFF];
                 var i1 = table[inChars[i + 1] & 0xFF];
                 var i2 = table[inChars[i + 2] & 0xFF];
+                if (IsInvalid(i0, i1, i2))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
             }
@@ -332,13 +328,19 @@ internal class Base32SortTable : IBaseConverter
             {
                 var i0 = table[inChars[i] & 0xFF];
                 var i1 = table[inChars[i + 1] & 0xFF];
+                if (IsInvalid(i0, i1))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
             }
         }
+
+        return true;
     }
 
-    private unsafe void DecodeUtf8Core(byte* inChars, byte* outData, int length, byte[] decodeTable)
+    private unsafe bool DecodeUtf8Core(byte* inChars, byte* outData, int length, byte[] decodeTable)
     {
         var n = length & ~7;
         var i = 0;
@@ -355,6 +357,10 @@ internal class Base32SortTable : IBaseConverter
                 var i5 = table[inChars[i + 5]];
                 var i6 = table[inChars[i + 6]];
                 var i7 = table[inChars[i + 7]];
+                if (IsInvalid(i0, i1, i2, i3, i4, i5, i6, i7))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
                 outData[j + 1] = (byte)(((i1 & 0b00000011) << 6) | (i2 << 1) | ((i3 & 0b00010000) >> 4));
@@ -375,6 +381,10 @@ internal class Base32SortTable : IBaseConverter
                 var i4 = table[inChars[i + 4]];
                 var i5 = table[inChars[i + 5]];
                 var i6 = table[inChars[i + 6]];
+                if (IsInvalid(i0, i1, i2, i3, i4, i5, i6))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
                 outData[j + 1] = (byte)(((i1 & 0b00000011) << 6) | (i2 << 1) | ((i3 & 0b00010000) >> 4));
@@ -389,6 +399,10 @@ internal class Base32SortTable : IBaseConverter
                 var i3 = table[inChars[i + 3]];
                 var i4 = table[inChars[i + 4]];
                 var i5 = table[inChars[i + 5]];
+                if (IsInvalid(i0, i1, i2, i3, i4, i5))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
                 outData[j + 1] = (byte)(((i1 & 0b00000011) << 6) | (i2 << 1) | ((i3 & 0b00010000) >> 4));
@@ -401,6 +415,10 @@ internal class Base32SortTable : IBaseConverter
                 var i2 = table[inChars[i + 2]];
                 var i3 = table[inChars[i + 3]];
                 var i4 = table[inChars[i + 4]];
+                if (IsInvalid(i0, i1, i2, i3, i4))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
                 outData[j + 1] = (byte)(((i1 & 0b00000011) << 6) | (i2 << 1) | ((i3 & 0b00010000) >> 4));
@@ -412,6 +430,10 @@ internal class Base32SortTable : IBaseConverter
                 var i1 = table[inChars[i + 1]];
                 var i2 = table[inChars[i + 2]];
                 var i3 = table[inChars[i + 3]];
+                if (IsInvalid(i0, i1, i2, i3))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
                 outData[j + 1] = (byte)(((i1 & 0b00000011) << 6) | (i2 << 1) | ((i3 & 0b00010000) >> 4));
@@ -421,6 +443,10 @@ internal class Base32SortTable : IBaseConverter
                 var i0 = table[inChars[i]];
                 var i1 = table[inChars[i + 1]];
                 var i2 = table[inChars[i + 2]];
+                if (IsInvalid(i0, i1, i2))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
             }
@@ -428,9 +454,52 @@ internal class Base32SortTable : IBaseConverter
             {
                 var i0 = table[inChars[i]];
                 var i1 = table[inChars[i + 1]];
+                if (IsInvalid(i0, i1))
+                {
+                    return false;
+                }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
             }
         }
+
+        return true;
     }
+
+#pragma warning disable CS0675
+#pragma warning disable SA1204
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsInvalid(byte i0)
+        => (i0 & 0b10000000) == 0b10000000;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsInvalid(byte i0, byte i1)
+        => ((i0 | i1) & 0b10000000) == 0b10000000;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsInvalid(byte i0, byte i1, byte i2)
+        => ((i0 | i1 | i2) & 0b10000000) == 0b10000000;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsInvalid(byte i0, byte i1, byte i2, byte i3)
+        => ((i0 | i1 | i2 | i3) & 0b10000000) == 0b10000000;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsInvalid(byte i0, byte i1, byte i2, byte i3, byte i4)
+        => ((i0 | i1 | i2 | i3 | i4) & 0b10000000) == 0b10000000;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsInvalid(byte i0, byte i1, byte i2, byte i3, byte i4, byte i5)
+        => ((i0 | i1 | i2 | i3 | i4 | i5) & 0b10000000) == 0b10000000;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsInvalid(byte i0, byte i1, byte i2, byte i3, byte i4, byte i5, byte i6)
+        => ((i0 | i1 | i2 | i3 | i4 | i5 | i6) & 0b10000000) == 0b10000000;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsInvalid(byte i0, byte i1, byte i2, byte i3, byte i4, byte i5, byte i6, byte i7)
+        => ((i0 | i1 | i2 | i3 | i4 | i5 | i6 | i7) & 0b10000000) == 0b10000000;
+
+#pragma warning restore SA1204
+#pragma warning restore CS0675
 }

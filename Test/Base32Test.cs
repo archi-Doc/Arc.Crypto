@@ -46,6 +46,47 @@ public class Base32Test
         }
     }
 
+    [Fact]
+    public void Test3()
+    {
+        var bytes = Base32Sort.Default.FromStringToByteArray("test");
+        bytes = Base32Sort.Reference.FromStringToByteArray("*****");
+        bytes.Length.Is(0);
+
+        for (var i = 1; i < 50; i++)
+        {
+            var utf16 = new string('*', i);
+            bytes = Base32Sort.Reference.FromStringToByteArray(utf16);
+            bytes.Length.Is(0);
+            bytes = Base32Sort.Table.FromStringToByteArray(utf16);
+            bytes.Length.Is(0);
+
+            var utf8 = UTF8Encoding.UTF8.GetBytes(utf16);
+            bytes = Base32Sort.Reference.FromUtf8ToByteArray(utf8);
+            bytes.Length.Is(0);
+            bytes = Base32Sort.Table.FromUtf8ToByteArray(utf8);
+            bytes.Length.Is(0);
+        }
+
+        bytes = Base32Sort.Reference.FromStringToByteArray("0123456abcefgHiJKOxIyzlo1234loOABC");
+        var bytes2 = Base32Sort.Reference.FromStringToByteArray("0123456abcefgHiJKOxIyzlo1234loOABC");
+        bytes2.SequenceEqual(bytes).IsTrue();
+
+        bytes2 = Base32Sort.Reference.FromStringToByteArray("o123456abcefgH1JKOx1yz1o1234looabc");
+        bytes2.SequenceEqual(bytes).IsTrue();
+        bytes2 = Base32Sort.Reference.FromStringToByteArray("O123456abcefgHIJKOxIyz101234lo0ABC");
+        bytes2.SequenceEqual(bytes).IsTrue();
+        bytes2 = Base32Sort.Reference.FromStringToByteArray("0123456ABcefgHiJK0x1yzlol234loOABC");
+        bytes2.SequenceEqual(bytes).IsTrue();
+
+        bytes2 = Base32Sort.Table.FromStringToByteArray("o123456abcefgH1JKOx1yz1o1234looabc");
+        bytes2.SequenceEqual(bytes).IsTrue();
+        bytes2 = Base32Sort.Table.FromStringToByteArray("O123456abcefgHIJKOxIyz101234lo0ABC");
+        bytes2.SequenceEqual(bytes).IsTrue();
+        bytes2 = Base32Sort.Table.FromStringToByteArray("0123456ABcefgHiJK0x1yzlol234loOABC");
+        bytes2.SequenceEqual(bytes).IsTrue();
+    }
+
     private void TestByteArray(byte[] bytes)
     {
         // Byte array to string
@@ -56,7 +97,8 @@ public class Base32Test
 
         // String to byte array
         var b = Base32Sort.Reference.FromStringToByteArray(st);
-
+        bytes.SequenceEqual(b).IsTrue();
+        b = Base32Sort.Reference.FromStringToByteArray(st.ToLower()); // Lower case
         bytes.SequenceEqual(b).IsTrue();
 
         // Utf8
@@ -69,6 +111,8 @@ public class Base32Test
         var st2 = Base32Sort.Table.FromByteArrayToString(bytes);
         st2.Is(st);
         b2 = Base32Sort.Table.FromStringToByteArray(st);
+        b2.SequenceEqual(b).IsTrue();
+        b2 = Base32Sort.Reference.FromStringToByteArray(st.ToLower()); // Lower case
         b2.SequenceEqual(b).IsTrue();
 
         utf8 = Base32Sort.Table.FromByteArrayToUtf8(bytes);
