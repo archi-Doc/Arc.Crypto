@@ -5,12 +5,11 @@ namespace Arc.Crypto;
 public static class Base32File
 {
     private static readonly char[] Utf16EncodeTable =
-    {
-        '#', '$', '+', '-', '@',
+    {// #%,-.@
+        '#', '%', ',', '-', '.', '@',
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
         'K', 'L', 'M','N', 'O', 'P', 'Q', 'R', 'S', 'T',
         'U', 'V', 'W', 'X', 'Y', 'Z',
-        '_',
     };
 
     private static readonly byte[] Utf8EncodeTable;
