@@ -46,6 +46,29 @@ public class Base32Test
         }
     }
 
+    [Fact]
+    public void Test3()
+    {
+        var bytes = Base32Sort.Default.FromStringToByteArray("test");
+        bytes = Base32Sort.Reference.FromStringToByteArray("*****");
+        bytes.Length.Is(0);
+
+        for (var i = 1; i < 50; i++)
+        {
+            var utf16 = new string('*', i);
+            bytes = Base32Sort.Reference.FromStringToByteArray(utf16);
+            bytes.Length.Is(0);
+            bytes = Base32Sort.Table.FromStringToByteArray(utf16);
+            bytes.Length.Is(0);
+
+            var utf8 = UTF8Encoding.UTF8.GetBytes(utf16);
+            bytes = Base32Sort.Reference.FromUtf8ToByteArray(utf8);
+            bytes.Length.Is(0);
+            bytes = Base32Sort.Table.FromUtf8ToByteArray(utf8);
+            bytes.Length.Is(0);
+        }
+    }
+
     private void TestByteArray(byte[] bytes)
     {
         // Byte array to string

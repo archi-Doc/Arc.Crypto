@@ -128,7 +128,7 @@ internal class Base32SortReference : IBaseConverter
         return returnArray;
     }
 
-    public byte[]? FromUtf8ToByteArray(ReadOnlySpan<byte> utf8)
+    public byte[] FromUtf8ToByteArray(ReadOnlySpan<byte> utf8)
     {
         nint byteCount = Base32Sort.GetDecodedLength(utf8.Length);
         byte[] returnArray = new byte[byteCount];

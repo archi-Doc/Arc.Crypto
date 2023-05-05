@@ -25,7 +25,7 @@ public interface IBaseConverter
     /// </summary>
     /// <param name="utf8">The UTF-8 string to be decoded.</param>
     /// <returns>A decoded byte array.</returns>
-    public byte[]? FromUtf8ToByteArray(ReadOnlySpan<byte> utf8);
+    public byte[] FromUtf8ToByteArray(ReadOnlySpan<byte> utf8);
 
     /// <summary>
     /// Decode a UTF-16 string to a byte array.
