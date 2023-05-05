@@ -7,7 +7,7 @@ namespace Arc.Crypto;
 
 public static class Base32Sort
 {
-    internal static readonly char[] Utf16EncodeTable =
+    private static readonly char[] Utf16EncodeTable =
     {
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
         'A', 'B', 'C', 'E', 'F', 'G', 'H', 'J', 'K', 'M',
@@ -15,15 +15,11 @@ public static class Base32Sort
         'Y', 'Z',
     };
 
-    internal static readonly byte[] Utf8EncodeTable;
-    internal static readonly byte[] DecodeTable;
+    private static readonly byte[] Utf8EncodeTable;
+    private static readonly byte[] DecodeTable;
 
     static Base32Sort()
     {
-        Reference = new Base32SortReference();
-        Table = new Base32SortTable();
-        Default = Table;
-
         // Prepare tables
         Utf8EncodeTable = new byte[Utf16EncodeTable.Length];
         for (var i = 0; i < Utf8EncodeTable.Length; i++)
@@ -52,6 +48,10 @@ public static class Base32Sort
         DecodeTable['l'] = DecodeTable['1']; // l -> 1
         DecodeTable['O'] = DecodeTable['0']; // O -> 0
         DecodeTable['o'] = DecodeTable['0']; // o -> 0
+
+        Reference = new Base32SortReference(Utf16EncodeTable, Utf8EncodeTable, DecodeTable);
+        Table = new Base32SortTable(Utf16EncodeTable, Utf8EncodeTable, DecodeTable);
+        Default = Table;
     }
 
     public static readonly IBaseConverter Default;
