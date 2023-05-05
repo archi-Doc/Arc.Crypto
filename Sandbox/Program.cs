@@ -16,8 +16,8 @@ internal class Program
         base32 = Base32Sort.Reference.FromByteArrayToString(new byte[] { });
         bytes = Base32Sort.Reference.FromStringToByteArray(base32);
 
-        base32 = Base32Sort.Reference.FromByteArrayToString(new byte[] { 0, });
-        bytes = Base32Sort.Reference.FromStringToByteArray(base32);
+        base32 = Base32Sort.Table.FromByteArrayToString(new byte[] { 0, });
+        bytes = Base32Sort.Table.FromStringToByteArray(base32);
 
         base32 = Base32Sort.Reference.FromByteArrayToString(new byte[] { 0, 1, 2, 3, 4, 5});
         bytes = Base32Sort.Reference.FromStringToByteArray(base32);
