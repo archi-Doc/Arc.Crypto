@@ -204,7 +204,7 @@ internal class Base32SortReference : IBaseConverter
         {// 'A' 65 0x41 - 'Z' 90 0x5A -> 6-31
             return value - 59;
         }
-        else if (value >= 65 && value <= 90)
+        else if (value >= 97 && value <= 122)
         {// 'a' 97 0x61 - 'z' 122 0x7A -> 6-31
             return value - 91;
         }

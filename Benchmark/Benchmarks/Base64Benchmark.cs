@@ -4,8 +4,6 @@ using System;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
 
-#pragma warning disable SA1300 // Element should begin with upper-case letter
-
 namespace Benchmark;
 
 [Config(typeof(BenchmarkConfig))]
@@ -65,11 +63,11 @@ public class Base64Benchmark
     public string Convert_ByteArrayToString()
         => Convert.ToBase64String(this.TestArray);*/
 
-    // [Benchmark]
+    [Benchmark]
     public string Base64Obsolete_ByteArrayToString()
        => Benchmark.Design.Base64.FromByteArrayToString(this.TestArray);
 
-    // [Benchmark]
+    [Benchmark]
     public string Base32Reference_ByteArrayToString()
         => Base32Sort.Reference.FromByteArrayToString(this.TestArray);
 
@@ -89,11 +87,11 @@ public class Base64Benchmark
     public byte[] Convert_StringToByteArray()
         => Convert.FromBase64String(this.testString);*/
 
-    // [Benchmark]
+    [Benchmark]
     public byte[]? Base64Obsolete_StringToByteArray()
         => Benchmark.Design.Base64.FromCharsToByteArray(this.testString);
 
-    // [Benchmark]
+    [Benchmark]
     public byte[] Base32Reference_StringToByteArray()
         => Base32Sort.Reference.FromStringToByteArray(this.testStringB);
 
