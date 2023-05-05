@@ -9,6 +9,17 @@ namespace Arc.Crypto;
 
 internal class Base32SortTable : IBaseConverter
 {
+    public Base32SortTable(char[] utf16EncodeTable, byte[] utf8EncodeTable, byte[] decodeTable)
+    {
+        this.utf16EncodeTable = utf16EncodeTable;
+        this.utf8EncodeTable = utf8EncodeTable;
+        this.decodeTable = decodeTable;
+    }
+
+    private char[] utf16EncodeTable;
+    private byte[] utf8EncodeTable;
+    private byte[] decodeTable;
+
     public unsafe string FromByteArrayToString(ReadOnlySpan<byte> bytes)
     {
         var length = Base32Sort.GetEncodedLength(bytes.Length);
@@ -22,7 +33,7 @@ internal class Base32SortTable : IBaseConverter
         {
             fixed (char* utf = &MemoryMarshal.GetReference(span))
             {
-                this.EncodeUtf16Core(data, utf, bytes.Length, Base32Sort.Utf16EncodeTable);
+                this.EncodeUtf16Core(data, utf, bytes.Length, this.utf16EncodeTable);
             }
         }
 
@@ -46,7 +57,7 @@ internal class Base32SortTable : IBaseConverter
         {
             fixed (byte* b = &MemoryMarshal.GetReference(span))
             {
-                this.EncodeUtf8Core(data, b, bytes.Length, Base32Sort.Utf8EncodeTable);
+                this.EncodeUtf8Core(data, b, bytes.Length, this.utf8EncodeTable);
             }
         }
 
@@ -62,7 +73,7 @@ internal class Base32SortTable : IBaseConverter
         {
             fixed (byte* outData = &MemoryMarshal.GetReference(bytes.AsSpan()))
             {
-                if (!this.DecodeUtf16Core(inChars, outData, utf16.Length, Base32Sort.DecodeTable))
+                if (!this.DecodeUtf16Core(inChars, outData, utf16.Length, this.decodeTable))
                 {
                     return Array.Empty<byte>();
                 }
@@ -81,7 +92,7 @@ internal class Base32SortTable : IBaseConverter
         {
             fixed (byte* outData = &MemoryMarshal.GetReference(bytes.AsSpan()))
             {
-                if (!this.DecodeUtf8Core(inChars, outData, utf8.Length, Base32Sort.DecodeTable))
+                if (!this.DecodeUtf8Core(inChars, outData, utf8.Length, this.decodeTable))
                 {
                     return Array.Empty<byte>();
                 }

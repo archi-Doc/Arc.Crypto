@@ -112,12 +112,22 @@ public class Base32Test
         st2.Is(st);
         b2 = Base32Sort.Table.FromStringToByteArray(st);
         b2.SequenceEqual(b).IsTrue();
-        b2 = Base32Sort.Reference.FromStringToByteArray(st.ToLower()); // Lower case
+        b2 = Base32Sort.Table.FromStringToByteArray(st.ToLower()); // Lower case
         b2.SequenceEqual(b).IsTrue();
 
         utf8 = Base32Sort.Table.FromByteArrayToUtf8(bytes);
         b2 = Base32Sort.Table.FromUtf8ToByteArray(utf8)!;
         b2.SequenceEqual(b).IsTrue();
         UTF8Encoding.UTF8.GetBytes(st).SequenceEqual(utf8).IsTrue();
+
+        // Base32File
+        st2 = Base32File.Default.FromByteArrayToString(bytes);
+        b2 = Base32File.Default.FromStringToByteArray(st2);
+        b2.SequenceEqual(b).IsTrue();
+
+        utf8 = Base32File.Default.FromByteArrayToUtf8(bytes);
+        b2 = Base32File.Default.FromUtf8ToByteArray(utf8);
+        b2.SequenceEqual(b).IsTrue();
+        UTF8Encoding.UTF8.GetBytes(st2).SequenceEqual(utf8).IsTrue();
     }
 }
