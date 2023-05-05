@@ -53,7 +53,7 @@ public class Base64Benchmark
     {
     }
 
-    // [Benchmark]
+    [Benchmark]
     public string Base64_ByteArrayToString()
         => Base64.Default.FromByteArrayToString(this.TestArray);
 
@@ -65,7 +65,7 @@ public class Base64Benchmark
     public string Convert_ByteArrayToString()
         => Convert.ToBase64String(this.TestArray);*/
 
-    // [Benchmark]
+    [Benchmark]
     public string Base64Obsolete_ByteArrayToString()
        => Benchmark.Design.Base64.FromByteArrayToString(this.TestArray);
 
@@ -73,7 +73,11 @@ public class Base64Benchmark
     public string Base32Reference_ByteArrayToString()
         => Base32Sort.Reference.FromByteArrayToString(this.TestArray);
 
-    // [Benchmark]
+    [Benchmark]
+    public string Base32Table_ByteArrayToString()
+        => Base32Sort.Table.FromByteArrayToString(this.TestArray);
+
+    [Benchmark]
     public byte[] Base64_StringToByteArray()
         => Base64.Default.FromStringToByteArray(this.testString);
 
@@ -85,11 +89,15 @@ public class Base64Benchmark
     public byte[] Convert_StringToByteArray()
         => Convert.FromBase64String(this.testString);*/
 
-    // [Benchmark]
+    [Benchmark]
     public byte[]? Base64Obsolete_StringToByteArray()
         => Benchmark.Design.Base64.FromCharsToByteArray(this.testString);
 
     [Benchmark]
     public byte[] Base32Reference_StringToByteArray()
         => Base32Sort.Reference.FromStringToByteArray(this.testStringB);
+
+    [Benchmark]
+    public byte[] Base32Table_StringToByteArray()
+        => Base32Sort.Table.FromStringToByteArray(this.testStringB);
 }

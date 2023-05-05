@@ -8,6 +8,7 @@ namespace Arc.Crypto;
 public static class Base32Sort
 {
     public static readonly IBaseConverter Reference = new Base32SortReference();
+    public static readonly IBaseConverter Table = new Base32SortTable();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetEncodedLength(int length)

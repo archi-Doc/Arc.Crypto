@@ -58,5 +58,11 @@ public class Base32Test
         var b = Base32Sort.Reference.FromStringToByteArray(st);
 
         bytes.SequenceEqual(b).IsTrue();
+
+        // Table
+        var st2 = Base32Sort.Table.FromByteArrayToString(bytes);
+        st2.Is(st);
+        var b2 = Base32Sort.Table.FromStringToByteArray(st);
+        b2.SequenceEqual(b).IsTrue();
     }
 }
