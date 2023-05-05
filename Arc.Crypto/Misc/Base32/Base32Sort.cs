@@ -27,11 +27,29 @@ public static class Base32Sort
         (byte)'Y', (byte)'Z',
     };
 
+    internal static readonly byte[] DecodeTable;
+
     static Base32Sort()
     {
         Reference = new Base32SortReference();
         Table = new Base32SortTable();
         Default = Table;
+
+        DecodeTable = new byte[byte.MaxValue];
+        for (byte i = 0; i < DecodeTable.Length; i++)
+        {
+            DecodeTable[i] = byte.MaxValue;
+        }
+
+        byte b = 0;
+        foreach (var x in Utf8EncodeTable)
+        {
+            DecodeTable[x] = b++;
+            if (x >= (byte)'A' && x <= (byte)'Z')
+            {
+                DecodeTable[x - (byte)'A' + (byte)'a'] = DecodeTable[x];
+            }
+        }
     }
 
     public static readonly IBaseConverter Default;

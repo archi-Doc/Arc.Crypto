@@ -9,25 +9,6 @@ namespace Arc.Crypto;
 
 internal class Base32SortTable : IBaseConverter
 {
-    private static readonly byte[] DecodeTable;
-
-    static Base32SortTable()
-    {
-        DecodeTable = new byte[byte.MaxValue];
-        for (byte i = 0; i < DecodeTable.Length; i++)
-        {
-            var v = Base32SortReference.ByteToValue(i);
-            if (v >= 0)
-            {
-                DecodeTable[i] = (byte)v;
-            }
-            else
-            {
-                DecodeTable[i] = byte.MaxValue;
-            }
-        }
-    }
-
     public unsafe string FromByteArrayToString(ReadOnlySpan<byte> bytes)
     {
         var length = Base32Sort.GetEncodedLength(bytes.Length);
@@ -81,7 +62,7 @@ internal class Base32SortTable : IBaseConverter
         {
             fixed (byte* outData = &MemoryMarshal.GetReference(bytes.AsSpan()))
             {
-                if (!this.DecodeUtf16Core(inChars, outData, utf16.Length, DecodeTable))
+                if (!this.DecodeUtf16Core(inChars, outData, utf16.Length, Base32Sort.DecodeTable))
                 {
                     return Array.Empty<byte>();
                 }
@@ -100,7 +81,7 @@ internal class Base32SortTable : IBaseConverter
         {
             fixed (byte* outData = &MemoryMarshal.GetReference(bytes.AsSpan()))
             {
-                if (!this.DecodeUtf8Core(inChars, outData, utf8.Length, DecodeTable))
+                if (!this.DecodeUtf8Core(inChars, outData, utf8.Length, Base32Sort.DecodeTable))
                 {
                     return Array.Empty<byte>();
                 }
