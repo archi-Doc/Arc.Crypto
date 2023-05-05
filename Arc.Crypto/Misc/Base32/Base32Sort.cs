@@ -17,16 +17,7 @@ public static class Base32Sort
         'Y', 'Z',
     };
 
-    internal static readonly byte[] Utf8EncodeTable =
-    {
-        (byte)'2', (byte)'3', (byte)'4', (byte)'5', (byte)'6', (byte)'7',
-        (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F',
-        (byte)'G', (byte)'H', (byte)'I', (byte)'J', (byte)'K', (byte)'L',
-        (byte)'M', (byte)'N', (byte)'O', (byte)'P', (byte)'Q', (byte)'R',
-        (byte)'S', (byte)'T', (byte)'U', (byte)'V', (byte)'W', (byte)'X',
-        (byte)'Y', (byte)'Z',
-    };
-
+    internal static readonly byte[] Utf8EncodeTable;
     internal static readonly byte[] DecodeTable;
 
     static Base32Sort()
@@ -34,6 +25,13 @@ public static class Base32Sort
         Reference = new Base32SortReference();
         Table = new Base32SortTable();
         Default = Table;
+
+        // Prepare tables
+        Utf8EncodeTable = new byte[Utf16EncodeTable.Length];
+        for (var i = 0; i < Utf8EncodeTable.Length; i++)
+        {
+            Utf8EncodeTable[i] = (byte)Utf16EncodeTable[i];
+        }
 
         DecodeTable = new byte[byte.MaxValue];
         for (byte i = 0; i < DecodeTable.Length; i++)
