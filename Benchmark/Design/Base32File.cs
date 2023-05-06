@@ -2,7 +2,7 @@
 
 namespace Arc.Crypto;
 
-public static class Base32File
+/*public static class Base32File
 {
     private static readonly char[] Utf16EncodeTable =
     {// #%,-.@
@@ -44,4 +44,4 @@ public static class Base32File
     }
 
     public static readonly IBaseConverter Default;
-}
+}*/
