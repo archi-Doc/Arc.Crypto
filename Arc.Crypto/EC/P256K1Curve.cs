@@ -31,6 +31,8 @@ public class P256K1Curve : ECCurveBase
     private const uint P7 = 0xFFFFFFFF;
     private const uint PInv33 = 0x3D1;
 
+    public override string CurveName => "secp256k1";
+
     public override int ElementIsZero(ReadOnlySpan<uint> x)
     {
         uint d = 0;
