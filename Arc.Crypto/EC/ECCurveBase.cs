@@ -48,6 +48,8 @@ public abstract class ECCurveBase
         }
     }
 
+    public abstract string CurveName { get; }
+
     public int UIntLength { get; }
 
     public int ByteLength => this.UIntLength * sizeof(uint);
