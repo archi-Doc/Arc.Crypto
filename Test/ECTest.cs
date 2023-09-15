@@ -83,4 +83,48 @@ public class ECTest
             P256R1Curve.Instance.IsValidSeed(seed);
         }
     }
+
+    [Fact]
+    public void DualTest()
+    {
+        var total = 1_000;
+        var curves = new ECCurveBase[]
+        {
+            P256K1Curve.Instance,
+            P256R1Curve.Instance,
+        };
+
+        var random = new Random(130);
+        var seed = new byte[32];
+        foreach (var curve in curves)
+        {
+            ECParameters key = default;
+            key.Curve = ECCurve.CreateFromFriendlyName(curve.CurveName);
+
+            for (var i = 0; i < total; i++)
+            {
+                random.NextBytes(seed);
+                key.D = seed;
+
+                if (curve.IsValidSeed(seed))
+                {// Valid
+                    ECParameters key1;
+                    using (var ecdsa = ECDsa.Create(key))
+                    {
+                        key1 = ecdsa.ExportParameters(true);
+                    }
+
+                    ECParameters key2;
+                    using (var ecdh = ECDiffieHellman.Create(key))
+                    {
+                        key2 = ecdh.ExportParameters(true);
+                    }
+
+                    key1.Q.X!.SequenceEqual(key2.Q.X!).IsTrue();
+                    key1.Q.Y!.SequenceEqual(key2.Q.Y!).IsTrue();
+                    key1.D!.SequenceEqual(key2.D!).IsTrue();
+                }
+            }
+        }
+    }
 }
