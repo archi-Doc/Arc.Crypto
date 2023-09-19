@@ -198,7 +198,7 @@ internal unsafe ref struct KeccakSpongeStruct
 
                     if (this.statePosition == (this.Bitrate / 8))
                     {
-                        this.Permute(this.State);
+                        this.Permute(stateHead);
                         s = (byte*)stateHead;
                         this.statePosition = 0;
                     }
@@ -215,7 +215,10 @@ internal unsafe ref struct KeccakSpongeStruct
     { // state 0..(this.Bitrate / 8) : data, (this.Bitrate / 8)..100
         this.State[this.statePosition / 8] ^= 0x06UL << (8 * (this.statePosition % 8));
         this.State[(this.Bitrate / 64) - 1] ^= 0x80UL << 56;
-        this.Permute(this.State);
+        fixed (ulong* stateHead = this.State)
+        {
+            this.Permute(stateHead);
+        }
 
         // copy result from this.state.
         var resultSize = this.OutputBits / 8;
@@ -237,14 +240,17 @@ internal unsafe ref struct KeccakSpongeStruct
     {
         this.State[this.statePosition / 8] ^= 0x06UL << (8 * (this.statePosition % 8));
         this.State[(this.Bitrate / 64) - 1] ^= 0x80UL << 56;
-        this.Permute(this.State);
+        fixed (ulong* stateHead = this.State)
+        {
+            this.Permute(stateHead);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     // private static ulong Rotl64(ulong val, int shift) => BitOperations.RotateLeft(val, shift);
     private static ulong Rotl64(ulong val, int shift) => shift == 0 ? val : (val << shift) | (val >> (64 - shift)); // same
 
-    private void Sha3_round(scoped Span<ulong> t, scoped ReadOnlySpan<ulong> a, ulong rc)
+    private void Sha3_round(ulong* t, ulong* a, ulong rc)
     {
         ulong c0 = a[0] ^ a[5] ^ a[10] ^ a[15] ^ a[20];
         ulong c1 = a[1] ^ a[6] ^ a[11] ^ a[16] ^ a[21];
@@ -315,13 +321,16 @@ internal unsafe ref struct KeccakSpongeStruct
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Permute(Span<ulong> a)
+    private void Permute(ulong* a)
     {
-        Span<ulong> t = stackalloc ulong[25];
-        for (var i = 0; i != 24; i += 2)
+        Span<ulong> span = stackalloc ulong[25];
+        fixed (ulong* t = span)
         {
-            this.Sha3_round(t, a, RoundConstants[i + 0]);
-            this.Sha3_round(a, t, RoundConstants[i + 1]);
+            for (var i = 0; i != 24; i += 2)
+            {
+                this.Sha3_round(t, a, RoundConstants[i + 0]);
+                this.Sha3_round(a, t, RoundConstants[i + 1]);
+            }
         }
     }
 }
