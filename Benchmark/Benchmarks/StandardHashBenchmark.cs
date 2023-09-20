@@ -25,7 +25,7 @@ public class StandardHashBenchmark
         new Random(42).NextBytes(this.data);
     }
 
-    [Params(10, 100, 1_000)]
+    [Params(100, 1_000)]
     public int Length { get; set; }
 
     [Benchmark]
@@ -43,24 +43,24 @@ public class StandardHashBenchmark
     [Benchmark]
     public byte[] Sha256() => this.sha256.ComputeHash(this.data, 0, this.Length);
 
-    // [Benchmark]
-    // public byte[] Sha256Struct() => Sha2Struct.Get256_ByteArray(this.data.AsSpan(0, this.Length));
+    [Benchmark]
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Sha256Helper() => Sha2Helper.Get256_UInt64(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
     public byte[] Sha3_256() => this.sha3_256.GetHash(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Sha3Helper_256() => Sha3Helper.Get256_UInt64(this.data.AsSpan(0, this.Length));
+
+    [Benchmark]
     public byte[] Sha3_384() => this.sha3_384.GetHash(this.data.AsSpan(0, this.Length));
+
+    [Benchmark]
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) Sha3Helper_384() => Sha3Helper.Get384_UInt64(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
     public byte[] Sha3_512() => this.sha3_512.GetHash(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
-    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Sha3Struct_256() => Sha3Struct.Get256_UInt64(this.data.AsSpan(0, this.Length));
-
-    [Benchmark]
-    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) Sha3Struct_384() => Sha3Struct.Get384_UInt64(this.data.AsSpan(0, this.Length));
-
-    [Benchmark]
-    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Sha3Struct_5126() => Sha3Struct.Get512_UInt64(this.data.AsSpan(0, this.Length));
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Sha3Helper_5126() => Sha3Helper.Get512_UInt64(this.data.AsSpan(0, this.Length));
 }

@@ -1,20 +1,67 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
-using System.Numerics;
-using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 #pragma warning disable SA1124 // Do not use regions
 
 namespace Arc.Crypto;
 
+/// <summary>
+/// Helper class for SHA2 functions.<br/>
+/// This class is thread-safe and does not allocate heap memory.
+/// </summary>
 public static class Sha2Helper
 {
+    private static ObjectPool<HashAlgorithm> Sha256 { get; } = new(static () => System.Security.Cryptography.SHA256.Create());
+
+    /// <summary>
+    /// Computes the SHA2-256 hash and returns the byte array (32 bytes).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <returns>The computed hash (32 bytes).</returns>
     public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[32];
-        System.Security.Cryptography.SHA256.TryHashData(input, output, out _);
+        var hashAlgorithm = Sha256.Get();
+        hashAlgorithm.TryComputeHash(input, output, out _);
+        Sha256.Return(hashAlgorithm);
+
         return output;
+    }
+
+    /// <summary>
+    /// Computes the SHA2-256 hash and assign the result to the output (<see cref="byte"/>[32]).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[32]).</param>
+    public static void Get256_Span(ReadOnlySpan<byte> input, Span<byte> output)
+    {
+        var hashAlgorithm = Sha256.Get();
+        hashAlgorithm.TryComputeHash(input, output, out _);
+        Sha256.Return(hashAlgorithm);
+    }
+
+    /// <summary>
+    /// Computes the SHA2-256 hash and returns the hash (<see cref="ulong"/>).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
+    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256_UInt64(ReadOnlySpan<byte> input)
+    {
+        Span<ulong> state = stackalloc ulong[4];
+
+        var hashAlgorithm = Sha256.Get();
+        hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _);
+        Sha256.Return(hashAlgorithm);
+        // hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _); // NOT thread-safe
+        // System.Security.Cryptography.SHA256.TryHashData(input, MemoryMarshal.Cast<ulong, byte>(state), out _); // Slow
+
+        return (state[0], state[1], state[2], state[3]);
     }
 }
 

@@ -7,13 +7,18 @@ using System.Runtime.CompilerServices;
 
 namespace Arc.Crypto;
 
+/// <summary>
+/// Helper class for SHA3 functions.<br/>
+/// This class is thread-safe and does not allocate heap memory.
+/// </summary>
 public static class Sha3Helper
 {
     /// <summary>
-    /// Computes a SHA3-256 hash and returns a byte array (32 bytes).
+    /// Computes the SHA3-256 hash and returns the byte array (32 bytes).<br/>
+    /// Thread-safe and it does not allocate heap memory.
     /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <returns>The computed hash (32 bytes).</returns>
     public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[32];
@@ -24,6 +29,12 @@ public static class Sha3Helper
         return output;
     }
 
+    /// <summary>
+    /// Computes the SHA3-256 hash and assign the result to the output (<see cref="byte"/>[32]).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[32]).</param>
     public static void Get256_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -32,6 +43,12 @@ public static class Sha3Helper
         sponge.SqueezeTo(output);
     }
 
+    /// <summary>
+    /// Computes the SHA3-256 hash and returns the hash (<see cref="ulong"/>).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
     public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256_UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -41,6 +58,12 @@ public static class Sha3Helper
         return (state[0], state[1], state[2], state[3]);
     }
 
+    /// <summary>
+    /// Computes the SHA3-384 hash and returns the byte array (48 bytes).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <returns>The computed hash (48 bytes).</returns>
     public static byte[] Get384_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[48];
@@ -51,6 +74,12 @@ public static class Sha3Helper
         return output;
     }
 
+    /// <summary>
+    /// Computes the SHA3-384 hash and assign the result to the output (<see cref="byte"/>[48]).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[48]).</param>
     public static void Get384_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -59,6 +88,12 @@ public static class Sha3Helper
         sponge.SqueezeTo(output);
     }
 
+    /// <summary>
+    /// Computes the SHA3-384 hash and returns the hash (<see cref="ulong"/>).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
     public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) Get384_UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -68,6 +103,12 @@ public static class Sha3Helper
         return (state[0], state[1], state[2], state[3], state[4], state[5]);
     }
 
+    /// <summary>
+    /// Computes the SHA3-512 hash and returns the byte array (64 bytes).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <returns>The computed hash (64 bytes).</returns>
     public static byte[] Get512_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[64];
@@ -78,6 +119,12 @@ public static class Sha3Helper
         return output;
     }
 
+    /// <summary>
+    /// Computes the SHA3-512 hash and assign the result to the output (<see cref="byte"/>[64]).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[64]).</param>
     public static void Get512_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -86,6 +133,12 @@ public static class Sha3Helper
         sponge.SqueezeTo(output);
     }
 
+    /// <summary>
+    /// Computes the SHA3-512 hash and returns the hash (<see cref="ulong"/>).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
     public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Get512_UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
