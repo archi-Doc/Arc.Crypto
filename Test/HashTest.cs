@@ -182,7 +182,7 @@ public class HashTest
         return random.Next(1, randomSize[range]);
     }
 
-    /*[Fact]
+    [Fact]
     public void TestSha2()
     {
         using var sha2 = new Arc.Crypto.Sha2_256();
@@ -200,7 +200,7 @@ public class HashTest
                 h.SequenceEqual(h2).IsTrue();
             }
         }
-    }*/
+    }
 
     [Fact]
     public void TestSha3()

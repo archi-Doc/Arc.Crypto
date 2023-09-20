@@ -7,8 +7,13 @@ using System.Runtime.CompilerServices;
 
 namespace Arc.Crypto;
 
-public static class Sha3Struct
+public static class Sha3Helper
 {
+    /// <summary>
+    /// Computes a SHA3-256 hash and returns a byte array (32 bytes).
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[32];

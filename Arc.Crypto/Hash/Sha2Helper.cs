@@ -8,36 +8,17 @@ using System.Runtime.CompilerServices;
 
 namespace Arc.Crypto;
 
-/*public static class Sha2Struct
+public static class Sha2Helper
 {
     public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[32];
-        Span<uint> buffer = stackalloc uint[Sha2StateStruct.BufferLength];
-        var sha2 = new Sha2StateStruct(buffer);
-        sha2.Process(input);
-
-        var span = output.AsSpan();
-        BitConverter.TryWriteBytes(span, sha2.Hash0);
-        span = span.Slice(sizeof(uint));
-        BitConverter.TryWriteBytes(span, sha2.Hash1);
-        span = span.Slice(sizeof(uint));
-        BitConverter.TryWriteBytes(span, sha2.Hash2);
-        span = span.Slice(sizeof(uint));
-        BitConverter.TryWriteBytes(span, sha2.Hash3);
-        span = span.Slice(sizeof(uint));
-        BitConverter.TryWriteBytes(span, sha2.Hash4);
-        span = span.Slice(sizeof(uint));
-        BitConverter.TryWriteBytes(span, sha2.Hash5);
-        span = span.Slice(sizeof(uint));
-        BitConverter.TryWriteBytes(span, sha2.Hash6);
-        span = span.Slice(sizeof(uint));
-        BitConverter.TryWriteBytes(span, sha2.Hash7);
-
+        System.Security.Cryptography.SHA256.TryHashData(input, output, out _);
         return output;
     }
 }
 
+/*
 /// <summary>
 /// Represents a managed implementation of SHA2.
 /// </summary>
