@@ -182,6 +182,26 @@ public class HashTest
         return random.Next(1, randomSize[range]);
     }
 
+    /*[Fact]
+    public void TestSha2()
+    {
+        using var sha2 = new Arc.Crypto.Sha2_256();
+
+        var random = new Random(42);
+        for (var length = 0; length < 10_000; length++)
+        {
+            var buffer = new byte[length];
+            for (var i = 0; i < 100; i++)
+            {
+                random.NextBytes(buffer);
+
+                var h = sha2.GetHash(buffer, 0, length);
+                var h2 = Sha2Struct.Get256_ByteArray(buffer);
+                h.SequenceEqual(h2).IsTrue();
+            }
+        }
+    }*/
+
     [Fact]
     public void TestSha3()
     {

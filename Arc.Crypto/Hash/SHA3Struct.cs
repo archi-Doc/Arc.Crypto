@@ -4,7 +4,6 @@ using System;
 using System.Runtime.CompilerServices;
 
 #pragma warning disable SA1124 // Do not use regions
-#pragma warning disable SA1649 // File name should match first type name
 
 namespace Arc.Crypto;
 

@@ -28,7 +28,7 @@ public class StandardHashBenchmark
     [Params(10, 100, 1_000)]
     public int Length { get; set; }
 
-    /*[Benchmark]
+    [Benchmark]
     public ulong ArcFarmHash32() => Arc.Crypto.FarmHash.Hash32(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
@@ -41,23 +41,26 @@ public class StandardHashBenchmark
     public ulong ArcXxHash64() => Arc.Crypto.XxHash64.Hash64(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
-    public byte[] Sha256() => this.sha256.ComputeHash(this.data, 0, this.Length);*/
+    public byte[] Sha256() => this.sha256.ComputeHash(this.data, 0, this.Length);
+
+    // [Benchmark]
+    // public byte[] Sha256Struct() => Sha2Struct.Get256_ByteArray(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
     public byte[] Sha3_256() => this.sha3_256.GetHash(this.data.AsSpan(0, this.Length));
 
-    // [Benchmark]
+    [Benchmark]
     public byte[] Sha3_384() => this.sha3_384.GetHash(this.data.AsSpan(0, this.Length));
 
-    // [Benchmark]
+    [Benchmark]
     public byte[] Sha3_512() => this.sha3_512.GetHash(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
     public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Sha3Struct_256() => Sha3Struct.Get256_UInt64(this.data.AsSpan(0, this.Length));
 
-    // [Benchmark]
+    [Benchmark]
     public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) Sha3Struct_384() => Sha3Struct.Get384_UInt64(this.data.AsSpan(0, this.Length));
 
-    // [Benchmark]
+    [Benchmark]
     public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Sha3Struct_5126() => Sha3Struct.Get512_UInt64(this.data.AsSpan(0, this.Length));
 }
