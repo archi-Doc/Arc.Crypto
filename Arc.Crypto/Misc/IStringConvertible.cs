@@ -23,12 +23,12 @@ public interface IStringConvertible<T>
     ///  Get the length of the utf-16 encoded data.
     /// </summary>
     /// <returns>The utf-16 encoded length.</returns>
-    int GetEncodedLength();
+    int GetStringLength();
 
     /// <summary>
     /// Convert an object to a <see cref="char"/> (utf-16) span.
     /// </summary>
-    /// <param name="destination">The destination span of <see cref="char"/> (utf-16).<br/>Allocate an array of a length greater than or equal to <seealso cref="GetEncodedLength()"/>.</param>
+    /// <param name="destination">The destination span of <see cref="char"/> (utf-16).<br/>Allocate an array of a length greater than or equal to <seealso cref="GetStringLength()"/>.</param>
     /// <param name="written">The number of bytes that were written in destination.</param>
     /// <returns><see langword="true"/> if the conversion was successful; otherwise, <see langword="false"/>.</returns>
     bool TryFormat(Span<char> destination, out int written);

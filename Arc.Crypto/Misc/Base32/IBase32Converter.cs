@@ -42,6 +42,24 @@ public interface IBase32Converter
     /// Decode from a base32 (utf-8) string to a byte array.
     /// </summary>
     /// <param name="base32">The source base32 (utf-8) string.</param>
+    /// <param name="destination">The destination span of byte.<br/>Allocate an array of a length greater than or equal to <seealso cref="Base32Sort.GetDecodedLength(int)"/>.</param>
+    /// <param name="written">The number of bytes that were written in destination.</param>
+    /// <returns><see langword="true"/> if the decoding was successful; otherwise, <see langword="false"/>.</returns>
+    public bool FromUtf8ToSpan(ReadOnlySpan<byte> base32, Span<byte> destination, out int written);
+
+    /// <summary>
+    /// Decode from a base32 (utf-16) string to a byte array.
+    /// </summary>
+    /// <param name="base32">The source base32 (utf-16) string.</param>
+    /// <param name="destination">The destination span of byte.<br/>Allocate an array of a length greater than or equal to <seealso cref="Base32Sort.GetDecodedLength(int)"/>.</param>
+    /// <param name="written">The number of bytes that were written in destination.</param>
+    /// <returns><see langword="true"/> if the decoding was successful; otherwise, <see langword="false"/>.</returns>
+    public bool FromStringToSpan(ReadOnlySpan<char> base32, Span<byte> destination, out int written);
+
+    /// <summary>
+    /// Decode from a base32 (utf-8) string to a byte array.
+    /// </summary>
+    /// <param name="base32">The source base32 (utf-8) string.</param>
     /// <returns>The decoded byte array. Returns an empty array if the base32 string is invalid.</returns>
     public byte[] FromUtf8ToByteArray(ReadOnlySpan<byte> base32);
 

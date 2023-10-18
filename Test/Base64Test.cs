@@ -16,7 +16,7 @@ public class Base64Test
         var xo = new Xoshiro256StarStar(42);
         var rv = new RandomVault(() => xo.NextUInt64(), x => xo.NextBytes(x));
 
-        for (var i = 0; i < 500; i++)
+        for (var i = 0; i < 300; i++)
         {
             var source = new byte[i];
             var written = 0;

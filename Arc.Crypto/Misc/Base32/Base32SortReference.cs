@@ -78,88 +78,68 @@ internal class Base32SortReference : IBase32Converter
         return destination;
     }
 
+    public bool FromUtf8ToSpan(ReadOnlySpan<byte> base32, Span<byte> destination, out int written)
+    {
+        var decodedLength = Base32Sort.GetDecodedLength(base32.Length);
+        if (destination.Length < decodedLength)
+        {
+            written = 0;
+            return false;
+        }
+
+        if (!this.ByteToByte(base32, destination, decodedLength))
+        {
+            written = 0;
+            return false;
+        }
+
+        written = decodedLength;
+        return true;
+    }
+
+    public bool FromStringToSpan(ReadOnlySpan<char> base32, Span<byte> destination, out int written)
+    {
+        var decodedLength = Base32Sort.GetDecodedLength(base32.Length);
+        if (destination.Length < decodedLength)
+        {
+            written = 0;
+            return false;
+        }
+
+        if (!this.CharToByte(base32, destination, decodedLength))
+        {
+            written = 0;
+            return false;
+        }
+
+        written = decodedLength;
+        return true;
+    }
+
     public byte[] FromStringToByteArray(ReadOnlySpan<char> base32)
     {
-        nint byteCount = Base32Sort.GetDecodedLength(base32.Length);
-        byte[] returnArray = new byte[byteCount];
+        var decodedLength = Base32Sort.GetDecodedLength(base32.Length);
+        byte[] destination = new byte[decodedLength];
 
-        byte current = 0;
-        var remaining = 8;
-        nint mask;
-        nint arrayIndex = 0;
-
-        foreach (char c in base32)
+        if (!this.CharToByte(base32, destination, decodedLength))
         {
-            nint v = this.CharToValue(c);
-            if (v >= byte.MaxValue)
-            {// Invalid character
-                return Array.Empty<byte>();
-            }
-
-            if (remaining > 5)
-            {
-                mask = v << (remaining - 5);
-                current = (byte)(current | mask);
-                remaining -= 5;
-            }
-            else
-            {
-                mask = v >> (5 - remaining);
-                current = (byte)(current | mask);
-                returnArray[arrayIndex++] = current;
-                current = (byte)(v << (3 + remaining));
-                remaining += 3;
-            }
+            return Array.Empty<byte>();
         }
 
-        if (arrayIndex != byteCount)
-        {
-            returnArray[arrayIndex] = current;
-        }
-
-        return returnArray;
+        return destination;
     }
 
     public byte[] FromUtf8ToByteArray(ReadOnlySpan<byte> base32)
     {
-        nint byteCount = Base32Sort.GetDecodedLength(base32.Length);
-        byte[] returnArray = new byte[byteCount];
+        var decodedLength = Base32Sort.GetDecodedLength(base32.Length);
+        byte[] destination = new byte[decodedLength];
 
-        byte current = 0;
-        var remaining = 8;
-        nint mask;
-        nint arrayIndex = 0;
-
-        foreach (var c in base32)
+        if (!this.ByteToByte(base32, destination, decodedLength))
         {
-            nint v = this.ByteToValue(c);
-            if (v >= byte.MaxValue)
-            {// Invalid character
-                return Array.Empty<byte>();
-            }
-
-            if (remaining > 5)
-            {
-                mask = v << (remaining - 5);
-                current = (byte)(current | mask);
-                remaining -= 5;
-            }
-            else
-            {
-                mask = v >> (5 - remaining);
-                current = (byte)(current | mask);
-                returnArray[arrayIndex++] = current;
-                current = (byte)(v << (3 + remaining));
-                remaining += 3;
-            }
+            return Array.Empty<byte>();
         }
 
-        if (arrayIndex != byteCount)
-        {
-            returnArray[arrayIndex] = current;
-        }
-
-        return returnArray;
+        return destination;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -310,5 +290,83 @@ internal class Base32SortReference : IBase32Converter
         {
             destination[index++] = this.ValueToByte(next);
         }
+    }
+
+    private bool CharToByte(ReadOnlySpan<char> base32, Span<byte> destination, int decodedLength)
+    {
+        byte current = 0;
+        var remaining = 8;
+        nint mask;
+        var arrayIndex = 0;
+
+        foreach (char c in base32)
+        {
+            nint v = this.CharToValue(c);
+            if (v >= byte.MaxValue)
+            {// Invalid character
+                return false;
+            }
+
+            if (remaining > 5)
+            {
+                mask = v << (remaining - 5);
+                current = (byte)(current | mask);
+                remaining -= 5;
+            }
+            else
+            {
+                mask = v >> (5 - remaining);
+                current = (byte)(current | mask);
+                destination[arrayIndex++] = current;
+                current = (byte)(v << (3 + remaining));
+                remaining += 3;
+            }
+        }
+
+        if (arrayIndex != decodedLength)
+        {
+            destination[arrayIndex] = current;
+        }
+
+        return true;
+    }
+
+    private bool ByteToByte(ReadOnlySpan<byte> base32, Span<byte> destination, int decodedLength)
+    {
+        byte current = 0;
+        var remaining = 8;
+        nint mask;
+        var arrayIndex = 0;
+
+        foreach (var c in base32)
+        {
+            nint v = this.ByteToValue(c);
+            if (v >= byte.MaxValue)
+            {// Invalid character
+                return false;
+            }
+
+            if (remaining > 5)
+            {
+                mask = v << (remaining - 5);
+                current = (byte)(current | mask);
+                remaining -= 5;
+            }
+            else
+            {
+                mask = v >> (5 - remaining);
+                current = (byte)(current | mask);
+                destination[arrayIndex++] = current;
+                current = (byte)(v << (3 + remaining));
+                remaining += 3;
+            }
+        }
+
+        if (arrayIndex != decodedLength)
+        {
+            destination[arrayIndex] = current;
+        }
+
+        return true;
     }
 }

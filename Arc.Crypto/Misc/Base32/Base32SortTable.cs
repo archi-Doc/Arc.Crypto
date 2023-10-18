@@ -107,6 +107,56 @@ internal class Base32SortTable : IBase32Converter
         return utf8;
     }
 
+    public unsafe bool FromUtf8ToSpan(ReadOnlySpan<byte> base32, Span<byte> destination, out int written)
+    {
+        var decodedLength = Base32Sort.GetDecodedLength(base32.Length);
+        if (destination.Length < decodedLength)
+        {
+            written = 0;
+            return false;
+        }
+
+        fixed (byte* inChars = &MemoryMarshal.GetReference(base32))
+        {
+            fixed (byte* outData = &MemoryMarshal.GetReference(destination))
+            {
+                if (!this.DecodeUtf8Core(inChars, outData, base32.Length, this.decodeTable))
+                {
+                    written = 0;
+                    return false;
+                }
+            }
+        }
+
+        written = decodedLength;
+        return true;
+    }
+
+    public unsafe bool FromStringToSpan(ReadOnlySpan<char> base32, Span<byte> destination, out int written)
+    {
+        var decodedLength = Base32Sort.GetDecodedLength(base32.Length);
+        if (destination.Length < decodedLength)
+        {
+            written = 0;
+            return false;
+        }
+
+        fixed (char* inChars = &MemoryMarshal.GetReference(base32))
+        {
+            fixed (byte* outData = &MemoryMarshal.GetReference(destination))
+            {
+                if (!this.DecodeUtf16Core(inChars, outData, base32.Length, this.decodeTable))
+                {
+                    written = 0;
+                    return false;
+                }
+            }
+        }
+
+        written = decodedLength;
+        return true;
+    }
+
     public unsafe byte[] FromStringToByteArray(ReadOnlySpan<char> base32)
     {
         nint length = Base32Sort.GetDecodedLength(base32.Length);
