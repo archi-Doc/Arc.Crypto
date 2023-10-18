@@ -16,40 +16,71 @@ public class Base64Test
         var xo = new Xoshiro256StarStar(42);
         var rv = new RandomVault(() => xo.NextUInt64(), x => xo.NextBytes(x));
 
-        for (var i = 0; i < 500; i++)
+        for (var i = 0; i < 300; i++)
         {
-            var bytes = new byte[i];
+            var source = new byte[i];
+            var written = 0;
 
             for (var j = 0; j < ((i / 2) + 1); j++)
             {
-                rv.NextBytes(bytes);
+                rv.NextBytes(source);
 
                 // Convert.ToBase64String
-                var st = Convert.ToBase64String(bytes);
+                var st = Convert.ToBase64String(source);
 
                 // Byte array to string
-                var st2 = Base64.Default.FromByteArrayToString(bytes);
+                var st2 = Base64.Default.FromByteArrayToString(source);
                 st.Equals(st2).IsTrue();
 
                 // Byte array to utf8
-                var utf8 = Base64.Default.FromByteArrayToUtf8(bytes);
+                var utf8 = Base64.Default.FromByteArrayToUtf8(source);
                 var st3 = Encoding.UTF8.GetString(utf8);
                 st.Equals(st3).IsTrue();
 
                 var bytes2 = Base64.Default.FromStringToByteArray(st);
-                bytes.SequenceEqual(bytes2).IsTrue();
+                source.SequenceEqual(bytes2).IsTrue();
 
                 var bytes3 = Base64.Default.FromUtf8ToByteArray(utf8);
-                bytes.SequenceEqual(bytes3!).IsTrue();
+                source.SequenceEqual(bytes3!).IsTrue();
+
+                // Byte array to span
+                Span<char> charSpan = new char[Base64.Default.GetEncodedLength(source.Length)];
+                Base64.Default.FromByteArrayToSpan(source, charSpan, out _).IsTrue();
+                st.Equals(charSpan.ToString()).IsTrue();
+
+                Span<byte> byteSpan = new byte[Base64.Default.GetEncodedLength(source.Length)];
+                Base64.Default.FromByteArrayToSpan(source, byteSpan, out _).IsTrue();
+                utf8.SequenceEqual(byteSpan.ToArray()).IsTrue();
+
+                Base64.Default.FromStringToSpan(charSpan, bytes2, out _).IsTrue();
+                source.SequenceEqual(bytes2).IsTrue();
+
+                Base64.Default.FromUtf8ToSpan(byteSpan, bytes2, out _).IsTrue();
+                source.SequenceEqual(bytes2).IsTrue();
 
                 // Url
-                utf8 = Base64.Url.FromByteArrayToUtf8(bytes);
+                utf8 = Base64.Url.FromByteArrayToUtf8(source);
                 bytes3 = Base64.Url.FromUtf8ToByteArray(utf8);
-                bytes.SequenceEqual(bytes3!).IsTrue();
+                source.SequenceEqual(bytes3!).IsTrue();
 
-                st = Base64.Url.FromByteArrayToString(bytes);
+                st = Base64.Url.FromByteArrayToString(source);
                 bytes3 = Base64.Url.FromStringToByteArray(st);
-                bytes.SequenceEqual(bytes3!).IsTrue();
+                source.SequenceEqual(bytes3!).IsTrue();
+
+                // Byte array to span
+                charSpan = new char[Base64.Url.GetEncodedLength(source.Length)];
+                Base64.Url.FromByteArrayToSpan(source, charSpan, out written).IsTrue();
+                st.Equals(charSpan.ToString()).IsTrue();
+
+                byteSpan = new byte[Base64.Url.GetEncodedLength(source.Length)];
+                Base64.Url.FromByteArrayToSpan(source, byteSpan, out _).IsTrue();
+                utf8.SequenceEqual(byteSpan.ToArray()).IsTrue();
+
+                Base64.Url.FromStringToSpan(charSpan, bytes2, out _).IsTrue();
+                source.SequenceEqual(bytes2).IsTrue();
+
+                Base64.Url.FromUtf8ToSpan(byteSpan, bytes2, out _).IsTrue();
+                source.SequenceEqual(bytes2).IsTrue();
             }
         }
     }

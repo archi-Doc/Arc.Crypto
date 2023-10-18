@@ -2,12 +2,13 @@
 
 using System;
 using System.Buffers;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Arc.Crypto;
 
-internal class Base32SortTable : IBaseConverter
+internal class Base32SortTable : IBase32Converter
 {
     public Base32SortTable(char[] utf16EncodeTable, byte[] utf8EncodeTable, byte[] decodeTable)
     {
@@ -20,20 +21,62 @@ internal class Base32SortTable : IBaseConverter
     private byte[] utf8EncodeTable;
     private byte[] decodeTable;
 
-    public unsafe string FromByteArrayToString(ReadOnlySpan<byte> bytes)
+    public unsafe bool FromByteArrayToSpan(ReadOnlySpan<byte> source, Span<byte> destination, out int written)
     {
-        var length = Base32Sort.GetEncodedLength(bytes.Length);
+        var encodedLength = Base32Sort.GetEncodedLength(source.Length);
+        if (destination.Length < encodedLength)
+        {
+            written = 0;
+            return false;
+        }
+
+        fixed (byte* data = &MemoryMarshal.GetReference(source))
+        {
+            fixed (byte* b = &MemoryMarshal.GetReference(destination))
+            {
+                this.EncodeUtf8Core(data, b, source.Length, this.utf8EncodeTable);
+            }
+        }
+
+        written = encodedLength;
+        return true;
+    }
+
+    public unsafe bool FromByteArrayToSpan(ReadOnlySpan<byte> source, Span<char> destination, out int written)
+    {
+        var encodedLength = Base32Sort.GetEncodedLength(source.Length);
+        if (destination.Length < encodedLength)
+        {
+            written = 0;
+            return false;
+        }
+
+        fixed (byte* data = &MemoryMarshal.GetReference(source))
+        {
+            fixed (char* b = &MemoryMarshal.GetReference(destination))
+            {
+                this.EncodeUtf16Core(data, b, source.Length, this.utf16EncodeTable);
+            }
+        }
+
+        written = encodedLength;
+        return true;
+    }
+
+    public unsafe string FromByteArrayToString(ReadOnlySpan<byte> source)
+    {
+        var length = Base32Sort.GetEncodedLength(source.Length);
         char[]? pooledName = null;
 
         Span<char> span = length <= 1024 ?
             stackalloc char[length] :
             (pooledName = ArrayPool<char>.Shared.Rent(length));
 
-        fixed (byte* data = &MemoryMarshal.GetReference(bytes))
+        fixed (byte* data = &MemoryMarshal.GetReference(source))
         {
             fixed (char* utf = &MemoryMarshal.GetReference(span))
             {
-                this.EncodeUtf16Core(data, utf, bytes.Length, this.utf16EncodeTable);
+                this.EncodeUtf16Core(data, utf, source.Length, this.utf16EncodeTable);
             }
         }
 
@@ -47,33 +90,83 @@ internal class Base32SortTable : IBaseConverter
         return result;
     }
 
-    public unsafe byte[] FromByteArrayToUtf8(ReadOnlySpan<byte> bytes)
+    public unsafe byte[] FromByteArrayToUtf8(ReadOnlySpan<byte> source)
     {
-        var length = Base32Sort.GetEncodedLength(bytes.Length);
+        var length = Base32Sort.GetEncodedLength(source.Length);
         var utf8 = new byte[length];
         var span = utf8.AsSpan();
 
-        fixed (byte* data = &MemoryMarshal.GetReference(bytes))
+        fixed (byte* data = &MemoryMarshal.GetReference(source))
         {
             fixed (byte* b = &MemoryMarshal.GetReference(span))
             {
-                this.EncodeUtf8Core(data, b, bytes.Length, this.utf8EncodeTable);
+                this.EncodeUtf8Core(data, b, source.Length, this.utf8EncodeTable);
             }
         }
 
         return utf8;
     }
 
-    public unsafe byte[] FromStringToByteArray(ReadOnlySpan<char> utf16)
+    public unsafe bool FromUtf8ToSpan(ReadOnlySpan<byte> base32, Span<byte> destination, out int written)
     {
-        nint length = Base32Sort.GetDecodedLength(utf16.Length);
+        var decodedLength = Base32Sort.GetDecodedLength(base32.Length);
+        if (destination.Length < decodedLength)
+        {
+            written = 0;
+            return false;
+        }
+
+        fixed (byte* inChars = &MemoryMarshal.GetReference(base32))
+        {
+            fixed (byte* outData = &MemoryMarshal.GetReference(destination))
+            {
+                if (!this.DecodeUtf8Core(inChars, outData, base32.Length, this.decodeTable))
+                {
+                    written = 0;
+                    return false;
+                }
+            }
+        }
+
+        written = decodedLength;
+        return true;
+    }
+
+    public unsafe bool FromStringToSpan(ReadOnlySpan<char> base32, Span<byte> destination, out int written)
+    {
+        var decodedLength = Base32Sort.GetDecodedLength(base32.Length);
+        if (destination.Length < decodedLength)
+        {
+            written = 0;
+            return false;
+        }
+
+        fixed (char* inChars = &MemoryMarshal.GetReference(base32))
+        {
+            fixed (byte* outData = &MemoryMarshal.GetReference(destination))
+            {
+                if (!this.DecodeUtf16Core(inChars, outData, base32.Length, this.decodeTable))
+                {
+                    written = 0;
+                    return false;
+                }
+            }
+        }
+
+        written = decodedLength;
+        return true;
+    }
+
+    public unsafe byte[] FromStringToByteArray(ReadOnlySpan<char> base32)
+    {
+        nint length = Base32Sort.GetDecodedLength(base32.Length);
         byte[] bytes = new byte[length];
 
-        fixed (char* inChars = &MemoryMarshal.GetReference(utf16))
+        fixed (char* inChars = &MemoryMarshal.GetReference(base32))
         {
             fixed (byte* outData = &MemoryMarshal.GetReference(bytes.AsSpan()))
             {
-                if (!this.DecodeUtf16Core(inChars, outData, utf16.Length, this.decodeTable))
+                if (!this.DecodeUtf16Core(inChars, outData, base32.Length, this.decodeTable))
                 {
                     return Array.Empty<byte>();
                 }
@@ -83,16 +176,16 @@ internal class Base32SortTable : IBaseConverter
         return bytes;
     }
 
-    public unsafe byte[] FromUtf8ToByteArray(ReadOnlySpan<byte> utf8)
+    public unsafe byte[] FromUtf8ToByteArray(ReadOnlySpan<byte> base32)
     {
-        nint length = Base32Sort.GetDecodedLength(utf8.Length);
+        nint length = Base32Sort.GetDecodedLength(base32.Length);
         byte[] bytes = new byte[length];
 
-        fixed (byte* inChars = &MemoryMarshal.GetReference(utf8))
+        fixed (byte* inChars = &MemoryMarshal.GetReference(base32))
         {
             fixed (byte* outData = &MemoryMarshal.GetReference(bytes.AsSpan()))
             {
-                if (!this.DecodeUtf8Core(inChars, outData, utf8.Length, this.decodeTable))
+                if (!this.DecodeUtf8Core(inChars, outData, base32.Length, this.decodeTable))
                 {
                     return Array.Empty<byte>();
                 }

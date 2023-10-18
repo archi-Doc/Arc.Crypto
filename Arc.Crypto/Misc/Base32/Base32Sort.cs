@@ -54,9 +54,9 @@ public static class Base32Sort
         Default = Table;
     }
 
-    public static readonly IBaseConverter Default;
-    public static readonly IBaseConverter Reference;
-    public static readonly IBaseConverter Table;
+    public static readonly IBase32Converter Default;
+    public static readonly IBase32Converter Reference;
+    public static readonly IBase32Converter Table;
 
     /// <summary>
     /// Get the length of the base32 encoded data.
@@ -67,9 +67,14 @@ public static class Base32Sort
     public static int GetEncodedLength(int sourceLength)
         => ((sourceLength << 3) + 4) / 5;
 
+    /// <summary>
+    /// Gets the length of the decoded data.
+    /// </summary>
+    /// <param name="encodedLength">The encoded length.</param>
+    /// <returns>The base32 decoded length of <paramref name="encodedLength"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetDecodedLength(int length)
-        => (length * 5) >> 3;
+    public static int GetDecodedLength(int encodedLength)
+        => (encodedLength * 5) >> 3;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int FastMod5(int value)

@@ -3,10 +3,11 @@
 using System;
 using System.Buffers;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Arc.Crypto;
 
-internal class Base32SortReference : IBaseConverter
+internal class Base32SortReference : IBase32Converter
 {
     public Base32SortReference(char[] utf16EncodeTable, byte[] utf8EncodeTable, byte[] decodeTable)
     {
@@ -19,41 +20,45 @@ internal class Base32SortReference : IBaseConverter
     private byte[] utf8EncodeTable;
     private byte[] decodeTable;
 
-    public unsafe string FromByteArrayToString(ReadOnlySpan<byte> bytes)
+    public bool FromByteArrayToSpan(ReadOnlySpan<byte> source, Span<byte> destination, out int written)
     {
-        var length = Base32Sort.GetEncodedLength(bytes.Length);
+        var encodedLength = Base32Sort.GetEncodedLength(source.Length);
+        if (destination.Length < encodedLength)
+        {
+            written = 0;
+            return false;
+        }
+
+        this.ByteSpanToByteSpan(source, destination, encodedLength);
+        written = encodedLength;
+        return true;
+    }
+
+    public bool FromByteArrayToSpan(ReadOnlySpan<byte> source, Span<char> destination, out int written)
+    {
+        var encodedLength = Base32Sort.GetEncodedLength(source.Length);
+        if (destination.Length < encodedLength)
+        {
+            written = 0;
+            return false;
+        }
+
+        this.ByteSpanToCharSpan(source, destination, encodedLength);
+        written = encodedLength;
+        return true;
+    }
+
+    public string FromByteArrayToString(ReadOnlySpan<byte> source)
+    {
+        var encodedLength = Base32Sort.GetEncodedLength(source.Length);
         char[]? pooledName = null;
 
-        Span<char> span = length <= 1024 ?
-            stackalloc char[length] :
-            (pooledName = ArrayPool<char>.Shared.Rent(length));
+        Span<char> destination = encodedLength <= 1024 ?
+            stackalloc char[encodedLength] :
+            (pooledName = ArrayPool<char>.Shared.Rent(encodedLength));
 
-        byte next = 0;
-        var remaining = 5;
-        var index = 0;
-
-        foreach (var b in bytes)
-        {
-            next = (byte)(next | (b >> (8 - remaining)));
-            span[index++] = this.ValueToChar(next);
-
-            if (remaining < 4)
-            {
-                next = (byte)((b >> (3 - remaining)) & 31);
-                span[index++] = this.ValueToChar(next);
-                remaining += 5;
-            }
-
-            remaining -= 3;
-            next = (byte)((b << remaining) & 31);
-        }
-
-        if (index != length)
-        {
-            span[index++] = this.ValueToChar(next);
-        }
-
-        var result = new string(span);
+        this.ByteSpanToCharSpan(source, destination, encodedLength);
+        var result = new string(destination);
 
         if (pooledName != null)
         {
@@ -63,122 +68,78 @@ internal class Base32SortReference : IBaseConverter
         return result;
     }
 
-    public byte[] FromByteArrayToUtf8(ReadOnlySpan<byte> bytes)
+    public byte[] FromByteArrayToUtf8(ReadOnlySpan<byte> source)
     {
-        var length = Base32Sort.GetEncodedLength(bytes.Length);
-        var utf8 = new byte[length];
-        var span = utf8.AsSpan();
+        var encodedLength = Base32Sort.GetEncodedLength(source.Length);
+        var destination = new byte[encodedLength];
 
-        byte next = 0;
-        var remaining = 5;
-        var index = 0;
+        this.ByteSpanToByteSpan(source, destination, encodedLength);
 
-        foreach (var b in bytes)
-        {
-            next = (byte)(next | (b >> (8 - remaining)));
-            span[index++] = this.ValueToByte(next);
-
-            if (remaining < 4)
-            {
-                next = (byte)((b >> (3 - remaining)) & 31);
-                span[index++] = this.ValueToByte(next);
-                remaining += 5;
-            }
-
-            remaining -= 3;
-            next = (byte)((b << remaining) & 31);
-        }
-
-        if (index != length)
-        {
-            span[index++] = this.ValueToByte(next);
-        }
-
-        return utf8;
+        return destination;
     }
 
-    public byte[] FromStringToByteArray(ReadOnlySpan<char> utf16)
+    public bool FromUtf8ToSpan(ReadOnlySpan<byte> base32, Span<byte> destination, out int written)
     {
-        nint byteCount = Base32Sort.GetDecodedLength(utf16.Length);
-        byte[] returnArray = new byte[byteCount];
-
-        byte current = 0;
-        var remaining = 8;
-        nint mask;
-        nint arrayIndex = 0;
-
-        foreach (char c in utf16)
+        var decodedLength = Base32Sort.GetDecodedLength(base32.Length);
+        if (destination.Length < decodedLength)
         {
-            nint v = this.CharToValue(c);
-            if (v >= byte.MaxValue)
-            {// Invalid character
-                return Array.Empty<byte>();
-            }
-
-            if (remaining > 5)
-            {
-                mask = v << (remaining - 5);
-                current = (byte)(current | mask);
-                remaining -= 5;
-            }
-            else
-            {
-                mask = v >> (5 - remaining);
-                current = (byte)(current | mask);
-                returnArray[arrayIndex++] = current;
-                current = (byte)(v << (3 + remaining));
-                remaining += 3;
-            }
+            written = 0;
+            return false;
         }
 
-        if (arrayIndex != byteCount)
+        if (!this.ByteToByte(base32, destination, decodedLength))
         {
-            returnArray[arrayIndex] = current;
+            written = 0;
+            return false;
         }
 
-        return returnArray;
+        written = decodedLength;
+        return true;
     }
 
-    public byte[] FromUtf8ToByteArray(ReadOnlySpan<byte> utf8)
+    public bool FromStringToSpan(ReadOnlySpan<char> base32, Span<byte> destination, out int written)
     {
-        nint byteCount = Base32Sort.GetDecodedLength(utf8.Length);
-        byte[] returnArray = new byte[byteCount];
-
-        byte current = 0;
-        var remaining = 8;
-        nint mask;
-        nint arrayIndex = 0;
-
-        foreach (var c in utf8)
+        var decodedLength = Base32Sort.GetDecodedLength(base32.Length);
+        if (destination.Length < decodedLength)
         {
-            nint v = this.ByteToValue(c);
-            if (v >= byte.MaxValue)
-            {// Invalid character
-                return Array.Empty<byte>();
-            }
-
-            if (remaining > 5)
-            {
-                mask = v << (remaining - 5);
-                current = (byte)(current | mask);
-                remaining -= 5;
-            }
-            else
-            {
-                mask = v >> (5 - remaining);
-                current = (byte)(current | mask);
-                returnArray[arrayIndex++] = current;
-                current = (byte)(v << (3 + remaining));
-                remaining += 3;
-            }
+            written = 0;
+            return false;
         }
 
-        if (arrayIndex != byteCount)
+        if (!this.CharToByte(base32, destination, decodedLength))
         {
-            returnArray[arrayIndex] = current;
+            written = 0;
+            return false;
         }
 
-        return returnArray;
+        written = decodedLength;
+        return true;
+    }
+
+    public byte[] FromStringToByteArray(ReadOnlySpan<char> base32)
+    {
+        var decodedLength = Base32Sort.GetDecodedLength(base32.Length);
+        byte[] destination = new byte[decodedLength];
+
+        if (!this.CharToByte(base32, destination, decodedLength))
+        {
+            return Array.Empty<byte>();
+        }
+
+        return destination;
+    }
+
+    public byte[] FromUtf8ToByteArray(ReadOnlySpan<byte> base32)
+    {
+        var decodedLength = Base32Sort.GetDecodedLength(base32.Length);
+        byte[] destination = new byte[decodedLength];
+
+        if (!this.ByteToByte(base32, destination, decodedLength))
+        {
+            return Array.Empty<byte>();
+        }
+
+        return destination;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -273,5 +234,139 @@ internal class Base32SortReference : IBaseConverter
         }
 
         return 0;*/
+    }
+
+    private void ByteSpanToCharSpan(ReadOnlySpan<byte> source, Span<char> destination, int encodedLength)
+    {
+        byte next = 0;
+        var remaining = 5;
+        var index = 0;
+
+        foreach (var b in source)
+        {
+            next = (byte)(next | (b >> (8 - remaining)));
+            destination[index++] = this.ValueToChar(next);
+
+            if (remaining < 4)
+            {
+                next = (byte)((b >> (3 - remaining)) & 31);
+                destination[index++] = this.ValueToChar(next);
+                remaining += 5;
+            }
+
+            remaining -= 3;
+            next = (byte)((b << remaining) & 31);
+        }
+
+        if (index != encodedLength)
+        {
+            destination[index++] = this.ValueToChar(next);
+        }
+    }
+
+    private void ByteSpanToByteSpan(ReadOnlySpan<byte> source, Span<byte> destination, int encodedLength)
+    {
+        byte next = 0;
+        var remaining = 5;
+        var index = 0;
+
+        foreach (var b in source)
+        {
+            next = (byte)(next | (b >> (8 - remaining)));
+            destination[index++] = this.ValueToByte(next);
+
+            if (remaining < 4)
+            {
+                next = (byte)((b >> (3 - remaining)) & 31);
+                destination[index++] = this.ValueToByte(next);
+                remaining += 5;
+            }
+
+            remaining -= 3;
+            next = (byte)((b << remaining) & 31);
+        }
+
+        if (index != encodedLength)
+        {
+            destination[index++] = this.ValueToByte(next);
+        }
+    }
+
+    private bool CharToByte(ReadOnlySpan<char> base32, Span<byte> destination, int decodedLength)
+    {
+        byte current = 0;
+        var remaining = 8;
+        nint mask;
+        var arrayIndex = 0;
+
+        foreach (char c in base32)
+        {
+            nint v = this.CharToValue(c);
+            if (v >= byte.MaxValue)
+            {// Invalid character
+                return false;
+            }
+
+            if (remaining > 5)
+            {
+                mask = v << (remaining - 5);
+                current = (byte)(current | mask);
+                remaining -= 5;
+            }
+            else
+            {
+                mask = v >> (5 - remaining);
+                current = (byte)(current | mask);
+                destination[arrayIndex++] = current;
+                current = (byte)(v << (3 + remaining));
+                remaining += 3;
+            }
+        }
+
+        if (arrayIndex != decodedLength)
+        {
+            destination[arrayIndex] = current;
+        }
+
+        return true;
+    }
+
+    private bool ByteToByte(ReadOnlySpan<byte> base32, Span<byte> destination, int decodedLength)
+    {
+        byte current = 0;
+        var remaining = 8;
+        nint mask;
+        var arrayIndex = 0;
+
+        foreach (var c in base32)
+        {
+            nint v = this.ByteToValue(c);
+            if (v >= byte.MaxValue)
+            {// Invalid character
+                return false;
+            }
+
+            if (remaining > 5)
+            {
+                mask = v << (remaining - 5);
+                current = (byte)(current | mask);
+                remaining -= 5;
+            }
+            else
+            {
+                mask = v >> (5 - remaining);
+                current = (byte)(current | mask);
+                destination[arrayIndex++] = current;
+                current = (byte)(v << (3 + remaining));
+                remaining += 3;
+            }
+        }
+
+        if (arrayIndex != decodedLength)
+        {
+            destination[arrayIndex] = current;
+        }
+
+        return true;
     }
 }
