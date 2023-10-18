@@ -58,9 +58,14 @@ public static class Base32Sort
     public static readonly IBaseConverter Reference;
     public static readonly IBaseConverter Table;
 
+    /// <summary>
+    /// Get the length of the base32 encoded data.
+    /// </summary>
+    /// <param name="sourceLength">The source length.</param>
+    /// <returns>The base32 encoded length of <paramref name="sourceLength"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetEncodedLength(int length)
-        => ((length << 3) + 4) / 5;
+    public static int GetEncodedLength(int sourceLength)
+        => ((sourceLength << 3) + 4) / 5;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetDecodedLength(int length)

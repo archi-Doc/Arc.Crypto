@@ -13,6 +13,14 @@ namespace Arc.Crypto;
 /// </summary>
 public static class Base64
 {
+    /// <summary>
+    /// Get the length of the base64 encoded data.
+    /// </summary>
+    /// <param name="sourceLength">The source length.</param>
+    /// <returns>The base64 encoded length of <paramref name="sourceLength"/>.</returns>
+    public static int GetEncodedLength(int sourceLength)
+        => gfoidl.Base64.Base64.Default.GetEncodedLength(sourceLength);
+
     public static class Default
     {
         /// <summary>
