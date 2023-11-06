@@ -20,15 +20,23 @@ public interface IStringConvertible<T>
     static abstract bool TryParse(ReadOnlySpan<char> source, [MaybeNullWhen(false)] out T? instance);
 
     /// <summary>
-    ///  Get the length of the utf-16 encoded data.
+    ///  Gets the maximum length of the utf-16 encoded data.<br/>
+    ///  Implementation of either <see cref="GetStringLength"/> or <see cref="MaxStringLength"/> is expected.
     /// </summary>
-    /// <returns>The utf-16 encoded length.</returns>
+    /// <returns>The maximum utf-16 encoded length.</returns>
+    static abstract int MaxStringLength { get; }
+
+    /// <summary>
+    ///  Get the actual length of the utf-16 encoded data.<br/>
+    ///  Implementation of either <see cref="GetStringLength"/> or <see cref="MaxStringLength"/> is expected.
+    /// </summary>
+    /// <returns>The actual utf-16 encoded length.</returns>
     int GetStringLength();
 
     /// <summary>
     /// Convert an object to a <see cref="char"/> (utf-16) span.
     /// </summary>
-    /// <param name="destination">The destination span of <see cref="char"/> (utf-16).<br/>Allocate an array of a length greater than or equal to <seealso cref="GetStringLength()"/>.</param>
+    /// <param name="destination">The destination span of <see cref="char"/> (utf-16).<br/>Allocate an array of a length greater than or equal to <seealso cref="GetStringLength"/> or <seealso cref="MaxStringLength"/>.</param>
     /// <param name="written">The number of bytes that were written in destination.</param>
     /// <returns><see langword="true"/> if the conversion was successful; otherwise, <see langword="false"/>.</returns>
     bool TryFormat(Span<char> destination, out int written);
