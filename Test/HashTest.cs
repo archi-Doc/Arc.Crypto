@@ -26,7 +26,7 @@ public class HashTest
             {
                 var span = buffer.AsSpan(0, j);
                 var hash = System.IO.Hashing.XxHash3.HashToUInt64(span, 0);
-                var hash2 = Arc.Crypto.XxHash3.HashToUInt64(span, 0);
+                var hash2 = Arc.Crypto.XxHash3.Hash64(span, 0);
                 hash.Is(hash2);
             }
         }

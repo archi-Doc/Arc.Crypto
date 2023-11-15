@@ -4,8 +4,7 @@ using System;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Arc.Crypto.Hashing;
-using static Arc.Crypto.Hashing.XxHashShared;
+using static Arc.Crypto.XxHashShared;
 
 namespace Arc.Crypto;
 
@@ -22,6 +21,52 @@ public sealed unsafe class XxHash3
     private const int HashLengthInBytes = 8;
 
     private State state;
+
+    /// <summary>Computes the XXH3 hash of the provided data.</summary>
+    /// <param name="source">The data to hash.</param>
+    /// <param name="seed">The seed value for this hash computation.</param>
+    /// <returns>The computed XXH3 hash.</returns>
+    public static unsafe ulong Hash64(ReadOnlySpan<byte> source, long seed = 0)
+    {
+        uint length = (uint)source.Length;
+        fixed (byte* sourcePtr = &MemoryMarshal.GetReference(source))
+        {
+            if (length <= 16)
+            {
+                return HashLength0To16(sourcePtr, length, (ulong)seed);
+            }
+
+            if (length <= 128)
+            {
+                return HashLength17To128(sourcePtr, length, (ulong)seed);
+            }
+
+            if (length <= MidSizeMaxBytes)
+            {
+                return HashLength129To240(sourcePtr, length, (ulong)seed);
+            }
+
+            return HashLengthOver240(sourcePtr, length, (ulong)seed);
+        }
+    }
+
+    /// <summary>
+    /// Static function: Calculates a 64bit hash from the given string.
+    /// </summary>
+    /// <param name="input">The read-only span that contains input data.</param>
+    /// <returns>A 64bit hash.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe ulong Hash64(ReadOnlySpan<char> input)
+        => Hash64(MemoryMarshal.Cast<char, byte>(input));
+
+    /// <summary>
+    /// Static function: Calculates a 64bit hash from the given string.
+    /// </summary>
+    /// <param name="str">The string containing the characters to calculates.</param>
+    /// <returns>A 64bit hash.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe ulong Hash64(string str)
+        => Hash64(MemoryMarshal.Cast<char, byte>(str));
 
     /// <summary>Initializes a new instance of the <see cref="XxHash3"/> class using the default seed value 0.</summary>
     public XxHash3()
@@ -60,7 +105,7 @@ public sealed unsafe class XxHash3
     public static byte[] Hash(ReadOnlySpan<byte> source, long seed = 0)
     {
         byte[] result = new byte[HashLengthInBytes];
-        ulong hash = HashToUInt64(source, seed);
+        ulong hash = Hash64(source, seed);
         BinaryPrimitives.WriteUInt64BigEndian(result, hash);
         return result;
     }
@@ -73,67 +118,19 @@ public sealed unsafe class XxHash3
     /// <exception cref="ArgumentException"><paramref name="destination"/> is shorter than <see cref="HashLengthInBytes"/> (8 bytes).</exception>
     public static int Hash(ReadOnlySpan<byte> source, Span<byte> destination, long seed = 0)
     {
-        if (!TryHash(source, destination, out int bytesWritten, seed))
+        if (destination.Length < sizeof(long))
         {
             throw new ArgumentOutOfRangeException();
         }
 
-        return bytesWritten;
-    }
-
-    /// <summary>Attempts to compute the XXH3 hash of the provided <paramref name="source"/> data into the provided <paramref name="destination"/> using the optionally provided <paramref name="seed"/>.</summary>
-    /// <param name="source">The data to hash.</param>
-    /// <param name="destination">The buffer that receives the computed 64-bit hash code.</param>
-    /// <param name="bytesWritten">When this method returns, contains the number of bytes written to <paramref name="destination"/>.</param>
-    /// <param name="seed">The seed value for this hash computation. The default is zero.</param>
-    /// <returns><see langword="true"/> if <paramref name="destination"/> is long enough to receive the computed hash value (8 bytes); otherwise, <see langword="false"/>.</returns>
-    public static bool TryHash(ReadOnlySpan<byte> source, Span<byte> destination, out int bytesWritten, long seed = 0)
-    {
-        if (destination.Length >= sizeof(long))
+        ulong hash = Hash64(source, seed);
+        if (BitConverter.IsLittleEndian)
         {
-            ulong hash = HashToUInt64(source, seed);
-
-            if (BitConverter.IsLittleEndian)
-            {
-                hash = BinaryPrimitives.ReverseEndianness(hash);
-            }
-
-            Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(destination), hash);
-
-            bytesWritten = HashLengthInBytes;
-            return true;
+            hash = BinaryPrimitives.ReverseEndianness(hash);
         }
 
-        bytesWritten = 0;
-        return false;
-    }
-
-    /// <summary>Computes the XXH3 hash of the provided data.</summary>
-    /// <param name="source">The data to hash.</param>
-    /// <param name="seed">The seed value for this hash computation.</param>
-    /// <returns>The computed XXH3 hash.</returns>
-    public static ulong HashToUInt64(ReadOnlySpan<byte> source, long seed = 0)
-    {
-        uint length = (uint)source.Length;
-        fixed (byte* sourcePtr = &MemoryMarshal.GetReference(source))
-        {
-            if (length <= 16)
-            {
-                return HashLength0To16(sourcePtr, length, (ulong)seed);
-            }
-
-            if (length <= 128)
-            {
-                return HashLength17To128(sourcePtr, length, (ulong)seed);
-            }
-
-            if (length <= MidSizeMaxBytes)
-            {
-                return HashLength129To240(sourcePtr, length, (ulong)seed);
-            }
-
-            return HashLengthOver240(sourcePtr, length, (ulong)seed);
-        }
+        Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(destination), hash);
+        return HashLengthInBytes;
     }
 
     /// <summary>Resets the hash computation to the initial state.</summary>
@@ -171,7 +168,7 @@ public sealed unsafe class XxHash3
         {
             fixed (byte* buffer = this.state.Buffer)
             {
-                current = HashToUInt64(new ReadOnlySpan<byte>(buffer, (int)this.state.TotalLength), (long)this.state.Seed);
+                current = Hash64(new ReadOnlySpan<byte>(buffer, (int)this.state.TotalLength), (long)this.state.Seed);
             }
         }
 

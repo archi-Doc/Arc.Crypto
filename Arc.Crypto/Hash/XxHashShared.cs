@@ -12,7 +12,7 @@ using System.Runtime.Intrinsics.X86;
 #pragma warning disable SA1202
 #pragma warning disable SA1310 // Field names should not contain underscore
 
-namespace Arc.Crypto.Hashing;
+namespace Arc.Crypto;
 
 [SkipLocalsInit]
 internal static unsafe class XxHashShared
@@ -321,7 +321,6 @@ internal static unsafe class XxHashShared
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void InitializeAccumulators(ulong* accumulators)
     {
-#if NET7_0_OR_GREATER
         if (Vector256.IsHardwareAccelerated)
         {
             Vector256.Store(Vector256.Create(Prime32_3, Prime64_1, Prime64_2, Prime64_3), accumulators);
@@ -335,7 +334,6 @@ internal static unsafe class XxHashShared
             Vector128.Store(Vector128.Create(Prime64_5, Prime32_1), accumulators + 6);
         }
         else
-#endif
         {
             accumulators[0] = Prime32_3;
             accumulators[1] = Prime64_1;
@@ -394,7 +392,6 @@ internal static unsafe class XxHashShared
     {
         fixed (byte* defaultSecret = &MemoryMarshal.GetReference(DefaultSecret))
         {
-#if NET7_0_OR_GREATER
             if (Vector256.IsHardwareAccelerated && BitConverter.IsLittleEndian)
             {
                 Vector256<ulong> seedVec = Vector256.Create(seed, 0u - seed, seed, 0u - seed);
@@ -412,7 +409,6 @@ internal static unsafe class XxHashShared
                 }
             }
             else
-#endif
             {
                 for (int i = 0; i < SecretLengthBytes; i += sizeof(ulong) * 2)
                 {
@@ -709,25 +705,12 @@ internal static unsafe class XxHashShared
     [StructLayout(LayoutKind.Auto)]
     public struct State
     {
-        /// <summary>The accumulators. Length is <see cref="AccumulatorCount"/>.</summary>
         internal fixed ulong Accumulators[AccumulatorCount];
-
-        /// <summary>Used to store a custom secret generated from a seed. Length is <see cref="SecretLengthBytes"/>.</summary>
         internal fixed byte Secret[SecretLengthBytes];
-
-        /// <summary>The internal buffer. Length is <see cref="InternalBufferLengthBytes"/>.</summary>
         internal fixed byte Buffer[InternalBufferLengthBytes];
-
-        /// <summary>The amount of memory in <see cref="Buffer"/>.</summary>
         internal uint BufferedCount;
-
-        /// <summary>Number of stripes processed in the current block.</summary>
         internal ulong StripesProcessedInCurrentBlock;
-
-        /// <summary>Total length hashed.</summary>
         internal ulong TotalLength;
-
-        /// <summary>The seed employed (possibly 0).</summary>
         internal ulong Seed;
     }
 }

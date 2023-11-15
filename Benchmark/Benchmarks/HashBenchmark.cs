@@ -28,20 +28,24 @@ public class HashBenchmark
     public int Length { get; set; }
 
     [Benchmark]
-    public ulong ArcFarmHash64() => Arc.Crypto.FarmHash.Hash64(this.data.AsSpan(0, this.Length));
+    public ulong ArcFarmHash32() => Arc.Crypto.FarmHash.Hash32(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
-    public byte[] ArcFarmHash64_IHash()
-    {
-        this.farm.HashInitialize();
-        this.farm.HashUpdate(this.data.AsSpan(0, this.Length));
-        return this.farm.HashFinal();
-    }
+    public ulong ArcFarmHash64() => Arc.Crypto.FarmHash.Hash64(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
     public uint ArcXXHash32() => Arc.Crypto.XXHash32.Hash32(this.data.AsSpan(0, this.Length));
 
-    // [Benchmark]
+    [Benchmark]
+    public ulong ArcXxHash64() => Arc.Crypto.XxHash64.Hash64(this.data.AsSpan(0, this.Length));
+
+    [Benchmark]
+    public ulong ArcXxHash3() => Arc.Crypto.XxHash3.Hash64(this.data.AsSpan(0, this.Length));
+
+    [Benchmark]
+    public ulong XxHash3() => System.IO.Hashing.XxHash3.HashToUInt64(this.data.AsSpan(0, this.Length));
+
+    /*// [Benchmark]
     public byte[] ArcXXHash32_IHash()
     {
         this.xxh32.HashInitialize();
@@ -50,12 +54,6 @@ public class HashBenchmark
     }
 
     [Benchmark]
-    public ulong ArcXxHash64() => Arc.Crypto.XxHash64.Hash64(this.data.AsSpan(0, this.Length));
-
-    [Benchmark]
-    public ulong XxHash3() => System.IO.Hashing.XxHash3.HashToUInt64(this.data.AsSpan(0, this.Length));
-
-    /*[Benchmark]
     public byte[] ArcXxHash64_IHash()
     {
         this.xxh64.HashInitialize();
@@ -64,7 +62,12 @@ public class HashBenchmark
     }
 
     [Benchmark]
-    public ulong ArcFarmHash32() => Arc.Crypto.FarmHash.Hash32(this.data.AsSpan(0, this.Length));
+    public byte[] ArcFarmHash64_IHash()
+    {
+        this.farm.HashInitialize();
+        this.farm.HashUpdate(this.data.AsSpan(0, this.Length));
+        return this.farm.HashFinal();
+    }
 
     [Benchmark]
     public ulong ArcAdler32() => Arc.Crypto.Adler32.Hash32(this.data.AsSpan(0, this.Length));
