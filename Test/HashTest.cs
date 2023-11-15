@@ -300,6 +300,8 @@ public class HashTest
         var bytes = Encoding.UTF8.GetBytes(text);
         var value = XxHash64.Hash64(bytes);
         Assert.Equal(expected, value);
+
+        // value.Is(System.IO.Hashing.XxHash3.HashToUInt64(bytes));
     }
 
     [Fact]

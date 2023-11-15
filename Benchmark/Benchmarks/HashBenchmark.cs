@@ -41,7 +41,7 @@ public class HashBenchmark
     [Benchmark]
     public uint ArcXXHash32() => Arc.Crypto.XXHash32.Hash32(this.data.AsSpan(0, this.Length));
 
-    [Benchmark]
+    // [Benchmark]
     public byte[] ArcXXHash32_IHash()
     {
         this.xxh32.HashInitialize();
@@ -53,6 +53,9 @@ public class HashBenchmark
     public ulong ArcXxHash64() => Arc.Crypto.XxHash64.Hash64(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
+    public ulong XxHash3() => System.IO.Hashing.XxHash3.HashToUInt64(this.data.AsSpan(0, this.Length));
+
+    /*[Benchmark]
     public byte[] ArcXxHash64_IHash()
     {
         this.xxh64.HashInitialize();
@@ -67,5 +70,5 @@ public class HashBenchmark
     public ulong ArcAdler32() => Arc.Crypto.Adler32.Hash32(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
-    public ulong ArcCrc32() => Arc.Crypto.Crc32.Hash32(this.data.AsSpan(0, this.Length));
+    public ulong ArcCrc32() => Arc.Crypto.Crc32.Hash32(this.data.AsSpan(0, this.Length));*/
 }
