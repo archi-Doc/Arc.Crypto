@@ -179,7 +179,7 @@ public sealed unsafe class XxHash3
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong Avalanche(ulong hash)
+    private static ulong XxHash64Avalanche(ulong hash)
     {
         hash ^= hash >> 33;
         hash *= Prime64_2;
@@ -207,7 +207,7 @@ public sealed unsafe class XxHash3
         }
 
         const ulong SecretXor = DefaultSecretUInt64_7 ^ DefaultSecretUInt64_8;
-        return Avalanche(seed ^ SecretXor);
+        return XxHash64Avalanche(seed ^ SecretXor);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -218,7 +218,7 @@ public sealed unsafe class XxHash3
         byte c3 = source[length - 1];
         uint combined = ((uint)c1 << 16) | ((uint)c2 << 24) | c3 | (length << 8);
         const uint SecretXor = unchecked((uint)DefaultSecretUInt64_0) ^ (uint)(DefaultSecretUInt64_0 >> 32);
-        return Avalanche(combined ^ (SecretXor + seed));
+        return XxHash64Avalanche(combined ^ (SecretXor + seed));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
