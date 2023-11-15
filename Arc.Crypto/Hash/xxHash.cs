@@ -8,14 +8,13 @@ using System.Runtime.InteropServices;
 #pragma warning disable SA1307 // Accessible fields should begin with upper-case letter
 #pragma warning disable SA1310 // Field names should not contain underscore
 #pragma warning disable SA1402 // File may only contain a single type
-#pragma warning disable SA1649 // File name should match first type name
 
 namespace Arc.Crypto;
 
 /// <summary>
 /// xxHash 64bit Class.
 /// </summary>
-public unsafe partial class XxHash64 : XXHash, IHash
+public unsafe partial class XxHash64 : InternalXXHash, IHash
 {
     private const ulong PRIME64_1 = 11400714785074694791ul;
     private const ulong PRIME64_2 = 14029467366897019727ul;
@@ -312,7 +311,7 @@ public unsafe partial class XxHash64 : XXHash, IHash
 /// <summary>
 /// xxHash 32bit Class.
 /// </summary>
-public unsafe class XXHash32 : XXHash, IHash
+public unsafe class XXHash32 : InternalXXHash, IHash
 {
     private const uint PRIME32_1 = 2654435761u;
     private const uint PRIME32_2 = 2246822519u;
@@ -582,12 +581,12 @@ public unsafe class XXHash32 : XXHash, IHash
 /// <summary>
 /// Base class for xxHash 32/64 bit. Do not use directly.
 /// </summary>
-public unsafe class XXHash
+public unsafe class InternalXXHash
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="XXHash"/> class. Protected constructor to prevent instantiation.
+    /// Initializes a new instance of the <see cref="InternalXXHash"/> class. Protected constructor to prevent instantiation.
     /// </summary>
-    protected XXHash()
+    protected InternalXXHash()
     {
     }
 

@@ -13,6 +13,26 @@ namespace Test;
 public class HashTest
 {
     [Fact]
+    public void TestXxHash3()
+    {
+        const int N = 10;
+        const int Length = 1500;
+
+        var buffer = new byte[Length];
+        RandomVault.Pseudo.NextBytes(buffer);
+        for (var i = 0; i < N; i++)
+        {
+            for (var j = 0; j < Length; j++)
+            {
+                var span = buffer.AsSpan(0, j);
+                var hash = System.IO.Hashing.XxHash3.HashToUInt64(span, 0);
+                var hash2 = Arc.Crypto.XxHash3.Hash64(span, 0);
+                hash.Is(hash2);
+            }
+        }
+    }
+
+    [Fact]
     public void QuickStart()
     {
         var data = new byte[100];
@@ -300,6 +320,8 @@ public class HashTest
         var bytes = Encoding.UTF8.GetBytes(text);
         var value = XxHash64.Hash64(bytes);
         Assert.Equal(expected, value);
+
+        // value.Is(System.IO.Hashing.XxHash3.HashToUInt64(bytes));
     }
 
     [Fact]
