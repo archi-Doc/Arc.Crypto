@@ -25,6 +25,44 @@ public class Xoshiro256StarStar : RandomUInt64
     //
     //     See <http://creativecommons.org/publicdomain/zero/1.0/>.
 
+    public static void InitializeState(ulong seed, out ulong state0, out ulong state1, out ulong state2, out ulong state3)
+    {
+        do
+        {
+            state0 = SplitMix64(ref seed);
+            state1 = SplitMix64(ref seed);
+            state2 = SplitMix64(ref seed);
+            state3 = SplitMix64(ref seed);
+        }
+        while ((state0 | state1 | state2 | state3) == 0); // at least one value must be non-zero
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong NextState(ref ulong state0, ref ulong state1, ref ulong state2, ref ulong state3)
+    {
+        var s0 = state0;
+        var s1 = state1;
+        var s2 = state2;
+        var s3 = state3;
+
+        var result = BitOperations.RotateLeft(s1 * 5, 7) * 9;
+
+        var t = s1 << 17;
+        s2 ^= s0;
+        s3 ^= s1;
+        s1 ^= s2;
+        s0 ^= s3;
+        s2 ^= t;
+        s3 = BitOperations.RotateLeft(s3, 45);
+
+        state0 = s0;
+        state1 = s1;
+        state2 = s2;
+        state3 = s3;
+
+        return result;
+    }
+
     private ulong ss0;
     private ulong ss1;
     private ulong ss2;
@@ -51,23 +89,20 @@ public class Xoshiro256StarStar : RandomUInt64
     /// <summary>
     /// Reset state vectors with random seeds.
     /// </summary>
-    public unsafe void Reset()
+    public void Reset()
     {
         Span<byte> span = stackalloc byte[4 * sizeof(ulong)];
-        fixed (byte* b = span)
+        var d = MemoryMarshal.Cast<byte, ulong>(span);
+        do
         {
-            ulong* d = (ulong*)b;
-            do
-            {
-                RandomNumberGenerator.Fill(span);
-            }
-            while ((d[0] | d[1] | d[2] | d[3]) == 0); // at least one value must be non-zero.
-
-            this.ss0 = d[0];
-            this.ss1 = d[1];
-            this.ss2 = d[2];
-            this.ss3 = d[3];
+            RandomNumberGenerator.Fill(span);
         }
+        while ((d[0] | d[1] | d[2] | d[3]) == 0); // at least one value must be non-zero.
+
+        this.ss0 = d[0];
+        this.ss1 = d[1];
+        this.ss2 = d[2];
+        this.ss3 = d[3];
     }
 
     /// <summary>
@@ -76,22 +111,16 @@ public class Xoshiro256StarStar : RandomUInt64
     /// <param name="seed">seed.</param>
     public void Reset(ulong seed)
     {
-        var state = seed;
-        do
-        {
-            this.ss0 = SplitMix64(ref state);
-            this.ss1 = SplitMix64(ref state);
-            this.ss2 = SplitMix64(ref state);
-            this.ss3 = SplitMix64(ref state);
-        }
-        while ((this.ss0 | this.ss1 | this.ss2 | this.ss3) == 0); // at least one value must be non-zero
+        InitializeState(seed, out this.ss0, out this.ss1, out this.ss2, out this.ss3);
     }
 
     /// <inheritdoc/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override ulong NextUInt64()
     {
-        var s0 = this.ss0;
+        return NextState(ref this.ss0, ref this.ss1, ref this.ss2, ref this.ss3);
+
+        /*var s0 = this.ss0;
         var s1 = this.ss1;
         var s2 = this.ss2;
         var s3 = this.ss3;
@@ -111,7 +140,7 @@ public class Xoshiro256StarStar : RandomUInt64
         this.ss2 = s2;
         this.ss3 = s3;
 
-        return result;
+        return result;*/
     }
 
     /// <inheritdoc/>

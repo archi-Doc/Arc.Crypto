@@ -37,12 +37,12 @@ public abstract class RandomUInt64
     public abstract ulong NextUInt64();
 
     /// <summary>
-    /// [0, long.MaxValue]<br/>
+    /// [0, <see cref="long.MaxValue"/>]<br/>
     /// Returns a random integer.
     /// </summary>
     /// <returns>A 64-bit signed integer [0, long.MaxValue].</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public long NextInt64() => (long)(this.NextUInt64() >> 1);
+    public long NextInt63() => (long)(this.NextUInt64() >> 1);
 
     /// <summary>
     /// [0, 2^32-1]<br/>
@@ -58,7 +58,7 @@ public abstract class RandomUInt64
     /// </summary>
     /// <returns>A 32-bit signed integer [0, int.MaxValue].</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int NextInt32() => (int)(this.NextUInt64() >> 33);
+    public int NextInt31() => (int)(this.NextUInt64() >> 33);
 
     /// <summary>
     /// [0, maxValue)<br/>

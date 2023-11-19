@@ -110,6 +110,6 @@ public class BenchmarkConfig : BenchmarkDotNet.Configs.ManualConfig
         this.AddExporter(BenchmarkDotNet.Exporters.MarkdownExporter.GitHub);
         this.AddDiagnoser(BenchmarkDotNet.Diagnosers.MemoryDiagnoser.Default);
 
-        this.AddJob(BenchmarkDotNet.Jobs.Job.ShortRun);
+        // this.AddJob(BenchmarkDotNet.Jobs.Job.ShortRun);
     }
 }

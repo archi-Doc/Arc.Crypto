@@ -15,6 +15,8 @@ public class PseudoRandomBenchmark
 
     public Xoshiro256StarStar Xo { get; set; } = new();
 
+    public Xoroshiro128StarStar Xo128 { get; set; } = new();
+
     public byte[] RandomBytes { get; } = new byte[24];
 
     public PseudoRandomBenchmark()
@@ -31,7 +33,7 @@ public class PseudoRandomBenchmark
     {
     }
 
-    [Benchmark]
+    /*[Benchmark]
     public int Random_Int()
     {
         return this.Random.Next();
@@ -116,5 +118,35 @@ public class PseudoRandomBenchmark
     {
         this.Xo.NextBytes(this.RandomBytes);
         return this.RandomBytes;
+    }*/
+
+    [Benchmark]
+    public ulong Xo_ULong10()
+    {
+        this.Xo.NextUInt64();
+        this.Xo.NextUInt64();
+        this.Xo.NextUInt64();
+        this.Xo.NextUInt64();
+        this.Xo.NextUInt64();
+        this.Xo.NextUInt64();
+        this.Xo.NextUInt64();
+        this.Xo.NextUInt64();
+        this.Xo.NextUInt64();
+        return this.Xo.NextUInt64();
+    }
+
+    [Benchmark]
+    public ulong Xo128_ULong10()
+    {
+        this.Xo128.NextUInt64();
+        this.Xo128.NextUInt64();
+        this.Xo128.NextUInt64();
+        this.Xo128.NextUInt64();
+        this.Xo128.NextUInt64();
+        this.Xo128.NextUInt64();
+        this.Xo128.NextUInt64();
+        this.Xo128.NextUInt64();
+        this.Xo128.NextUInt64();
+        return this.Xo128.NextUInt64();
     }
 }
