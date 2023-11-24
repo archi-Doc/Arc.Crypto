@@ -34,7 +34,8 @@ public class AesBenchmark
         this.destination = new byte[2000];
     }
 
-    [Params(10, 100, 1000)]
+    // [Params(10, 100, 1000)]
+    [Params(64)]
     public int Length { get; set; }
 
     [GlobalSetup]
@@ -55,14 +56,38 @@ public class AesBenchmark
     }
 
     [Benchmark]
-    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) TestSha2()
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) TestSha2_256()
     {
         return Sha2Helper.Get256_UInt64(this.source.AsSpan(0, this.Length));
     }
 
     [Benchmark]
-    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) TestSha3()
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) TestSha2_384()
+    {
+        return Sha2Helper.Get384_UInt64(this.source.AsSpan(0, this.Length));
+    }
+
+    [Benchmark]
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) TestSha2_512()
+    {
+        return Sha2Helper.Get512_UInt64(this.source.AsSpan(0, this.Length));
+    }
+
+    [Benchmark]
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) TestSha3_256()
     {
         return Sha3Helper.Get256_UInt64(this.source.AsSpan(0, this.Length));
+    }
+
+    [Benchmark]
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) TestSha3_384()
+    {
+        return Sha3Helper.Get384_UInt64(this.source.AsSpan(0, this.Length));
+    }
+
+    [Benchmark]
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) TestSha3_512()
+    {
+        return Sha3Helper.Get512_UInt64(this.source.AsSpan(0, this.Length));
     }
 }
