@@ -2,6 +2,8 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 #pragma warning disable SA1124 // Do not use regions
 
