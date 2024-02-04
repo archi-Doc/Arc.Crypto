@@ -109,7 +109,7 @@ public class Utf8Hashtable<TValue>
     public bool TryGetValue(ReadOnlySpan<byte> key, [MaybeNullWhen(false)] out TValue value)
     {
         var table = this.hashTable;
-        var hash = unchecked((int)FarmHash.Hash64(key));
+        var hash = unchecked((int)XxHash3.Hash64(key));
         var item = table[hash & (table.Length - 1)];
 
         while (item != null)
@@ -192,7 +192,7 @@ public class Utf8Hashtable<TValue>
     private bool AddKeyValue(ReadOnlySpan<byte> key, TValue value)
     { // lock(cs) required.
         var table = this.hashTable;
-        var hash = unchecked((int)FarmHash.Hash64(key));
+        var hash = unchecked((int)XxHash3.Hash64(key));
         var h = hash & (table.Length - 1);
 
         if (table[h] == null)
@@ -228,7 +228,7 @@ public class Utf8Hashtable<TValue>
     private bool AddKeyValue(byte[] key, TValue value)
     { // lock(cs) required.
         var table = this.hashTable;
-        var hash = unchecked((int)FarmHash.Hash64(key));
+        var hash = unchecked((int)XxHash3.Hash64(key));
         var h = hash & (table.Length - 1);
 
         if (table[h] == null)
