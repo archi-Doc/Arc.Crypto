@@ -73,8 +73,8 @@ public static class PasswordEncrypt
         // Hash: Sha3_384 => Key(32) + IV(16)
         var keyIV = GetKeyIV(salt, password);
 
-        // Checksum: FarmHash64
-        var checksum = FarmHash.Hash64(data);
+        // Checksum: XxHash3
+        var checksum = XxHash3.Hash64(data);
 
         // AES
         byte[] buffer;
@@ -162,8 +162,8 @@ public static class PasswordEncrypt
             return false;
         }
 
-        // Checksum: FarmHash64
-        var checksum = FarmHash.Hash64(decrypted.AsSpan(dataPosition));
+        // Checksum: XxHash3
+        var checksum = XxHash3.Hash64(decrypted.AsSpan(dataPosition));
         if (BitConverter.ToUInt64(decrypted.AsSpan(RandomLength)) != checksum)
         {
             return false;
