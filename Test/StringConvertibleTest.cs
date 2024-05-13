@@ -1,6 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Text;
 using Arc.Crypto;
 using Xunit;
 
@@ -103,8 +104,10 @@ public class StringConvertibleTest
     {
         var c1 = new StringConvertibleClass();
         c1.ConvertToString().Is("a");
+        c1.ConvertToUtf8().Is(Encoding.UTF8.GetBytes("a"));
 
         var c2 = new StringConvertibleClass2("abc");
         c2.ConvertToString().Is("abc");
+        c2.ConvertToUtf8().Is(Encoding.UTF8.GetBytes("abc"));
     }
 }

@@ -1,13 +1,19 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Text;
+
+#pragma warning disable SA1405
 
 namespace Arc.Crypto;
 
 public static class CryptoHelper
 {
+    private const int StackallocThreshold = 1024;
+
     /// <summary>
     /// Parses the value from the provided source or environment variable and assigns it to the <paramref name="instance"/> parameter.
     /// </summary>
@@ -84,7 +90,7 @@ public static class CryptoHelper
         }
 
         // scoped Span<char> destination;
-        var destination = length <= 1024 ? stackalloc char[length] : new char[length];
+        var destination = length <= StackallocThreshold ? stackalloc char[length] : new char[length];
         if (obj.TryFormat(destination, out var written))
         {
             return new string(destination.Slice(0, written));
@@ -93,5 +99,50 @@ public static class CryptoHelper
         {
             return string.Empty;
         }
+    }
+
+    [SkipLocalsInit]
+    public static byte[] ConvertToUtf8<T>(this T obj)
+        where T : IStringConvertible<T>
+    { // MemoryMarshal.CreateSpan<char>(ref MemoryMarshal.GetReference(str.AsSpan()), str.Length);
+        int length = 0;
+        try
+        {
+            length = obj.GetStringLength();
+        }
+        catch
+        {
+        }
+
+        if (length == 0)
+        {
+            try
+            {
+                length = T.MaxStringLength;
+            }
+            catch
+            {
+            }
+        }
+
+        // scoped Span<char> destination;
+        try
+        {
+            var destination = length <= StackallocThreshold ? stackalloc char[length] : new char[length];
+            if (obj.TryFormat(destination, out var written))
+            {
+                var d = destination.Slice(0, written);
+                var count = Encoding.UTF8.GetByteCount(d);
+                var array = new byte[count];
+                length = Encoding.UTF8.GetBytes(d, array);
+                Debug.Assert(length == array.Length);
+                return array;
+            }
+        }
+        catch
+        {
+        }
+
+        return Array.Empty<byte>();
     }
 }
