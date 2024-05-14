@@ -21,14 +21,16 @@ public interface IStringConvertible<T>
 
     /// <summary>
     ///  Gets the maximum length of the utf-16 encoded data.<br/>
-    ///  Implementation of either <see cref="GetStringLength"/> or <see cref="MaxStringLength"/> is expected.
+    ///  Implementation of either <see cref="GetStringLength"/> or <see cref="MaxStringLength"/> is expected.<br/>
+    ///  If not implemented, please return -1 instead of throwing an exception.
     /// </summary>
     /// <returns>The maximum utf-16 encoded length.</returns>
     static abstract int MaxStringLength { get; }
 
     /// <summary>
     ///  Get the actual length of the utf-16 encoded data.<br/>
-    ///  Implementation of either <see cref="GetStringLength"/> or <see cref="MaxStringLength"/> is expected.
+    ///  Implementation of either <see cref="GetStringLength"/> or <see cref="MaxStringLength"/> is expected.<br/>
+    ///  If not implemented, please return -1 instead of throwing an exception.
     /// </summary>
     /// <returns>The actual utf-16 encoded length.</returns>
     int GetStringLength();

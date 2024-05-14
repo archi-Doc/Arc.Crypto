@@ -33,9 +33,7 @@ public class StringConvertibleClass : IStringConvertible<StringConvertibleClass>
     }
 
     int IStringConvertible<StringConvertibleClass>.GetStringLength()
-    {
-        throw new NotImplementedException();
-    }
+        => -1;
 
     bool IStringConvertible<StringConvertibleClass>.TryFormat(Span<char> destination, out int written)
     {

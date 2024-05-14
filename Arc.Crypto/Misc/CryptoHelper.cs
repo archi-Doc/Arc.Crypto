@@ -26,15 +26,15 @@ public static class CryptoHelper
         where T : IStringConvertible<T>
     {
         // 1st Source
-        if (source.Length > 0 && T.TryParse(source, out instance!))
-        {
+        if (T.TryParse(source, out instance!))
+        {// source.Length > 0 &&
             return true;
         }
 
         // 2nd: Environment variable
         if (Environment.GetEnvironmentVariable(variable) is { } source2)
         {
-            if (source2.Length > 0 && T.TryParse(source2, out instance!))
+            if (T.TryParse(source2, out instance!))
             {
                 return true;
             }
@@ -69,7 +69,7 @@ public static class CryptoHelper
     public static string ConvertToString<T>(this T obj)
         where T : IStringConvertible<T>
     { // MemoryMarshal.CreateSpan<char>(ref MemoryMarshal.GetReference(str.AsSpan()), str.Length);
-        int length = 0;
+        var length = -1;
         try
         {
             length = obj.GetStringLength();
@@ -78,7 +78,7 @@ public static class CryptoHelper
         {
         }
 
-        if (length == 0)
+        if (length < 0)
         {
             try
             {
@@ -87,6 +87,11 @@ public static class CryptoHelper
             catch
             {
             }
+        }
+
+        if (length < 0)
+        {
+            return string.Empty;
         }
 
         // scoped Span<char> destination;
@@ -105,7 +110,7 @@ public static class CryptoHelper
     public static byte[] ConvertToUtf8<T>(this T obj)
         where T : IStringConvertible<T>
     { // MemoryMarshal.CreateSpan<char>(ref MemoryMarshal.GetReference(str.AsSpan()), str.Length);
-        int length = 0;
+        var length = -1;
         try
         {
             length = obj.GetStringLength();
@@ -114,7 +119,7 @@ public static class CryptoHelper
         {
         }
 
-        if (length == 0)
+        if (length < 0)
         {
             try
             {
@@ -123,6 +128,11 @@ public static class CryptoHelper
             catch
             {
             }
+        }
+
+        if (length < 0)
+        {
+            return Array.Empty<byte>();
         }
 
         // scoped Span<char> destination;
