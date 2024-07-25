@@ -14,6 +14,11 @@ namespace Arc.Crypto;
 public class Sha3_256 : Sha3
 {
     /// <summary>
+    /// Length of the hash in bytes.
+    /// </summary>
+    public const int HashLength = 32;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="Sha3_256"/> class.
     /// </summary>
     public Sha3_256()
@@ -56,6 +61,11 @@ public class Sha3_256 : Sha3
 public class Sha3_384 : Sha3
 {
     /// <summary>
+    /// Length of the hash in bytes.
+    /// </summary>
+    public const int HashLength = 48;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="Sha3_384"/> class.
     /// </summary>
     public Sha3_384()
@@ -78,6 +88,11 @@ public class Sha3_384 : Sha3
 /// </summary>
 public class Sha3_512 : Sha3
 {
+    /// <summary>
+    /// Length of the hash in bytes.
+    /// </summary>
+    public const int HashLength = 64;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Sha3_512"/> class.
     /// </summary>

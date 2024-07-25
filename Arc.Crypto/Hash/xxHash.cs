@@ -16,6 +16,11 @@ namespace Arc.Crypto;
 /// </summary>
 public unsafe partial class XxHash64 : InternalXXHash, IHash
 {
+    /// <summary>
+    /// Length of the hash in bytes.
+    /// </summary>
+    public const int HashLength = 8;
+
     private const ulong PRIME64_1 = 11400714785074694791ul;
     private const ulong PRIME64_2 = 14029467366897019727ul;
     private const ulong PRIME64_3 = 1609587929392839161ul;

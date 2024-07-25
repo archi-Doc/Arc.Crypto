@@ -18,7 +18,10 @@ namespace Arc.Crypto;
 [SkipLocalsInit]
 public sealed unsafe class XxHash3
 {
-    private const int HashLengthInBytes = 8;
+    /// <summary>
+    /// Length of the hash in bytes.
+    /// </summary>
+    public const int HashLength = 8;
 
     private State state;
 
@@ -104,7 +107,7 @@ public sealed unsafe class XxHash3
     /// <returns>The XXH3 64-bit hash code of the provided data.</returns>
     public static byte[] Hash(ReadOnlySpan<byte> source, long seed = 0)
     {
-        byte[] result = new byte[HashLengthInBytes];
+        byte[] result = new byte[HashLength];
         ulong hash = Hash64(source, seed);
         BinaryPrimitives.WriteUInt64BigEndian(result, hash);
         return result;
@@ -115,7 +118,7 @@ public sealed unsafe class XxHash3
     /// <param name="destination">The buffer that receives the computed 64-bit hash code.</param>
     /// <param name="seed">The seed value for this hash computation. The default is zero.</param>
     /// <returns>The number of bytes written to <paramref name="destination"/>.</returns>
-    /// <exception cref="ArgumentException"><paramref name="destination"/> is shorter than <see cref="HashLengthInBytes"/> (8 bytes).</exception>
+    /// <exception cref="ArgumentException"><paramref name="destination"/> is shorter than <see cref="HashLength"/> (8 bytes).</exception>
     public static int Hash(ReadOnlySpan<byte> source, Span<byte> destination, long seed = 0)
     {
         if (destination.Length < sizeof(long))
@@ -130,7 +133,7 @@ public sealed unsafe class XxHash3
         }
 
         Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(destination), hash);
-        return HashLengthInBytes;
+        return HashLength;
     }
 
     /// <summary>Resets the hash computation to the initial state.</summary>

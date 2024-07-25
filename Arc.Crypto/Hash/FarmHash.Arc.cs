@@ -14,6 +14,11 @@ namespace Arc.Crypto;
 /// </summary>
 public class FarmHash : IHash
 {
+    /// <summary>
+    /// Length of the hash in bytes.
+    /// </summary>
+    public const int HashLength = 8;
+
     // Magic numbers for 32-bit hashing.  Copied from Murmur3.
     private const uint C1 = 0xcc9e2d51;
     private const uint C2 = 0x1b873593;
