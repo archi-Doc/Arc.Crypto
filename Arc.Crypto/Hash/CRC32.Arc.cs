@@ -11,6 +11,11 @@ namespace Arc.Crypto;
 /// </summary>
 public class Crc32 : IHash
 {
+    /// <summary>
+    /// Length of the hash in bytes.
+    /// </summary>
+    public const int HashLength = 4;
+
     private const uint Crc32Mask = 0xffffffff;
 
     private static readonly uint[] Crc32Table = new uint[]

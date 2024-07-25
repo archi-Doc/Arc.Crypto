@@ -11,6 +11,11 @@ namespace Arc.Crypto;
 /// </summary>
 public class Adler32 : IHash
 {
+    /// <summary>
+    /// Length of the hash in bytes.
+    /// </summary>
+    public const int HashLength = 4;
+
     private uint checksum = 1;
 
     /// <summary>
@@ -69,7 +74,7 @@ public class Adler32 : IHash
     /// <summary>
     /// Calculates a 32bit hash from the given string.
     /// </summary>
-    /// <param name="str">The string containing the characters to calculates.</param>
+    /// <param name="str">The string containing the characters to calculate the hash from.</param>
     /// <returns>A 32bit hash.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe uint Hash32(string str) => Hash32(MemoryMarshal.Cast<char, byte>(str));
