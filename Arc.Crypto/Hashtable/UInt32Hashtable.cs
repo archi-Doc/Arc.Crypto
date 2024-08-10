@@ -7,6 +7,8 @@ namespace Arc.Crypto;
 
 /// <summary>
 /// Represents a collection of uint and value pairs.
+/// It is thread-safe, and it locks when adding items, but it is lock-free when retrieving them.<br/>
+/// Please use this for use cases where the collection is initially built and then primarily used for retrieval.
 /// </summary>
 /// <typeparam name="TValue">The type of value.</typeparam>
 public class UInt32Hashtable<TValue>
