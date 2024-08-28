@@ -106,7 +106,7 @@ public class UInt32Hashtable<TValue>
     public bool TryGetValue(uint key, [MaybeNullWhen(false)] out TValue value)
     {
         var table = this.table;
-        var hash = unchecked((int)key);
+        var hash = unchecked((int)key); // GetHashCode: e.g. (int)XxHash3.Hash64(key);
         var item = table[hash & (table.Length - 1)];
 
         while (item != null)
@@ -148,7 +148,7 @@ public class UInt32Hashtable<TValue>
             }
 
             var table = this.table;
-            var hash = unchecked((int)key); // e.g. (int)XxHash3.Hash64(key);
+            var hash = unchecked((int)key); // GetHashCode: e.g. (int)XxHash3.Hash64(key);
             var h = hash & (table.Length - 1);
 
             if (table[h] is null)
