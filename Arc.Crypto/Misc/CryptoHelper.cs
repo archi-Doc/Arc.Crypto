@@ -14,6 +14,169 @@ public static class CryptoHelper
 {
     private const int StackallocThreshold = 1024;
 
+    private const int P1 = 10;
+    private const int P2 = 100;
+    private const int P3 = 1000;
+    private const int P4 = 10000;
+    private const int P5 = 100000;
+    private const int P6 = 1000000;
+    private const int P7 = 10000000;
+    private const int P8 = 100000000;
+    private const int P9 = 1000000000;
+    private const long P10 = 10000000000;
+    private const long P11 = 100000000000;
+    private const long P12 = 1000000000000;
+    private const long P13 = 10000000000000;
+    private const long P14 = 100000000000000;
+    private const long P15 = 1000000000000000;
+    private const long P16 = 10000000000000000;
+    private const long P17 = 100000000000000000;
+    private const long P18 = 1000000000000000000;
+
+#pragma warning disable SA1503 // Braces should not be omitted
+
+    /// <summary>
+    /// Gets the length of the string representation of the specified number.
+    /// </summary>
+    /// <param name="number">The number to get the string length for.</param>
+    /// <returns>The length of the string representation of the number.</returns>
+    public static int GetStringLength(int number)
+    {
+        int add = 0;
+        if (number < 0)
+        {
+            add = 1;
+            number = -number;
+        }
+
+        // 1,2,3,4,5,6,7,8,9,10
+        if (number < P4)
+        {// 1,2,3,4
+            if (number < P2)
+            {// 1,2
+                if (number < P1) return 1 + add;
+                else return 2 + add;
+            }
+            else
+            {// 3,4
+                if (number < P3) return 3 + add;
+                else return 4 + add;
+            }
+        }
+        else
+        {// 5,6,7,8,9,10
+            if (number < P6)
+            {// 5,6
+                if (number < P5) return 5 + add;
+                else return 6 + add;
+            }
+            else
+            {// 7,8,9,10
+                if (number < P8)
+                {// 7,8
+                    if (number < P7) return 7 + add;
+                    else return 8 + add;
+                }
+                else
+                {// 9,10
+                    if (number < P9) return 9 + add;
+                    else return 10 + add;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets the length of the string representation of the specified number.
+    /// </summary>
+    /// <param name="number">The number to get the string length for.</param>
+    /// <returns>The length of the string representation of the number.</returns>
+    public static int GetStringLength(long number)
+    {
+        int add = 0;
+        if (number < 0)
+        {
+            add = 1;
+            number = -number;
+        }
+
+        // 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
+        if (number < P8)
+        {// 1,2,3,4,5,6,7, 8
+            if (number < P4)
+            {// 1,2,3,4
+                if (number < P2)
+                {// 1,2
+                    if (number < P1) return 1 + add;
+                    else return 2 + add;
+                }
+                else
+                {// 3,4
+                    if (number < P3) return 3 + add;
+                    else return 4 + add;
+                }
+            }
+            else
+            {// 5,6,7,8
+                if (number < P6)
+                {// 5, 6
+                    if (number < P5) return 5 + add;
+                    else return 6 + add;
+                }
+                else
+                {// 7, 8
+                    if (number < P7) return 7 + add;
+                    else return 8 + add;
+                }
+            }
+        }
+        else
+        {// 9,10,11,12,13,14,15,16,17,18,19
+            if (number < P12)
+            {// 9,10,11,12
+                if (number < P10)
+                {// 9, 10
+                    if (number < P9) return 9 + add;
+                    else return 10 + add;
+                }
+                else
+                {// 11, 12
+                    if (number < P11) return 11 + add;
+                    else return 12 + add;
+                }
+            }
+            else
+            {// 13,14,15,16,17,18,19
+                if (number < P15)
+                {// 13,14,15
+                    if (number < P13)
+                    {// 13
+                        return 13 + add;
+                    }
+                    else
+                    {// 14, 15
+                        if (number < P14) return 14 + add;
+                        else return 15 + add;
+                    }
+                }
+                else
+                {// 16,17,18,19
+                    if (number < P17)
+                    {// 16, 17
+                        if (number < P16) return 16 + add;
+                        else return 17 + add;
+                    }
+                    else
+                    {// 18, 19
+                        if (number < P18) return 18 + add;
+                        else return 19 + add;
+                    }
+                }
+            }
+        }
+    }
+#pragma warning restore SA1503 // Braces should not be omitted
+
     /// <summary>
     /// Parses the value from the provided source or environment variable and assigns it to the <paramref name="instance"/> parameter.
     /// </summary>
