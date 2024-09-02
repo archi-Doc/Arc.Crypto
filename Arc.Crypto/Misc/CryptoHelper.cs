@@ -14,6 +14,105 @@ public static class CryptoHelper
 {
     private const int StackallocThreshold = 1024;
 
+    private const int P1 = 10;
+    private const int P2 = 100;
+    private const int P3 = 1000;
+    private const int P4 = 10000;
+    private const int P5 = 100000;
+    private const int P6 = 1000000;
+    private const int P7 = 10000000;
+    private const int P8 = 100000000;
+    private const int P9 = 1000000000;
+    private const int N2 = -10;
+    private const int N3 = -100;
+    private const int N4 = -1000;
+    private const int N5 = -10000;
+    private const int N6 = -100000;
+    private const int N7 = -1000000;
+    private const int N8 = -10000000;
+    private const int N9 = -100000000;
+    private const int N10 = -1000000000;
+
+#pragma warning disable SA1503 // Braces should not be omitted
+    public static int GetStringLength(int number)
+    {
+        if (number >= 0)
+        {// 1,2,3,4,5,6,7,8,9,10
+            if (number < P4)
+            {// 1,2,3,4
+                if (number < P2)
+                {// 1,2
+                    if (number < P1) return 1;
+                    else return 2;
+                }
+                else
+                {// 3,4
+                    if (number < P3) return 3;
+                    else return 4;
+                }
+            }
+            else
+            {// 5,6,7,8,9,10
+                if (number < P6)
+                {// 5,6
+                    if (number < P5) return 5;
+                    else return 6;
+                }
+                else
+                {// 7,8,9,10
+                    if (number < P8)
+                    {// 7,8
+                        if (number < P7) return 7;
+                        else return 8;
+                    }
+                    else
+                    {// 9,10
+                        if (number < P9) return 9;
+                        else return 10;
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (number > N5)
+            {// 2,3,4,5
+                if (number > N3)
+                {// 
+                    if (number > N2) return 2;
+                    else return 3;
+                }
+                else
+                {// 3,4
+                    if (number < P3) return 3;
+                    else return 4;
+                }
+            }
+            else
+            {// 5,6,7,8,9,10
+                if (number < P6)
+                {// 5,6
+                    if (number < P5) return 5;
+                    else return 6;
+                }
+                else
+                {// 7,8,9,10
+                    if (number < P8)
+                    {// 7,8
+                        if (number < P7) return 7;
+                        else return 8;
+                    }
+                    else
+                    {// 9,10
+                        if (number < P9) return 9;
+                        else return 10;
+                    }
+                }
+            }
+        }
+    }
+#pragma warning restore SA1503 // Braces should not be omitted
+
     /// <summary>
     /// Parses the value from the provided source or environment variable and assigns it to the <paramref name="instance"/> parameter.
     /// </summary>
