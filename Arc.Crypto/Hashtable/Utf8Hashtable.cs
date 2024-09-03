@@ -15,34 +15,17 @@ namespace Arc.Crypto;
 /// <typeparam name="TValue">The type of value.</typeparam>
 public class Utf8Hashtable<TValue>
 { // HashTable for UTF-8 .
-    private static uint CalculateCapacity(uint collectionSize)
+    public Utf8Hashtable(int capacity = 4)
     {
-        collectionSize *= 2;
-        uint capacity = 1;
-        while (capacity < collectionSize)
-        {
-            capacity <<= 1;
-        }
-
-        if (capacity < 8)
-        {
-            return 8;
-        }
-
-        return capacity;
-    }
-
-    public Utf8Hashtable(uint capacity = 4)
-    {
-        var size = CalculateCapacity(capacity);
-        this.hashTable = new Item[size];
+        var size = HashtableHelper.CalculateCapacity(capacity);
+        this.table = new Item[size];
     }
 
     public TValue[] ToArray()
     {
         lock (this.cs)
         {
-            var table = this.hashTable;
+            var table = this.table;
             var array = new TValue[this.numberOfItems];
 
             var n = 0;
@@ -68,7 +51,7 @@ public class Utf8Hashtable<TValue>
         {
             bool successAdd;
 
-            if ((this.numberOfItems * 2) > this.hashTable.Length)
+            if ((this.numberOfItems * 2) > this.table.Length)
             {// rehash
                 this.RebuildTable();
             }
@@ -91,7 +74,7 @@ public class Utf8Hashtable<TValue>
         {
             bool successAdd;
 
-            if ((this.numberOfItems * 2) > this.hashTable.Length)
+            if ((this.numberOfItems * 2) > this.table.Length)
             {// rehash
                 this.RebuildTable();
             }
@@ -110,7 +93,7 @@ public class Utf8Hashtable<TValue>
 
     public bool TryGetValue(ReadOnlySpan<byte> key, [MaybeNullWhen(false)] out TValue value)
     {
-        var table = this.hashTable;
+        var table = this.table;
         var hash = unchecked((int)XxHash3.Hash64(key));
         var item = table[hash & (table.Length - 1)];
 
@@ -133,20 +116,20 @@ public class Utf8Hashtable<TValue>
     {
         lock (this.cs)
         {
-            for (var n = 0; n < this.hashTable.Length; n++)
+            for (var n = 0; n < this.table.Length; n++)
             {
-                Volatile.Write(ref this.hashTable[n], null);
+                Volatile.Write(ref this.table[n], null);
             }
         }
     }
 
     private void RebuildTable()
     {
-        var nextCapacity = this.hashTable.Length * 2;
+        var nextCapacity = this.table.Length * 2;
         var nextTable = new Item[nextCapacity];
-        for (var i = 0; i < this.hashTable.Length; i++)
+        for (var i = 0; i < this.table.Length; i++)
         {
-            var e = this.hashTable[i];
+            var e = this.table[i];
             while (e != null)
             {
                 var newItem = new Item(e.Key, e.Value, e.Hash);
@@ -156,7 +139,7 @@ public class Utf8Hashtable<TValue>
         }
 
         // replace field(threadsafe for read)
-        Volatile.Write(ref this.hashTable, nextTable);
+        Volatile.Write(ref this.table, nextTable);
     }
 
     private bool AddItem(Item[] table, Item item)
@@ -193,7 +176,7 @@ public class Utf8Hashtable<TValue>
 
     private bool AddKeyValue(ReadOnlySpan<byte> key, TValue value)
     { // lock(cs) required.
-        var table = this.hashTable;
+        var table = this.table;
         var hash = unchecked((int)XxHash3.Hash64(key));
         var h = hash & (table.Length - 1);
 
@@ -229,7 +212,7 @@ public class Utf8Hashtable<TValue>
 
     private bool AddKeyValue(byte[] key, TValue value)
     { // lock(cs) required.
-        var table = this.hashTable;
+        var table = this.table;
         var hash = unchecked((int)XxHash3.Hash64(key));
         var h = hash & (table.Length - 1);
 
@@ -264,7 +247,7 @@ public class Utf8Hashtable<TValue>
     }
 
     private readonly object cs = new object();
-    private Item?[] hashTable;
+    private Item?[] table;
     private uint numberOfItems;
 
     internal class Item
