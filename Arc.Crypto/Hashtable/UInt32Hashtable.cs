@@ -77,7 +77,7 @@ public class UInt32Hashtable<TValue>
     /// <param name="value">The value to add.</param>
     /// <returns><c>true</c> if the key-value pair was added successfully; otherwise, <c>false</c> if the key already exists.</returns>
     public bool TryAdd(uint key, TValue value)
-        => this.AddInternal(key, _ => value, out _);
+        => this.AddInternal(key, false, _ => value, out _);
 
     /// <summary>
     /// Gets the value associated with the specified key if it exists in the hashtable; otherwise, adds a new key-value pair using the specified value factory function and returns the added value.
@@ -93,7 +93,7 @@ public class UInt32Hashtable<TValue>
             return v;
         }
 
-        this.AddInternal(key, valueFactory, out v);
+        this.AddInternal(key, false, valueFactory, out v);
         return v;
     }
 
@@ -138,7 +138,7 @@ public class UInt32Hashtable<TValue>
         }
     }
 
-    private bool AddInternal(uint key, Func<uint, TValue> valueFactory, out TValue resultingValue)
+    private bool AddInternal(uint key, bool updateValue, Func<uint, TValue> valueFactory, out TValue resultingValue)
     {
         lock (this.cs)
         {
@@ -167,6 +167,11 @@ public class UInt32Hashtable<TValue>
                 {
                     if (key == i.Key)
                     {// Identical
+                        if (updateValue)
+                        {
+                            i.Value = valueFactory(key);
+                        }
+
                         resultingValue = i.Value;
                         return false;
                     }
