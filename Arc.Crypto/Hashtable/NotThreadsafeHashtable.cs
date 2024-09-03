@@ -78,6 +78,14 @@ public class NotThreadsafeHashtable<TKey, TValue>
         => this.AddInternal(key, false, _ => value, out _);
 
     /// <summary>
+    /// Adds a key-value pair to the hashtable.
+    /// </summary>
+    /// <param name="key">The key to add.</param>
+    /// <param name="value">The value to add.</param>
+    public void Add(TKey key, TValue value)
+        => this.AddInternal(key, true, _ => value, out _);
+
+    /// <summary>
     /// Gets the value associated with the specified key if it exists in the hashtable; otherwise, adds a new key-value pair using the specified value factory function and returns the added value.
     /// </summary>
     /// <param name="key">The key to get or add.</param>
