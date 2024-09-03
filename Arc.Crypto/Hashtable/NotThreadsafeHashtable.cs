@@ -9,21 +9,23 @@ using System.Threading;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Represents a collection of ushort and value pairs.<br/>
-/// It is thread-safe, and it locks when adding items, but it is lock-free when retrieving them.<br/>
+/// Represents a collection of key and value pairs.<br/>
+/// Adding values is not thread-safe, but reading values is thread-safe.<br/>
 /// Please use this for use cases where the collection is initially built and then primarily used for retrieval.
 /// </summary>
-/// <typeparam name="TValue">The type of value.</typeparam>
-public class UInt16Hashtable<TValue>
+/// <typeparam name="TKey">The type of the key.</typeparam>
+/// <typeparam name="TValue">The type of the value.</typeparam>
+public class NotThreadsafeHashtable<TKey, TValue>
+    where TKey : notnull
 {
     private class Item
     {
-        public ushort Key;
+        public TKey Key;
         public TValue Value;
         public int Hash;
         public Item? Next;
 
-        public Item(ushort key, TValue value, int hash)
+        public Item(TKey key, TValue value, int hash)
         {
             this.Key = key;
             this.Value = value;
@@ -31,13 +33,12 @@ public class UInt16Hashtable<TValue>
         }
     }
 
-    private readonly object cs = new object();
     private Item?[] table;
     private int count;
 
     public int Count => this.count;
 
-    public UInt16Hashtable(int capacity = 4)
+    public NotThreadsafeHashtable(int capacity = 4)
     {
         var size = HashtableHelper.CalculateCapacity(capacity);
         this.table = new Item[size];
@@ -49,25 +50,22 @@ public class UInt16Hashtable<TValue>
     /// <returns>An array of values.</returns>
     public TValue[] ToArray()
     {
-        lock (this.cs)
+        var t = this.table;
+        var values = new TValue[this.count];
+        var n = 0;
+        for (var i = 0; i < t.Length; i++)
         {
-            var t = this.table;
-            var values = new TValue[this.count];
-            var n = 0;
-            for (var i = 0; i < t.Length; i++)
+            if (t[i] is { } item)
             {
-                if (t[i] is { } item)
+                values[n++] = item.Value;
+                if (n >= this.count)
                 {
-                    values[n++] = item.Value;
-                    if (n >= this.count)
-                    {
-                        break;
-                    }
+                    break;
                 }
             }
-
-            return values;
         }
+
+        return values;
     }
 
     /// <summary>
@@ -76,7 +74,7 @@ public class UInt16Hashtable<TValue>
     /// <param name="key">The key to add.</param>
     /// <param name="value">The value to add.</param>
     /// <returns><c>true</c> if the key-value pair was added successfully; otherwise, <c>false</c> if the key already exists.</returns>
-    public bool TryAdd(ushort key, TValue value)
+    public bool TryAdd(TKey key, TValue value)
         => this.AddInternal(key, false, _ => value, out _);
 
     /// <summary>
@@ -85,7 +83,7 @@ public class UInt16Hashtable<TValue>
     /// <param name="key">The key to get or add.</param>
     /// <param name="valueFactory">The function used to generate a value for the key if it doesn't exist.</param>
     /// <returns>The value associated with the specified key if it exists; otherwise, the newly added value.</returns>
-    public TValue GetOrAdd(ushort key, Func<ushort, TValue> valueFactory)
+    public TValue GetOrAdd(TKey key, Func<TKey, TValue> valueFactory)
     {
         TValue? v;
         if (this.TryGetValue(key, out v))
@@ -103,15 +101,15 @@ public class UInt16Hashtable<TValue>
     /// <param name="key">The key to retrieve the value for.</param>
     /// <param name="value">When this method returns, contains the value associated with the specified key, if the key is found; otherwise, the default value for the type of the value parameter. This parameter is passed uninitialized.</param>
     /// <returns><c>true</c> if the key was found and the value was successfully retrieved; otherwise, <c>false</c>.</returns>
-    public bool TryGetValue(ushort key, [MaybeNullWhen(false)] out TValue value)
+    public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
         var table = this.table;
-        var hash = unchecked((int)key); // GetHashCode: e.g. (int)XxHash3.Hash64(key);
+        var hash = key.GetHashCode(); // GetHashCode: e.g. (int)XxHash3.Hash64(key);
         var item = table[hash & (table.Length - 1)];
 
         while (item != null)
         {
-            if (key == item.Key)
+            if (key.Equals(item.Key))
             {// Identical
                 value = item.Value;
                 return true;
@@ -129,73 +127,67 @@ public class UInt16Hashtable<TValue>
     /// </summary>
     public void Clear()
     {
-        lock (this.cs)
+        for (var n = 0; n < this.table.Length; n++)
         {
-            for (var n = 0; n < this.table.Length; n++)
-            {
-                this.table[n] = default;
-            }
+            this.table[n] = default;
         }
     }
 
-    private bool AddInternal(ushort key, bool updateValue, Func<ushort, TValue> valueFactory, out TValue resultingValue)
+    private bool AddInternal(TKey key, bool updateValue, Func<TKey, TValue> valueFactory, out TValue resultingValue)
     {
-        lock (this.cs)
+        if ((this.count * 2) > this.table.Length)
+        {// Rebuild table
+            this.RebuildTable();
+        }
+
+        var table = this.table;
+        var hash = key.GetHashCode(); // GetHashCode: e.g. (int)XxHash3.Hash64(key);
+        var h = hash & (table.Length - 1);
+
+        if (table[h] is null)
         {
-            if ((this.count * 2) > this.table.Length)
-            {// Rebuild table
-                this.RebuildTable();
-            }
+            resultingValue = valueFactory(key);
+            var item = new Item(key, resultingValue, hash);
+            table[h] = item;
 
-            var table = this.table;
-            var hash = unchecked((int)key); // GetHashCode: e.g. (int)XxHash3.Hash64(key);
-            var h = hash & (table.Length - 1);
-
-            if (table[h] is null)
+            this.count++;
+            return true;
+        }
+        else
+        {
+            var i = table[h]!;
+            while (true)
             {
-                resultingValue = valueFactory(key);
-                var item = new Item(key, resultingValue, hash);
-                table[h] = item;
-
-                this.count++;
-                return true;
-            }
-            else
-            {
-                var i = table[h]!;
-                while (true)
-                {
-                    if (key == i.Key)
-                    {// Identical
-                        if (updateValue)
-                        {
-                            i.Value = valueFactory(key);
-                        }
-
-                        resultingValue = i.Value;
-                        return false;
+                if (key.Equals(i.Key))
+                {// Identical
+                    if (updateValue)
+                    {
+                        i.Value = valueFactory(key);
                     }
 
-                    if (i.Next == null)
-                    { // Last item.
-                        break;
-                    }
-
-                    i = i.Next;
+                    resultingValue = i.Value;
+                    return false;
                 }
 
-                resultingValue = valueFactory(key);
-                var item = new Item(key, resultingValue, hash);
-                i.Next = item;
+                if (i.Next == null)
+                { // Last item.
+                    break;
+                }
 
-                this.count++;
-                return true;
+                i = i.Next;
             }
+
+            resultingValue = valueFactory(key);
+            var item = new Item(key, resultingValue, hash);
+            i.Next = item;
+
+            this.count++;
+            return true;
         }
     }
 
     private void RebuildTable()
-    {// lock(cs) required.
+    {
         var nextCapacity = this.table.Length * 2;
         var nextTable = new Item[nextCapacity];
         for (var i = 0; i < this.table.Length; i++)
@@ -213,7 +205,7 @@ public class UInt16Hashtable<TValue>
     }
 
     private bool AddItem(Item[] table, Item item)
-    {// lock(cs) required.
+    {
         var h = item.Hash & (table.Length - 1);
 
         if (table[h] == null)
@@ -225,7 +217,7 @@ public class UInt16Hashtable<TValue>
             var i = table[h];
             while (true)
             {
-                if (i.Key == item.Key)
+                if (i.Key.Equals(item.Key))
                 {// Identical
                     return false;
                 }
