@@ -1,6 +1,8 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
@@ -161,11 +163,10 @@ public static class Sha2Helper
     }
 }
 
-/*
 /// <summary>
 /// Represents a managed implementation of SHA2.
 /// </summary>
-internal unsafe ref struct Sha2StateStruct
+public unsafe ref struct Sha2StateStruct
 {
     public const int BufferLength = 64;
 
@@ -339,4 +340,4 @@ internal unsafe ref struct Sha2StateStruct
             this.Hash7 += h;
         }
     }
-}*/
+}

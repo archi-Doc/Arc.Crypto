@@ -37,7 +37,7 @@ internal static class Ed25519Operations
         byte[] r;
         byte[] hram;
         GroupElementP3 R;
-        var hasher = new Sha512();
+        /*var hasher = new Sha512();
         {
             hasher.Update(expandedPrivateKey, 0, 32);
             az = hasher.Finish();
@@ -64,6 +64,6 @@ internal static class Ed25519Operations
             ScalarOperations.sc_muladd(s, hram, az, r);
             Array.Copy(s, 0, sign, 0 + 32, 32);
             s.AsSpan().Clear();
-        }
+        }*/
     }
 }
