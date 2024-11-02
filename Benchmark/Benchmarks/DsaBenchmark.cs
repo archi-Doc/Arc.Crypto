@@ -27,6 +27,7 @@ public class DsaBenchmark
     private readonly byte[] signEd25519B;
     private readonly byte[] pri2;
     private readonly byte[] pub2;
+    private readonly byte[] signature;
 
     public DsaBenchmark()
     {
@@ -51,9 +52,9 @@ public class DsaBenchmark
         Ed25519Helper.KeyPairFromSeed(Sha3Helper.Get256_ByteArray([]), out this.pub2, out this.pri2);
         Debug.Assert(pri.SequenceEqual(this.pri2));
         Debug.Assert(pub.SequenceEqual(this.pub2));
-        var signature = new byte[Ed25519Helper.SignatureSizeInBytes];
-        Ed25519Helper.Sign(this.message, this.pri2, signature);
-        Debug.Assert(signature.SequenceEqual(this.signEd25519));
+        this.signature = new byte[Ed25519Helper.SignatureSizeInBytes];
+        Ed25519Helper.Sign(this.message, this.pri2, this.signature);
+        Debug.Assert(this.signature.SequenceEqual(this.signEd25519));
 
         this.algorithm = NSec.Cryptography.SignatureAlgorithm.Ed25519;
         this.key = NSec.Cryptography.Key.Create(this.algorithm);
@@ -95,9 +96,8 @@ public class DsaBenchmark
     [Benchmark]
     public byte[] SignEd25519()
     {
-        var signature = new byte[Ed25519Helper.SignatureSizeInBytes];
-        Ed25519Helper.Sign(this.message, this.pri2, signature);
-        return signature;
+        Ed25519Helper.Sign(this.message, this.pri2, this.signature);
+        return this.signature;
     }
 
     /*[Benchmark]

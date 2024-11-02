@@ -11,7 +11,7 @@ namespace Arc.Crypto.Ed25519;
 
 internal static class Ed25519Operations
 {
-    public static void crypto_sign_keypair(ReadOnlySpan<byte> seed, Span<byte> publicKey, Span<byte> expandedPrivateKey)
+    public static void CreateKeyFromSeed(ReadOnlySpan<byte> seed, Span<byte> publicKey, Span<byte> expandedPrivateKey)
     {
         seed.CopyTo(expandedPrivateKey);
 
@@ -29,7 +29,7 @@ internal static class Ed25519Operations
         hash.Clear();
     }
 
-    public static void crypto_sign2(Span<byte> sign, ReadOnlySpan<byte> message, ReadOnlySpan<byte> expandedPrivateKey)
+    public static void Sign(Span<byte> sign, ReadOnlySpan<byte> message, ReadOnlySpan<byte> expandedPrivateKey)
     {
         Span<byte> az = stackalloc byte[64];
         Span<byte> r = stackalloc byte[64];

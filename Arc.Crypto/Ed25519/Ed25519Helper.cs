@@ -22,7 +22,7 @@ public static class Ed25519Helper
 
         publicKey = new byte[PublicKeySizeInBytes];
         expandedPrivateKey = new byte[ExpandedPrivateKeySizeInBytes];
-        Ed25519Operations.crypto_sign_keypair(privateKeySeed, publicKey, expandedPrivateKey);
+        Ed25519Operations.CreateKeyFromSeed(privateKeySeed, publicKey, expandedPrivateKey);
     }
 
     public static void Sign(ReadOnlySpan<byte> message, ReadOnlySpan<byte> expandedPrivateKey, Span<byte> signature)
@@ -37,6 +37,6 @@ public static class Ed25519Helper
             throw new ArgumentOutOfRangeException(nameof(signature));
         }
 
-        Ed25519Operations.crypto_sign2(signature, message, expandedPrivateKey);
+        Ed25519Operations.Sign(signature, message, expandedPrivateKey);
     }
 }
