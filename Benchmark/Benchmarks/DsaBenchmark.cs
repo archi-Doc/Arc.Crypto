@@ -1,5 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System.Diagnostics;
+using System.Linq;
 using System.Security.Cryptography;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
@@ -8,6 +10,7 @@ using Rebex.Security.Cryptography;
 namespace Benchmark;
 
 #pragma warning disable SA1310 // Field names should not contain underscore
+#pragma warning disable SA1405 // Debug.Assert should provide message text
 
 [Config(typeof(BenchmarkConfig))]
 public class DsaBenchmark
@@ -22,6 +25,8 @@ public class DsaBenchmark
     private readonly byte[] signSecp256r1;
     private readonly byte[] signEd25519;
     private readonly byte[] signEd25519B;
+    private readonly byte[] pri2;
+    private readonly byte[] pub2;
 
     public DsaBenchmark()
     {
@@ -40,6 +45,15 @@ public class DsaBenchmark
         this.ed25519.FromSeed(Sha3Helper.Get256_ByteArray([]));
         this.signEd25519 = this.ed25519.SignMessage(this.message);
         verify = this.ed25519.VerifyMessage(this.message, this.signEd25519);
+
+        var pri = this.ed25519.GetPrivateKey();
+        var pub = this.ed25519.GetPublicKey();
+        Ed25519Helper.KeyPairFromSeed(Sha3Helper.Get256_ByteArray([]), out this.pub2, out this.pri2);
+        Debug.Assert(pri.SequenceEqual(this.pri2));
+        Debug.Assert(pub.SequenceEqual(this.pub2));
+        var signature = new byte[Ed25519Helper.SignatureSizeInBytes];
+        Ed25519Helper.Sign(this.message, this.pri2, signature);
+        Debug.Assert(signature.SequenceEqual(this.signEd25519));
 
         this.algorithm = NSec.Cryptography.SignatureAlgorithm.Ed25519;
         this.key = NSec.Cryptography.Key.Create(this.algorithm);
@@ -76,6 +90,14 @@ public class DsaBenchmark
     public byte[] SignEd25519B()
     {
         return this.algorithm.Sign(this.key, this.message);
+    }
+
+    [Benchmark]
+    public byte[] SignEd25519C()
+    {
+        var signature = new byte[Ed25519Helper.SignatureSizeInBytes];
+        Ed25519Helper.Sign(this.message, this.pri2, signature);
+        return signature;
     }
 
     [Benchmark]
