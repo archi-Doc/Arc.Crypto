@@ -21,7 +21,7 @@ internal static class Ed25519Operations
         ScalarOperations.sc_clamp(hash, 0);
 
         GroupElementP3 A;
-        GroupOperations.ge_scalarmult_base(out A, hash, 0);
+        GroupOperations.ge_scalarmult_base(out A, hash);
         GroupOperations.ge_p3_tobytes(publicKey, ref A);
 
         publicKey.CopyTo(expandedPrivateKey.Slice(32));
@@ -48,7 +48,7 @@ internal static class Ed25519Operations
             incrementalHash.GetHashAndReset(r);
 
             ScalarOperations.sc_reduce(r);
-            GroupOperations.ge_scalarmult_base(out R, r, 0);
+            GroupOperations.ge_scalarmult_base(out R, r);
             GroupOperations.ge_p3_tobytes(sign, ref R);
 
             incrementalHash.AppendData(sign.Slice(0, 32));

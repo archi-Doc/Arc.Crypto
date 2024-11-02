@@ -1,6 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Arc.Crypto.Ed25519;
 
@@ -9,6 +10,7 @@ namespace Arc.Crypto.Ed25519;
 
 internal static class ScalarOperations
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void sc_clamp(Span<byte> s, int offset)
     {
         s[offset + 0] &= 248;
@@ -16,6 +18,7 @@ internal static class ScalarOperations
         s[offset + 31] |= 64;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long load_3(ReadOnlySpan<byte> input, int offset)
     {
         long result;
@@ -25,6 +28,7 @@ internal static class ScalarOperations
         return result;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long load_4(ReadOnlySpan<byte> input, int offset)
     {
         long result;

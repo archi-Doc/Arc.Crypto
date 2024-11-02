@@ -74,7 +74,7 @@ public class DsaBenchmark
     {
     }
 
-    [Benchmark]
+    // [Benchmark]
     public byte[] SignSecp256r1()
     {
         return this.ecdsa.SignHash(this.hash);

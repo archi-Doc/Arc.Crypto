@@ -9,7 +9,7 @@ namespace Arc.Crypto.Ed25519;
 
 internal static class GroupOperations
 {
-    public static void ge_scalarmult_base(out GroupElementP3 h, Span<byte> a, int offset)
+    public static void ge_scalarmult_base(out GroupElementP3 h, Span<byte> a)
     {
         Span<sbyte> e = stackalloc sbyte[64];
         sbyte carry;
@@ -20,8 +20,8 @@ internal static class GroupOperations
 
         for (i = 0; i < 32; ++i)
         {
-            e[(2 * i) + 0] = (sbyte)((a[offset + i] >> 0) & 15);
-            e[(2 * i) + 1] = (sbyte)((a[offset + i] >> 4) & 15);
+            e[(2 * i) + 0] = (sbyte)((a[i] >> 0) & 15);
+            e[(2 * i) + 1] = (sbyte)((a[i] >> 4) & 15);
         }
 
         carry = 0;
