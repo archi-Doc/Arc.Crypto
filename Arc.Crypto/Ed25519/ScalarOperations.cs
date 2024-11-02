@@ -16,7 +16,7 @@ internal static class ScalarOperations
         s[offset + 31] |= 64;
     }
 
-    public static long load_3(byte[] input, int offset)
+    public static long load_3(ReadOnlySpan<byte> input, int offset)
     {
         long result;
         result = (long)input[offset + 0];
@@ -25,7 +25,7 @@ internal static class ScalarOperations
         return result;
     }
 
-    public static long load_4(byte[] input, int offset)
+    public static long load_4(ReadOnlySpan<byte> input, int offset)
     {
         long result;
         result = (long)input[offset + 0];
@@ -35,7 +35,7 @@ internal static class ScalarOperations
         return result;
     }
 
-    public static void sc_muladd(byte[] s, byte[] a, byte[] b, byte[] c)
+    public static void sc_muladd(Span<byte> s, ReadOnlySpan<byte> a, ReadOnlySpan<byte> b, ReadOnlySpan<byte> c)
     {
         long a0 = 2097151 & load_3(a, 0);
         long a1 = 2097151 & (load_4(a, 2) >> 5);
@@ -510,7 +510,7 @@ internal static class ScalarOperations
         }
     }
 
-    public static void sc_reduce(byte[] s)
+    public static void sc_reduce(Span<byte> s)
     {
         long s0 = 2097151 & load_3(s, 0);
         long s1 = 2097151 & (load_4(s, 2) >> 5);

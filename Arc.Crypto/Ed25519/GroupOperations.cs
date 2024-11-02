@@ -60,7 +60,7 @@ internal static class GroupOperations
         }
     }
 
-    public static void ge_p3_tobytes(Span<byte> s, int offset, ref GroupElementP3 h)
+    public static void ge_p3_tobytes(Span<byte> s, ref GroupElementP3 h)
     {
         FieldElement recip;
         FieldElement x;
@@ -69,8 +69,8 @@ internal static class GroupOperations
         FieldOperations.fe_invert(out recip, ref h.Z);
         FieldOperations.fe_mul(out x, ref h.X, ref recip);
         FieldOperations.fe_mul(out y, ref h.Y, ref recip);
-        FieldOperations.fe_tobytes(s, offset, ref y);
-        s[offset + 31] ^= (byte)(FieldOperations.fe_isnegative(ref x) << 7);
+        FieldOperations.fe_tobytes(s, ref y);
+        s[31] ^= (byte)(FieldOperations.fe_isnegative(ref x) << 7);
     }
 
     public static void ge_p1p1_to_p3(out GroupElementP3 r, ref GroupElementP1P1 p)

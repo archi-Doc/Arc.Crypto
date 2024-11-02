@@ -71,7 +71,7 @@ public class Sha256Benchmark
         try
         {
             incrementalHash.AppendData(this.data.AsSpan(0, this.Length));
-            return this.incrementalHash.GetHashAndReset();
+            return incrementalHash.GetHashAndReset();
         }
         finally
         {

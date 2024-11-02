@@ -1,6 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 
 namespace Arc.Crypto.Ed25519;
@@ -21,49 +22,51 @@ internal static class Ed25519Operations
 
         GroupElementP3 A;
         GroupOperations.ge_scalarmult_base(out A, hash, 0);
-        GroupOperations.ge_p3_tobytes(publicKey, 0, ref A);
+        GroupOperations.ge_p3_tobytes(publicKey, ref A);
 
         publicKey.CopyTo(expandedPrivateKey.Slice(32));
 
         hash.Clear();
     }
 
-    public static void crypto_sign2(
-            byte[] sign,
-            byte[] message,
-            byte[] expandedPrivateKey)
+    public static void crypto_sign2(Span<byte> sign, ReadOnlySpan<byte> message, ReadOnlySpan<byte> expandedPrivateKey)
     {
-        byte[] az;
-        byte[] r;
-        byte[] hram;
+        Span<byte> az = stackalloc byte[64];
+        Span<byte> r = stackalloc byte[64];
+        Span<byte> hram = stackalloc byte[64];
         GroupElementP3 R;
-        /*var hasher = new Sha512();
+
+        var incrementalHash = Sha2Helper.IncrementalSha512Pool.Get();
+        try
         {
-            hasher.Update(expandedPrivateKey, 0, 32);
-            az = hasher.Finish();
+            incrementalHash.AppendData(expandedPrivateKey.Slice(0, 32));
+            incrementalHash.GetHashAndReset(az);
             ScalarOperations.sc_clamp(az, 0);
 
-            hasher.Init();
-            hasher.Update(az, 32, 32);
-            hasher.Update(message, 0, message.Length);
-            r = hasher.Finish();
+            incrementalHash.AppendData(az.Slice(32, 32));
+            incrementalHash.AppendData(message);
+            incrementalHash.GetHashAndReset(r);
 
             ScalarOperations.sc_reduce(r);
             GroupOperations.ge_scalarmult_base(out R, r, 0);
-            GroupOperations.ge_p3_tobytes(sign, 0, ref R);
+            GroupOperations.ge_p3_tobytes(sign, ref R);
 
-            hasher.Init();
-            hasher.Update(sign, 0, 32);
-            hasher.Update(expandedPrivateKey, 32, 32);
-            hasher.Update(message, 0, message.Length);
-            hram = hasher.Finish();
+            incrementalHash.AppendData(sign.Slice(0, 32));
+            incrementalHash.AppendData(expandedPrivateKey.Slice(32, 32));
+            incrementalHash.AppendData(message);
+            incrementalHash.GetHashAndReset(hram);
 
             ScalarOperations.sc_reduce(hram);
-            var s = new byte[32];
-            Array.Copy(sign, 0 + 32, s, 0, 32);
+            Span<byte> s = stackalloc byte[32];
+
+            sign.Slice(32).CopyTo(s);
             ScalarOperations.sc_muladd(s, hram, az, r);
-            Array.Copy(s, 0, sign, 0 + 32, 32);
-            s.AsSpan().Clear();
-        }*/
+            s.CopyTo(sign.Slice(32));
+            s.Clear();
+        }
+        finally
+        {
+            Sha2Helper.IncrementalSha256Pool.Return(incrementalHash);
+        }
     }
 }
