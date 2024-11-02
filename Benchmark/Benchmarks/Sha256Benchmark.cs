@@ -65,11 +65,17 @@ public class Sha256Benchmark
     }
 
     [Benchmark]
-    public uint Sha256Struct()
+    public byte[] Sha256Incremental3()
     {
-        Span<uint> buffer = stackalloc uint[16];
-        Sha2StateStruct st = new(buffer);
-        st.Process(this.data.AsSpan(0, this.Length));
-        return st.Hash0;
+        var incrementalHash = Sha2Helper.IncrementalSha256Pool.Get();
+        try
+        {
+            incrementalHash.AppendData(this.data.AsSpan(0, this.Length));
+            return this.incrementalHash.GetHashAndReset();
+        }
+        finally
+        {
+            Sha2Helper.IncrementalSha256Pool.Return(incrementalHash);
+        }
     }
 }
