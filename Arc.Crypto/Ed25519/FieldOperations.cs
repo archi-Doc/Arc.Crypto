@@ -249,7 +249,7 @@ internal static class FieldOperations
         h1 += carry0;
         h0 -= carry0 << 26;
 
-        h = new((int)h0, (int)h1, (int)h2, (int)h3, (int)h4, (int)h5, (int)h6, (int)h7, (int)h8, (int)h9);
+        h = new((nint)h0, (nint)h1, (nint)h2, (nint)h3, (nint)h4, (nint)h5, (nint)h6, (nint)h7, (nint)h8, (nint)h9);
     }
 
     public static void fe_sq2(out FieldElement h, ref FieldElement f)
@@ -407,7 +407,7 @@ internal static class FieldOperations
         h1 += carry0;
         h0 -= carry0 << 26;
 
-        h = new((int)h0, (int)h1, (int)h2, (int)h3, (int)h4, (int)h5, (int)h6, (int)h7, (int)h8, (int)h9);
+        h = new((nint)h0, (nint)h1, (nint)h2, (nint)h3, (nint)h4, (nint)h5, (nint)h6, (nint)h7, (nint)h8, (nint)h9);
     }
 
     public static void fe_sub(out FieldElement h, ref FieldElement f, ref FieldElement g)
@@ -646,7 +646,7 @@ internal static class FieldOperations
         h1 += carry0;
         h0 -= carry0 << 26;
 
-        h = new((int)h0, (int)h1, (int)h2, (int)h3, (int)h4, (int)h5, (int)h6, (int)h7, (int)h8, (int)h9);
+        h = new((nint)h0, (nint)h1, (nint)h2, (nint)h3, (nint)h4, (nint)h5, (nint)h6, (nint)h7, (nint)h8, (nint)h9);
     }
 
     public static void fe_neg(out FieldElement h, ref FieldElement f)
@@ -762,7 +762,7 @@ internal static class FieldOperations
         fe_mul(out result, ref t1, ref t0);
     }
 
-    public static int fe_isnegative(ref FieldElement f)
+    public static nint fe_isnegative(ref FieldElement f)
     {
         FieldElement fr;
         fe_reduce(out fr, ref f);

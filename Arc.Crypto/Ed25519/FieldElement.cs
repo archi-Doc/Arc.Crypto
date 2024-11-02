@@ -8,18 +8,18 @@ namespace Arc.Crypto.Ed25519;
 
 internal readonly struct FieldElement
 {
-    public readonly int x0;
-    public readonly int x1;
-    public readonly int x2;
-    public readonly int x3;
-    public readonly int x4;
-    public readonly int x5;
-    public readonly int x6;
-    public readonly int x7;
-    public readonly int x8;
-    public readonly int x9;
+    public readonly nint x0;
+    public readonly nint x1;
+    public readonly nint x2;
+    public readonly nint x3;
+    public readonly nint x4;
+    public readonly nint x5;
+    public readonly nint x6;
+    public readonly nint x7;
+    public readonly nint x8;
+    public readonly nint x9;
 
-    public FieldElement(int e0, int e1, int e2, int e3, int e4, int e5, int e6, int e7, int e8, int e9)
+    public FieldElement(nint e0, nint e1, nint e2, nint e3, nint e4, nint e5, nint e6, nint e7, nint e8, nint e9)
     {
         this.x0 = e0;
         this.x1 = e1;
