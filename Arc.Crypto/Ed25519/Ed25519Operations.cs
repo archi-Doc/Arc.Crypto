@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.Intrinsics.Arm;
 using System.Security.Cryptography;
 
 namespace Arc.Crypto.Ed25519;
@@ -68,5 +69,41 @@ internal static class Ed25519Operations
         {
             Sha2Helper.IncrementalSha512Pool.Return(incrementalHash);
         }
+    }
+
+    public static bool crypto_sign_verify(ReadOnlySpan<byte> sig, ReadOnlySpan<byte> m, ReadOnlySpan<byte> pk)
+    {
+        Span<byte> h = stackalloc byte[64];
+        Span<byte> checkr = stackalloc byte[32];
+        GroupElementP3 A;
+        GroupElementP2 R;
+
+        if ((sig[63] & 224) != 0)
+        {
+            return false;
+        }
+
+        if (GroupOperations.ge_frombytes_negate_vartime(out A, pk) != 0)
+        {
+            return false;
+        }
+
+        var hasher = new Sha512();
+        hasher.Update(sig, 0, 32);
+        hasher.Update(pk, 0, 32);
+        hasher.Update(m, 0, m.Length);
+        h = hasher.Finish();
+
+        ScalarOperations.sc_reduce(h);
+
+        Span<byte> sm32 = stackalloc byte[32];
+        sig.Slice(32).CopyTo(sm32);
+        GroupOperations.ge_double_scalarmult_vartime(out R, h, ref A, sm32);
+        GroupOperations.ge_tobytes(checkr, 0, ref R);
+        var result = CryptoBytes.ConstantTimeEquals(checkr, 0, sig, 0, 32);
+        h.Clear();
+        checkr.Clear();
+
+        return result;
     }
 }
