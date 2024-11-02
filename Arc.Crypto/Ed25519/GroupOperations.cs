@@ -11,7 +11,7 @@ internal static class GroupOperations
 {
     public static void ge_scalarmult_base(out GroupElementP3 h, Span<byte> a, int offset)
     {
-        sbyte[] e = new sbyte[64];
+        Span<sbyte> e = stackalloc sbyte[64];
         sbyte carry;
         GroupElementP1P1 r;
         GroupElementP2 s;

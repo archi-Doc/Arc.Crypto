@@ -81,26 +81,26 @@ public class DsaBenchmark
     }
 
     [Benchmark]
-    public byte[] SignEd25519()
+    public byte[] SignEd25519_NaCl()
     {
         return this.ed25519.SignMessage(this.message);
     }
 
     [Benchmark]
-    public byte[] SignEd25519B()
+    public byte[] SignEd25519B_NSec()
     {
         return this.algorithm.Sign(this.key, this.message);
     }
 
     [Benchmark]
-    public byte[] SignEd25519C()
+    public byte[] SignEd25519()
     {
         var signature = new byte[Ed25519Helper.SignatureSizeInBytes];
         Ed25519Helper.Sign(this.message, this.pri2, signature);
         return signature;
     }
 
-    [Benchmark]
+    /*[Benchmark]
     public bool VerifySecp256r1()
     {
         return this.ecdsa.VerifyHash(this.hash, this.signSecp256r1);
@@ -116,5 +116,5 @@ public class DsaBenchmark
     public bool VerifyEd25519B()
     {
         return this.algorithm.Verify(this.key.PublicKey, this.message, this.signEd25519B);
-    }
+    }*/
 }
