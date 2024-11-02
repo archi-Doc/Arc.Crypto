@@ -19,7 +19,8 @@ internal static class FieldOperations
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void fe_1(out FieldElement h)
     {
-        h = new(1, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        h = default;
+        h.x0 = 1;
     }
 
     public static void fe_cmov(ref FieldElement f, ref FieldElement g, int b)
@@ -102,7 +103,16 @@ internal static class FieldOperations
         var h8 = f8 + g8;
         var h9 = f9 + g9;
 
-        h = new(h0, h1, h2, h3, h4, h5, h6, h7, h8, h9);
+        h.x0 = h0;
+        h.x1 = h1;
+        h.x2 = h2;
+        h.x3 = h3;
+        h.x4 = h4;
+        h.x5 = h5;
+        h.x6 = h6;
+        h.x7 = h7;
+        h.x8 = h8;
+        h.x9 = h9;
     }
 
     public static void fe_sq(out FieldElement h, ref FieldElement f)
@@ -249,7 +259,16 @@ internal static class FieldOperations
         h1 += carry0;
         h0 -= carry0 << 26;
 
-        h = new((nint)h0, (nint)h1, (nint)h2, (nint)h3, (nint)h4, (nint)h5, (nint)h6, (nint)h7, (nint)h8, (nint)h9);
+        h.x0 = (nint)h0;
+        h.x1 = (nint)h1;
+        h.x2 = (nint)h2;
+        h.x3 = (nint)h3;
+        h.x4 = (nint)h4;
+        h.x5 = (nint)h5;
+        h.x6 = (nint)h6;
+        h.x7 = (nint)h7;
+        h.x8 = (nint)h8;
+        h.x9 = (nint)h9;
     }
 
     public static void fe_sq2(out FieldElement h, ref FieldElement f)
@@ -407,7 +426,16 @@ internal static class FieldOperations
         h1 += carry0;
         h0 -= carry0 << 26;
 
-        h = new((nint)h0, (nint)h1, (nint)h2, (nint)h3, (nint)h4, (nint)h5, (nint)h6, (nint)h7, (nint)h8, (nint)h9);
+        h.x0 = (nint)h0;
+        h.x1 = (nint)h1;
+        h.x2 = (nint)h2;
+        h.x3 = (nint)h3;
+        h.x4 = (nint)h4;
+        h.x5 = (nint)h5;
+        h.x6 = (nint)h6;
+        h.x7 = (nint)h7;
+        h.x8 = (nint)h8;
+        h.x9 = (nint)h9;
     }
 
     public static void fe_sub(out FieldElement h, ref FieldElement f, ref FieldElement g)
@@ -443,7 +471,16 @@ internal static class FieldOperations
         var h8 = f8 - g8;
         var h9 = f9 - g9;
 
-        h = new(h0, h1, h2, h3, h4, h5, h6, h7, h8, h9);
+        h.x0 = h0;
+        h.x1 = h1;
+        h.x2 = h2;
+        h.x3 = h3;
+        h.x4 = h4;
+        h.x5 = h5;
+        h.x6 = h6;
+        h.x7 = h7;
+        h.x8 = h8;
+        h.x9 = h9;
     }
 
     public static void fe_mul(out FieldElement h, ref FieldElement f, ref FieldElement g)
@@ -646,7 +683,16 @@ internal static class FieldOperations
         h1 += carry0;
         h0 -= carry0 << 26;
 
-        h = new((nint)h0, (nint)h1, (nint)h2, (nint)h3, (nint)h4, (nint)h5, (nint)h6, (nint)h7, (nint)h8, (nint)h9);
+        h.x0 = (nint)h0;
+        h.x1 = (nint)h1;
+        h.x2 = (nint)h2;
+        h.x3 = (nint)h3;
+        h.x4 = (nint)h4;
+        h.x5 = (nint)h5;
+        h.x6 = (nint)h6;
+        h.x7 = (nint)h7;
+        h.x8 = (nint)h8;
+        h.x9 = (nint)h9;
     }
 
     public static void fe_neg(out FieldElement h, ref FieldElement f)
@@ -672,7 +718,16 @@ internal static class FieldOperations
         var h8 = -f8;
         var h9 = -f9;
 
-        h = new(h0, h1, h2, h3, h4, h5, h6, h7, h8, h9);
+        h.x0 = h0;
+        h.x1 = h1;
+        h.x2 = h2;
+        h.x3 = h3;
+        h.x4 = h4;
+        h.x5 = h5;
+        h.x6 = h6;
+        h.x7 = h7;
+        h.x8 = h8;
+        h.x9 = h9;
     }
 
     public static void fe_invert(out FieldElement result, ref FieldElement z)
@@ -879,6 +934,15 @@ internal static class FieldOperations
         var carry9 = h9 >> 25;
         h9 -= carry9 << 25;
 
-        hr = new(h0, h1, h2, h3, h4, h5, h6, h7, h8, h9);
+        hr.x0 = h0;
+        hr.x1 = h1;
+        hr.x2 = h2;
+        hr.x3 = h3;
+        hr.x4 = h4;
+        hr.x5 = h5;
+        hr.x6 = h6;
+        hr.x7 = h7;
+        hr.x8 = h8;
+        hr.x9 = h9;
     }
 }

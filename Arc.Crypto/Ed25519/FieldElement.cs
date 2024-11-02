@@ -6,18 +6,18 @@ namespace Arc.Crypto.Ed25519;
 
 #pragma warning disable SA1307 // Accessible fields should begin with upper-case letter
 
-internal readonly struct FieldElement
+internal struct FieldElement
 {
-    public readonly nint x0;
-    public readonly nint x1;
-    public readonly nint x2;
-    public readonly nint x3;
-    public readonly nint x4;
-    public readonly nint x5;
-    public readonly nint x6;
-    public readonly nint x7;
-    public readonly nint x8;
-    public readonly nint x9;
+    public nint x0;
+    public nint x1;
+    public nint x2;
+    public nint x3;
+    public nint x4;
+    public nint x5;
+    public nint x6;
+    public nint x7;
+    public nint x8;
+    public nint x9;
 
     public FieldElement(nint e0, nint e1, nint e2, nint e3, nint e4, nint e5, nint e6, nint e7, nint e8, nint e9)
     {
