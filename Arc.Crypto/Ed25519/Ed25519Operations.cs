@@ -66,7 +66,7 @@ internal static class Ed25519Operations
         }
         finally
         {
-            Sha2Helper.IncrementalSha256Pool.Return(incrementalHash);
+            Sha2Helper.IncrementalSha512Pool.Return(incrementalHash);
         }
     }
 }

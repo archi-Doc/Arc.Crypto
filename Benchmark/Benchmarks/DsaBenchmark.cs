@@ -86,7 +86,7 @@ public class DsaBenchmark
         return this.ed25519.SignMessage(this.message);
     }
 
-    [Benchmark]
+    // [Benchmark]
     public byte[] SignEd25519B_NSec()
     {
         return this.algorithm.Sign(this.key, this.message);
