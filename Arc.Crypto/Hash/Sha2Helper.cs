@@ -1,8 +1,11 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using Arc.Collections;
 
 #pragma warning disable SA1124 // Do not use regions
 
@@ -14,11 +17,17 @@ namespace Arc.Crypto;
 /// </summary>
 public static class Sha2Helper
 {
-    private static ObjectPool<HashAlgorithm> Sha256 { get; } = new(static () => System.Security.Cryptography.SHA256.Create());
+    public static readonly ObjectPool<IncrementalHash> IncrementalSha256Pool = new(static () => IncrementalHash.CreateHash(HashAlgorithmName.SHA256));
 
-    private static ObjectPool<HashAlgorithm> Sha384 { get; } = new(static () => System.Security.Cryptography.SHA384.Create());
+    public static readonly ObjectPool<IncrementalHash> IncrementalSha384Pool = new(static () => IncrementalHash.CreateHash(HashAlgorithmName.SHA384));
 
-    private static ObjectPool<HashAlgorithm> Sha512 { get; } = new(static () => System.Security.Cryptography.SHA512.Create());
+    public static readonly ObjectPool<IncrementalHash> IncrementalSha512Pool = new(static () => IncrementalHash.CreateHash(HashAlgorithmName.SHA512));
+
+    private static readonly ObjectPool<HashAlgorithm> Sha256 = new(static () => System.Security.Cryptography.SHA256.Create());
+
+    private static readonly ObjectPool<HashAlgorithm> Sha384 = new(static () => System.Security.Cryptography.SHA384.Create());
+
+    private static readonly ObjectPool<HashAlgorithm> Sha512 = new(static () => System.Security.Cryptography.SHA512.Create());
 
     /// <summary>
     /// Computes the SHA2-256 hash and returns the byte array (32 bytes).<br/>
@@ -165,7 +174,7 @@ public static class Sha2Helper
 /// <summary>
 /// Represents a managed implementation of SHA2.
 /// </summary>
-internal unsafe ref struct Sha2StateStruct
+public unsafe ref struct Sha2StateStruct
 {
     public const int BufferLength = 64;
 
