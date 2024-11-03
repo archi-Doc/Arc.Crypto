@@ -71,7 +71,7 @@ internal static class Ed25519Operations
         }
     }
 
-    public static bool Verify(ReadOnlySpan<byte> signature, ReadOnlySpan<byte> message, ReadOnlySpan<byte> expandedPrivateKey)
+    public static bool Verify(ReadOnlySpan<byte> signature, ReadOnlySpan<byte> message, ReadOnlySpan<byte> publicKey)
     {
         Span<byte> h = stackalloc byte[64];
         Span<byte> checkr = stackalloc byte[32];
@@ -83,7 +83,7 @@ internal static class Ed25519Operations
             return false;
         }
 
-        if (GroupOperations.ge_frombytes_negate_vartime(out A, expandedPrivateKey) != 0)
+        if (GroupOperations.ge_frombytes_negate_vartime(out A, publicKey) != 0)
         {
             return false;
         }
@@ -92,7 +92,7 @@ internal static class Ed25519Operations
         try
         {
             incrementalHash.AppendData(signature.Slice(0, 32));
-            incrementalHash.AppendData(expandedPrivateKey.Slice(0, 32));
+            incrementalHash.AppendData(publicKey);
             incrementalHash.AppendData(message);
             incrementalHash.GetHashAndReset(h);
         }

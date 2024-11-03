@@ -367,7 +367,7 @@ internal static class GroupOperations
         GroupElementPreComp[] Bi = LookupTables.Base2;
         Span<sbyte> aslide = stackalloc sbyte[256];
         Span<sbyte> bslide = stackalloc sbyte[256];
-        GroupElementCached[] Ai = new GroupElementCached[8];
+        Span<GroupElementCached> Ai = stackalloc GroupElementCached[8];
         GroupElementP1P1 t;
         GroupElementP3 u;
         GroupElementP3 A2;

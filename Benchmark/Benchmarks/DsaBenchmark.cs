@@ -55,7 +55,7 @@ public class DsaBenchmark
         this.signature = new byte[Ed25519Helper.SignatureSizeInBytes];
         Ed25519Helper.Sign(this.message, this.pri2, this.signature);
         Debug.Assert(this.signature.SequenceEqual(this.signEd25519));
-        verify = Ed25519Helper.Verify(this.message, this.pri2, this.signature);
+        verify = Ed25519Helper.Verify(this.message, this.pub2, this.signature);
 
         this.algorithm = NSec.Cryptography.SignatureAlgorithm.Ed25519;
         this.key = NSec.Cryptography.Key.Create(this.algorithm);
@@ -76,7 +76,7 @@ public class DsaBenchmark
     {
     }
 
-    // [Benchmark]
+    [Benchmark]
     public byte[] SignSecp256r1()
     {
         return this.ecdsa.SignHash(this.hash);
@@ -101,21 +101,21 @@ public class DsaBenchmark
         return this.signature;
     }
 
-    /*[Benchmark]
+    [Benchmark]
     public bool VerifySecp256r1()
     {
         return this.ecdsa.VerifyHash(this.hash, this.signSecp256r1);
     }
 
     [Benchmark]
-    public bool VerifyEd25519()
+    public bool VerifyEd25519_NaCl()
     {
         return this.ed25519.VerifyMessage(this.message, this.signEd25519);
     }
 
     [Benchmark]
-    public bool VerifyEd25519B()
+    public bool VerifyEd25519()
     {
-        return this.algorithm.Verify(this.key.PublicKey, this.message, this.signEd25519B);
-    }*/
+        return Ed25519Helper.Verify(this.message, this.pub2, this.signature);
+    }
 }

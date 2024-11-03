@@ -40,11 +40,11 @@ public static class Ed25519Helper
         Ed25519Operations.Sign(signature, message, expandedPrivateKey);
     }
 
-    public static bool Verify(ReadOnlySpan<byte> message, ReadOnlySpan<byte> expandedPrivateKey, ReadOnlySpan<byte> signature)
+    public static bool Verify(ReadOnlySpan<byte> message, ReadOnlySpan<byte> publicKey, ReadOnlySpan<byte> signature)
     {
-        if (expandedPrivateKey.Length != ExpandedPrivateKeySizeInBytes)
+        if (publicKey.Length != PublicKeySizeInBytes)
         {
-            throw new ArgumentOutOfRangeException(nameof(expandedPrivateKey));
+            throw new ArgumentOutOfRangeException(nameof(publicKey));
         }
 
         if (signature.Length != SignatureSizeInBytes)
@@ -52,6 +52,6 @@ public static class Ed25519Helper
             throw new ArgumentOutOfRangeException(nameof(signature));
         }
 
-        return Ed25519Operations.Verify(signature, message, expandedPrivateKey);
+        return Ed25519Operations.Verify(signature, message, publicKey);
     }
 }

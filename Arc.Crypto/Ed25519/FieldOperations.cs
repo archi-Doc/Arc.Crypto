@@ -77,11 +77,11 @@ internal static class FieldOperations
         h.x9 = (int)h9;
     }
 
-    public static nint fe_isnonzero(ref FieldElement f)
+    public static int fe_isnonzero(ref FieldElement f)
     {
         FieldElement fr;
         fe_reduce(out fr, ref f);
-        nint differentBits = 0;
+        int differentBits = 0;
         differentBits |= fr.x0;
         differentBits |= fr.x1;
         differentBits |= fr.x2;
@@ -92,7 +92,7 @@ internal static class FieldOperations
         differentBits |= fr.x7;
         differentBits |= fr.x8;
         differentBits |= fr.x9;
-        return (nint)((unchecked((nuint)differentBits - 1) >> 31) ^ 1);
+        return (int)((unchecked((uint)differentBits - 1) >> 31) ^ 1);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -344,16 +344,16 @@ internal static class FieldOperations
         h1 += carry0;
         h0 -= carry0 << 26;
 
-        h.x0 = (nint)h0;
-        h.x1 = (nint)h1;
-        h.x2 = (nint)h2;
-        h.x3 = (nint)h3;
-        h.x4 = (nint)h4;
-        h.x5 = (nint)h5;
-        h.x6 = (nint)h6;
-        h.x7 = (nint)h7;
-        h.x8 = (nint)h8;
-        h.x9 = (nint)h9;
+        h.x0 = (int)h0;
+        h.x1 = (int)h1;
+        h.x2 = (int)h2;
+        h.x3 = (int)h3;
+        h.x4 = (int)h4;
+        h.x5 = (int)h5;
+        h.x6 = (int)h6;
+        h.x7 = (int)h7;
+        h.x8 = (int)h8;
+        h.x9 = (int)h9;
     }
 
     public static void fe_sq2(out FieldElement h, ref FieldElement f)
@@ -511,16 +511,16 @@ internal static class FieldOperations
         h1 += carry0;
         h0 -= carry0 << 26;
 
-        h.x0 = (nint)h0;
-        h.x1 = (nint)h1;
-        h.x2 = (nint)h2;
-        h.x3 = (nint)h3;
-        h.x4 = (nint)h4;
-        h.x5 = (nint)h5;
-        h.x6 = (nint)h6;
-        h.x7 = (nint)h7;
-        h.x8 = (nint)h8;
-        h.x9 = (nint)h9;
+        h.x0 = (int)h0;
+        h.x1 = (int)h1;
+        h.x2 = (int)h2;
+        h.x3 = (int)h3;
+        h.x4 = (int)h4;
+        h.x5 = (int)h5;
+        h.x6 = (int)h6;
+        h.x7 = (int)h7;
+        h.x8 = (int)h8;
+        h.x9 = (int)h9;
     }
 
     public static void fe_sub(out FieldElement h, ref FieldElement f, ref FieldElement g)
@@ -768,16 +768,16 @@ internal static class FieldOperations
         h1 += carry0;
         h0 -= carry0 << 26;
 
-        h.x0 = (nint)h0;
-        h.x1 = (nint)h1;
-        h.x2 = (nint)h2;
-        h.x3 = (nint)h3;
-        h.x4 = (nint)h4;
-        h.x5 = (nint)h5;
-        h.x6 = (nint)h6;
-        h.x7 = (nint)h7;
-        h.x8 = (nint)h8;
-        h.x9 = (nint)h9;
+        h.x0 = (int)h0;
+        h.x1 = (int)h1;
+        h.x2 = (int)h2;
+        h.x3 = (int)h3;
+        h.x4 = (int)h4;
+        h.x5 = (int)h5;
+        h.x6 = (int)h6;
+        h.x7 = (int)h7;
+        h.x8 = (int)h8;
+        h.x9 = (int)h9;
     }
 
     public static void fe_neg(out FieldElement h, ref FieldElement f)
@@ -902,7 +902,7 @@ internal static class FieldOperations
         fe_mul(out result, ref t1, ref t0);
     }
 
-    public static nint fe_isnegative(ref FieldElement f)
+    public static int fe_isnegative(ref FieldElement f)
     {
         FieldElement fr;
         fe_reduce(out fr, ref f);
