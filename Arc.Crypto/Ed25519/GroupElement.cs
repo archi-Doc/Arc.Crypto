@@ -48,10 +48,10 @@ internal struct GroupElementPreComp
     }
 }
 
-/*internal struct GroupElementCached
+internal struct GroupElementCached
 {
     public FieldElement YplusX;
     public FieldElement YminusX;
     public FieldElement Z;
     public FieldElement T2d;
-}*/
+}

@@ -55,6 +55,7 @@ public class DsaBenchmark
         this.signature = new byte[Ed25519Helper.SignatureSizeInBytes];
         Ed25519Helper.Sign(this.message, this.pri2, this.signature);
         Debug.Assert(this.signature.SequenceEqual(this.signEd25519));
+        verify = Ed25519Helper.Verify(this.message, this.pri2, this.signature);
 
         this.algorithm = NSec.Cryptography.SignatureAlgorithm.Ed25519;
         this.key = NSec.Cryptography.Key.Create(this.algorithm);

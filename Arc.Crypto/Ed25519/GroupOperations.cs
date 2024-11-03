@@ -190,7 +190,7 @@ internal static class GroupOperations
         FieldOperations.fe_0(out h.xy2d);
     }
 
-    public static int ge_frombytes_negate_vartime(out GroupElementP3 h, byte[] data)
+    public static int ge_frombytes_negate_vartime(out GroupElementP3 h, ReadOnlySpan<byte> data)
     {
         FieldElement u;
         FieldElement v;
@@ -198,10 +198,10 @@ internal static class GroupOperations
         FieldElement vxx;
         FieldElement check;
 
-        FieldOperations.fe_frombytes(out h.Y, data, offset);
+        FieldOperations.fe_frombytes(out h.Y, data);
         FieldOperations.fe_1(out h.Z);
         FieldOperations.fe_sq(out u, ref h.Y);
-        FieldOperations.fe_mul(out v, ref u, ref LookupTables.d);
+        FieldOperations.fe_mul(out v, ref u, ref LookupTables.D);
         FieldOperations.fe_sub(out u, ref u, ref h.Z);       /* u = y^2-1 */
         FieldOperations.fe_add(out v, ref v, ref h.Z);       /* v = dy^2+1 */
 
@@ -227,7 +227,7 @@ internal static class GroupOperations
                 return -1;
             }
 
-            FieldOperations.fe_mul(out h.X, ref h.X, ref LookupTables.sqrtm1);
+            FieldOperations.fe_mul(out h.X, ref h.X, ref LookupTables.Sqrtm1);
         }
 
         if (FieldOperations.fe_isnegative(ref h.X) == (data[31] >> 7))
@@ -237,5 +237,207 @@ internal static class GroupOperations
 
         FieldOperations.fe_mul(out h.T, ref h.X, ref h.Y);
         return 0;
+    }
+
+    public static void slide(Span<sbyte> r, ReadOnlySpan<byte> a)
+    {
+        int i;
+        int b;
+        int k;
+
+        for (i = 0; i < 256; ++i)
+        {
+            r[i] = (sbyte)(1 & (a[i >> 3] >> (i & 7)));
+        }
+
+        for (i = 0; i < 256; ++i)
+        {
+            if (r[i] != 0)
+            {
+                for (b = 1; b <= 6 && i + b < 256; ++b)
+                {
+                    if (r[i + b] != 0)
+                    {
+                        if (r[i] + (r[i + b] << b) <= 15)
+                        {
+                            r[i] += (sbyte)(r[i + b] << b);
+                            r[i + b] = 0;
+                        }
+                        else if (r[i] - (r[i + b] << b) >= -15)
+                        {
+                            r[i] -= (sbyte)(r[i + b] << b);
+                            for (k = i + b; k < 256; ++k)
+                            {
+                                if (r[k] == 0)
+                                {
+                                    r[k] = 1;
+                                    break;
+                                }
+
+                                r[k] = 0;
+                            }
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static void ge_add(out GroupElementP1P1 r, ref GroupElementP3 p, ref GroupElementCached q)
+    {
+        FieldElement t0;
+        FieldOperations.fe_add(out r.X, ref p.Y, ref p.X);
+        FieldOperations.fe_sub(out r.Y, ref p.Y, ref p.X);
+        FieldOperations.fe_mul(out r.Z, ref r.X, ref q.YplusX);
+        FieldOperations.fe_mul(out r.Y, ref r.Y, ref q.YminusX);
+        FieldOperations.fe_mul(out r.T, ref q.T2d, ref p.T);
+        FieldOperations.fe_mul(out r.X, ref p.Z, ref q.Z);
+        FieldOperations.fe_add(out t0, ref r.X, ref r.X);
+        FieldOperations.fe_sub(out r.X, ref r.Z, ref r.Y);
+        FieldOperations.fe_add(out r.Y, ref r.Z, ref r.Y);
+        FieldOperations.fe_add(out r.Z, ref t0, ref r.T);
+        FieldOperations.fe_sub(out r.T, ref t0, ref r.T);
+    }
+
+    public static void ge_p3_to_cached(out GroupElementCached r, ref GroupElementP3 p)
+    {
+        FieldOperations.fe_add(out r.YplusX, ref p.Y, ref p.X);
+        FieldOperations.fe_sub(out r.YminusX, ref p.Y, ref p.X);
+        r.Z = p.Z;
+        FieldOperations.fe_mul(out r.T2d, ref p.T, ref LookupTables.D2);
+    }
+
+    public static void ge_p2_0(out GroupElementP2 h)
+    {
+        FieldOperations.fe_0(out h.X);
+        FieldOperations.fe_1(out h.Y);
+        FieldOperations.fe_1(out h.Z);
+    }
+
+    public static void ge_sub(out GroupElementP1P1 r, ref GroupElementP3 p, ref GroupElementCached q)
+    {
+        FieldElement t0;
+        FieldOperations.fe_add(out r.X, ref p.Y, ref p.X);
+        FieldOperations.fe_sub(out r.Y, ref p.Y, ref p.X);
+        FieldOperations.fe_mul(out r.Z, ref r.X, ref q.YminusX);
+        FieldOperations.fe_mul(out r.Y, ref r.Y, ref q.YplusX);
+        FieldOperations.fe_mul(out r.T, ref q.T2d, ref p.T);
+        FieldOperations.fe_mul(out r.X, ref p.Z, ref q.Z);
+        FieldOperations.fe_add(out t0, ref r.X, ref r.X);
+        FieldOperations.fe_sub(out r.X, ref r.Z, ref r.Y);
+        FieldOperations.fe_add(out r.Y, ref r.Z, ref r.Y);
+        FieldOperations.fe_sub(out r.Z, ref t0, ref r.T);
+        FieldOperations.fe_add(out r.T, ref t0, ref r.T);
+    }
+
+    public static void ge_msub(out GroupElementP1P1 r, ref GroupElementP3 p, ref GroupElementPreComp q)
+    {
+        FieldElement t0;
+        FieldOperations.fe_add(out r.X, ref p.Y, ref p.X);
+        FieldOperations.fe_sub(out r.Y, ref p.Y, ref p.X);
+        FieldOperations.fe_mul(out r.Z, ref r.X, ref q.yminusx);
+        FieldOperations.fe_mul(out r.Y, ref r.Y, ref q.yplusx);
+        FieldOperations.fe_mul(out r.T, ref q.xy2d, ref p.T);
+        FieldOperations.fe_add(out t0, ref p.Z, ref p.Z);
+        FieldOperations.fe_sub(out r.X, ref r.Z, ref r.Y);
+        FieldOperations.fe_add(out r.Y, ref r.Z, ref r.Y);
+        FieldOperations.fe_sub(out r.Z, ref t0, ref r.T);
+        FieldOperations.fe_add(out r.T, ref t0, ref r.T);
+    }
+
+    public static void ge_tobytes(Span<byte> s, ref GroupElementP2 h)
+    {
+        FieldElement recip;
+        FieldElement x;
+        FieldElement y;
+
+        FieldOperations.fe_invert(out recip, ref h.Z);
+        FieldOperations.fe_mul(out x, ref h.X, ref recip);
+        FieldOperations.fe_mul(out y, ref h.Y, ref recip);
+        FieldOperations.fe_tobytes(s, ref y);
+        s[31] ^= (byte)(FieldOperations.fe_isnegative(ref x) << 7);
+    }
+
+    public static void ge_double_scalarmult_vartime(out GroupElementP2 r, ReadOnlySpan<byte> a, ref GroupElementP3 aa, ReadOnlySpan<byte> b)
+    {
+        GroupElementPreComp[] Bi = LookupTables.Base2;
+        Span<sbyte> aslide = stackalloc sbyte[256];
+        Span<sbyte> bslide = stackalloc sbyte[256];
+        GroupElementCached[] Ai = new GroupElementCached[8];
+        GroupElementP1P1 t;
+        GroupElementP3 u;
+        GroupElementP3 A2;
+        int i;
+
+        slide(aslide, a);
+        slide(bslide, b);
+
+        ge_p3_to_cached(out Ai[0], ref aa);
+        ge_p3_dbl(out t, ref aa);
+        ge_p1p1_to_p3(out A2, ref t);
+        ge_add(out t, ref A2, ref Ai[0]);
+        ge_p1p1_to_p3(out u, ref t);
+        ge_p3_to_cached(out Ai[1], ref u);
+        ge_add(out t, ref A2, ref Ai[1]);
+        ge_p1p1_to_p3(out u, ref t);
+        ge_p3_to_cached(out Ai[2], ref u);
+        ge_add(out t, ref A2, ref Ai[2]);
+        ge_p1p1_to_p3(out u, ref t);
+        ge_p3_to_cached(out Ai[3], ref u);
+        ge_add(out t, ref A2, ref Ai[3]);
+        ge_p1p1_to_p3(out u, ref t);
+        ge_p3_to_cached(out Ai[4], ref u);
+        ge_add(out t, ref A2, ref Ai[4]);
+        ge_p1p1_to_p3(out u, ref t);
+        ge_p3_to_cached(out Ai[5], ref u);
+        ge_add(out t, ref A2, ref Ai[5]);
+        ge_p1p1_to_p3(out u, ref t);
+        ge_p3_to_cached(out Ai[6], ref u);
+        ge_add(out t, ref A2, ref Ai[6]);
+        ge_p1p1_to_p3(out u, ref t);
+        ge_p3_to_cached(out Ai[7], ref u);
+
+        ge_p2_0(out r);
+
+        for (i = 255; i >= 0; --i)
+        {
+            if ((aslide[i] != 0) || (bslide[i] != 0))
+            {
+                break;
+            }
+        }
+
+        for (; i >= 0; --i)
+        {
+            ge_p2_dbl(out t, ref r);
+
+            if (aslide[i] > 0)
+            {
+                ge_p1p1_to_p3(out u, ref t);
+                ge_add(out t, ref u, ref Ai[aslide[i] / 2]);
+            }
+            else if (aslide[i] < 0)
+            {
+                ge_p1p1_to_p3(out u, ref t);
+                ge_sub(out t, ref u, ref Ai[(-aslide[i]) / 2]);
+            }
+
+            if (bslide[i] > 0)
+            {
+                ge_p1p1_to_p3(out u, ref t);
+                ge_madd(out t, ref u, ref Bi[bslide[i] / 2]);
+            }
+            else if (bslide[i] < 0)
+            {
+                ge_p1p1_to_p3(out u, ref t);
+                ge_msub(out t, ref u, ref Bi[(-bslide[i]) / 2]);
+            }
+
+            ge_p1p1_to_p2(out r, ref t);
+        }
     }
 }
