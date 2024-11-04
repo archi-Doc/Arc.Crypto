@@ -861,14 +861,14 @@ public static class Avx2Methods
         var g8 = (long)g.x8;
         var g9 = (long)g.x9;
 
-        /*var g1_19 = 19 * g1;
-        var g2_19 = 19 * g2;
-        var g3_19 = 19 * g3;
-        var g4_19 = 19 * g4;
-        var g5_19 = 19 * g5;
-        var g6_19 = 19 * g6;
-        var g7_19 = 19 * g7;
-        var g8_19 = 19 * g8;*/
+        // var g1_19 = 19 * g1;
+        // var g2_19 = 19 * g2;
+        // var g3_19 = 19 * g3;
+        // var g4_19 = 19 * g4;
+        // var g5_19 = 19 * g5;
+        // var g6_19 = 19 * g6;
+        // var g7_19 = 19 * g7;
+        // var g8_19 = 19 * g8;
         var g9_19 = 19 * g9;
 
         Vector256<int> vec_g;
