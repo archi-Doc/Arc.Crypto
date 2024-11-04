@@ -89,7 +89,7 @@ public class DsaBenchmark
         return this.ed25519.SignMessage(this.message);
     }
 
-    // [Benchmark]
+    [Benchmark]
     public byte[] SignEd25519B_NSec()
     {
         return this.algorithm.Sign(this.key, this.message);
@@ -112,6 +112,13 @@ public class DsaBenchmark
     public bool VerifyEd25519_NaCl()
     {
         return this.ed25519.VerifyMessage(this.message, this.signEd25519);
+    }
+
+    [Benchmark]
+    public bool VerifyEd25519_NSec()
+    {
+        var b = this.algorithm.Verify(this.key.PublicKey, this.message, this.signEd25519B);
+        return b;
     }
 
     [Benchmark]
