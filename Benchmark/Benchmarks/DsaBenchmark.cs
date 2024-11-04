@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using Rebex.Security.Cryptography;
 
 namespace Benchmark;
@@ -13,6 +14,9 @@ namespace Benchmark;
 #pragma warning disable SA1405 // Debug.Assert should provide message text
 
 [Config(typeof(BenchmarkConfig))]
+[ShortRunJob]
+[NativeMemoryProfiler]
+[MemoryDiagnoser]
 public class DsaBenchmark
 {
     private readonly ECCurve curve;
