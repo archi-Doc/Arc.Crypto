@@ -160,47 +160,16 @@ internal static class FieldOperations
 
     public static void fe_add(out FieldElement h, ref FieldElement f, ref FieldElement g)
     {
-        var f0 = f.x0;
-        var f1 = f.x1;
-        var f2 = f.x2;
-        var f3 = f.x3;
-        var f4 = f.x4;
-        var f5 = f.x5;
-        var f6 = f.x6;
-        var f7 = f.x7;
-        var f8 = f.x8;
-        var f9 = f.x9;
-        var g0 = g.x0;
-        var g1 = g.x1;
-        var g2 = g.x2;
-        var g3 = g.x3;
-        var g4 = g.x4;
-        var g5 = g.x5;
-        var g6 = g.x6;
-        var g7 = g.x7;
-        var g8 = g.x8;
-        var g9 = g.x9;
-        var h0 = f0 + g0;
-        var h1 = f1 + g1;
-        var h2 = f2 + g2;
-        var h3 = f3 + g3;
-        var h4 = f4 + g4;
-        var h5 = f5 + g5;
-        var h6 = f6 + g6;
-        var h7 = f7 + g7;
-        var h8 = f8 + g8;
-        var h9 = f9 + g9;
-
-        h.x0 = h0;
-        h.x1 = h1;
-        h.x2 = h2;
-        h.x3 = h3;
-        h.x4 = h4;
-        h.x5 = h5;
-        h.x6 = h6;
-        h.x7 = h7;
-        h.x8 = h8;
-        h.x9 = h9;
+        h.x0 = f.x0 + g.x0;
+        h.x1 = f.x1 + g.x1;
+        h.x2 = f.x2 + g.x2;
+        h.x3 = f.x3 + g.x3;
+        h.x4 = f.x4 + g.x4;
+        h.x5 = f.x5 + g.x5;
+        h.x6 = f.x6 + g.x6;
+        h.x7 = f.x7 + g.x7;
+        h.x8 = f.x8 + g.x8;
+        h.x9 = f.x9 + g.x9;
     }
 
     public static void fe_sq(out FieldElement h, ref FieldElement f)
@@ -293,6 +262,7 @@ internal static class FieldOperations
         var h7 = f0f7_2 + f1f6_2 + f2f5_2 + f3f4_2 + f8f9_38;
         var h8 = f0f8_2 + f1f7_4 + f2f6_2 + f3f5_4 + f4f4 + f9f9_38;
         var h9 = f0f9_2 + f1f8_2 + f2f7_2 + f3f6_2 + f4f5_2;
+
         long carry0;
         long carry1;
         long carry2;
@@ -307,6 +277,7 @@ internal static class FieldOperations
         carry0 = (h0 + (long)(1 << 25)) >> 26;
         h1 += carry0;
         h0 -= carry0 << 26;
+
         carry4 = (h4 + (long)(1 << 25)) >> 26;
         h5 += carry4;
         h4 -= carry4 << 26;
@@ -314,6 +285,7 @@ internal static class FieldOperations
         carry1 = (h1 + (long)(1 << 24)) >> 25;
         h2 += carry1;
         h1 -= carry1 << 25;
+
         carry5 = (h5 + (long)(1 << 24)) >> 25;
         h6 += carry5;
         h5 -= carry5 << 25;
@@ -321,6 +293,7 @@ internal static class FieldOperations
         carry2 = (h2 + (long)(1 << 25)) >> 26;
         h3 += carry2;
         h2 -= carry2 << 26;
+
         carry6 = (h6 + (long)(1 << 25)) >> 26;
         h7 += carry6;
         h6 -= carry6 << 26;
@@ -328,6 +301,7 @@ internal static class FieldOperations
         carry3 = (h3 + (long)(1 << 24)) >> 25;
         h4 += carry3;
         h3 -= carry3 << 25;
+
         carry7 = (h7 + (long)(1 << 24)) >> 25;
         h8 += carry7;
         h7 -= carry7 << 25;
@@ -335,6 +309,7 @@ internal static class FieldOperations
         carry4 = (h4 + (long)(1 << 25)) >> 26;
         h5 += carry4;
         h4 -= carry4 << 26;
+
         carry8 = (h8 + (long)(1 << 25)) >> 26;
         h9 += carry8;
         h8 -= carry8 << 26;
@@ -379,11 +354,11 @@ internal static class FieldOperations
         var f5_2 = 2 * f5;
         var f6_2 = 2 * f6;
         var f7_2 = 2 * f7;
-        var f5_38 = 38 * f5; /* 1.959375*2^30 */
-        var f6_19 = 19 * f6; /* 1.959375*2^30 */
-        var f7_38 = 38 * f7; /* 1.959375*2^30 */
-        var f8_19 = 19 * f8; /* 1.959375*2^30 */
-        var f9_38 = 38 * f9; /* 1.959375*2^30 */
+        var f5_38 = 38 * f5;
+        var f6_19 = 19 * f6;
+        var f7_38 = 38 * f7;
+        var f8_19 = 19 * f8;
+        var f9_38 = 38 * f9;
         var f0f0 = f0 * (long)f0;
         var f0f1_2 = f0_2 * (long)f1;
         var f0f2_2 = f0_2 * (long)f2;
@@ -449,6 +424,7 @@ internal static class FieldOperations
         var h7 = f0f7_2 + f1f6_2 + f2f5_2 + f3f4_2 + f8f9_38;
         var h8 = f0f8_2 + f1f7_4 + f2f6_2 + f3f5_4 + f4f4 + f9f9_38;
         var h9 = f0f9_2 + f1f8_2 + f2f7_2 + f3f6_2 + f4f5_2;
+
         long carry0;
         long carry1;
         long carry2;
@@ -460,7 +436,7 @@ internal static class FieldOperations
         long carry8;
         long carry9;
 
-        h0 += h0;
+        h0 += h0; // dif
         h1 += h1;
         h2 += h2;
         h3 += h3;
@@ -474,6 +450,7 @@ internal static class FieldOperations
         carry0 = (h0 + (long)(1 << 25)) >> 26;
         h1 += carry0;
         h0 -= carry0 << 26;
+
         carry4 = (h4 + (long)(1 << 25)) >> 26;
         h5 += carry4;
         h4 -= carry4 << 26;
@@ -481,6 +458,7 @@ internal static class FieldOperations
         carry1 = (h1 + (long)(1 << 24)) >> 25;
         h2 += carry1;
         h1 -= carry1 << 25;
+
         carry5 = (h5 + (long)(1 << 24)) >> 25;
         h6 += carry5;
         h5 -= carry5 << 25;
@@ -488,6 +466,7 @@ internal static class FieldOperations
         carry2 = (h2 + (long)(1 << 25)) >> 26;
         h3 += carry2;
         h2 -= carry2 << 26;
+
         carry6 = (h6 + (long)(1 << 25)) >> 26;
         h7 += carry6;
         h6 -= carry6 << 26;
@@ -495,6 +474,7 @@ internal static class FieldOperations
         carry3 = (h3 + (long)(1 << 24)) >> 25;
         h4 += carry3;
         h3 -= carry3 << 25;
+
         carry7 = (h7 + (long)(1 << 24)) >> 25;
         h8 += carry7;
         h7 -= carry7 << 25;
@@ -502,6 +482,7 @@ internal static class FieldOperations
         carry4 = (h4 + (long)(1 << 25)) >> 26;
         h5 += carry4;
         h4 -= carry4 << 26;
+
         carry8 = (h8 + (long)(1 << 25)) >> 26;
         h9 += carry8;
         h8 -= carry8 << 26;
@@ -528,57 +509,20 @@ internal static class FieldOperations
 
     public static void fe_sub(out FieldElement h, ref FieldElement f, ref FieldElement g)
     {
-        var f0 = f.x0;
-        var f1 = f.x1;
-        var f2 = f.x2;
-        var f3 = f.x3;
-        var f4 = f.x4;
-        var f5 = f.x5;
-        var f6 = f.x6;
-        var f7 = f.x7;
-        var f8 = f.x8;
-        var f9 = f.x9;
-        var g0 = g.x0;
-        var g1 = g.x1;
-        var g2 = g.x2;
-        var g3 = g.x3;
-        var g4 = g.x4;
-        var g5 = g.x5;
-        var g6 = g.x6;
-        var g7 = g.x7;
-        var g8 = g.x8;
-        var g9 = g.x9;
-        var h0 = f0 - g0;
-        var h1 = f1 - g1;
-        var h2 = f2 - g2;
-        var h3 = f3 - g3;
-        var h4 = f4 - g4;
-        var h5 = f5 - g5;
-        var h6 = f6 - g6;
-        var h7 = f7 - g7;
-        var h8 = f8 - g8;
-        var h9 = f9 - g9;
-
-        h.x0 = h0;
-        h.x1 = h1;
-        h.x2 = h2;
-        h.x3 = h3;
-        h.x4 = h4;
-        h.x5 = h5;
-        h.x6 = h6;
-        h.x7 = h7;
-        h.x8 = h8;
-        h.x9 = h9;
+        h.x0 = f.x0 - g.x0;
+        h.x1 = f.x1 - g.x1;
+        h.x2 = f.x2 - g.x2;
+        h.x3 = f.x3 - g.x3;
+        h.x4 = f.x4 - g.x4;
+        h.x5 = f.x5 - g.x5;
+        h.x6 = f.x6 - g.x6;
+        h.x7 = f.x7 - g.x7;
+        h.x8 = f.x8 - g.x8;
+        h.x9 = f.x9 - g.x9;
     }
 
     public static unsafe void fe_mul(out FieldElement h, ref FieldElement f, ref FieldElement g)
     {
-        if (!Avx2.IsSupported)
-        {
-            fe_mul_original(out h, ref f, ref g);
-            return;
-        }
-
         var f0 = f.x0;
         var f1 = f.x1;
         var f2 = f.x2;
