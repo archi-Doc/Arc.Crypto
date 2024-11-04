@@ -235,51 +235,51 @@ public static class Avx2Methods
         long carry8;
         long carry9;
 
-        carry0 = (h0 + (long)(1 << 25)) >> 26;
+        carry0 = (h0 + (1 << 25)) >> 26;
         h1 += carry0;
         h0 -= carry0 << 26;
 
-        carry4 = (h4 + (long)(1 << 25)) >> 26;
+        carry4 = (h4 + (1 << 25)) >> 26;
         h5 += carry4;
         h4 -= carry4 << 26;
 
-        carry1 = (h1 + (long)(1 << 24)) >> 25;
+        carry1 = (h1 + (1 << 24)) >> 25;
         h2 += carry1;
         h1 -= carry1 << 25;
 
-        carry5 = (h5 + (long)(1 << 24)) >> 25;
+        carry5 = (h5 + (1 << 24)) >> 25;
         h6 += carry5;
         h5 -= carry5 << 25;
 
-        carry2 = (h2 + (long)(1 << 25)) >> 26;
+        carry2 = (h2 + (1 << 25)) >> 26;
         h3 += carry2;
         h2 -= carry2 << 26;
 
-        carry6 = (h6 + (long)(1 << 25)) >> 26;
+        carry6 = (h6 + (1 << 25)) >> 26;
         h7 += carry6;
         h6 -= carry6 << 26;
 
-        carry3 = (h3 + (long)(1 << 24)) >> 25;
+        carry3 = (h3 + (1 << 24)) >> 25;
         h4 += carry3;
         h3 -= carry3 << 25;
 
-        carry7 = (h7 + (long)(1 << 24)) >> 25;
+        carry7 = (h7 + (1 << 24)) >> 25;
         h8 += carry7;
         h7 -= carry7 << 25;
 
-        carry4 = (h4 + (long)(1 << 25)) >> 26;
+        carry4 = (h4 + (1 << 25)) >> 26;
         h5 += carry4;
         h4 -= carry4 << 26;
 
-        carry8 = (h8 + (long)(1 << 25)) >> 26;
+        carry8 = (h8 + (1 << 25)) >> 26;
         h9 += carry8;
         h8 -= carry8 << 26;
 
-        carry9 = (h9 + (long)(1 << 24)) >> 25;
+        carry9 = (h9 + (1 << 24)) >> 25;
         h0 += carry9 * 19;
         h9 -= carry9 << 25;
 
-        carry0 = (h0 + (long)(1 << 25)) >> 26;
+        carry0 = (h0 + (1 << 25)) >> 26;
         h1 += carry0;
         h0 -= carry0 << 26;
 
@@ -297,7 +297,7 @@ public static class Avx2Methods
 
     public static unsafe void fe_sqB(out FieldElement h, ref FieldElement f)
     {// 140
-        var f0_2 = f.x0 << 1;
+        /*var f0_2 = f.x0 << 1;
         var f1_2 = f.x1 << 1;
         var f2_2 = f.x2 << 1;
         var f3_2 = f.x3 << 1;
@@ -310,7 +310,22 @@ public static class Avx2Methods
         var f6_19 = 19 * f.x6;
         var f7_38 = 38 * f.x7;
         var f8_19 = 19 * f.x8;
-        var f9_38 = 38 * f.x9;
+        var f9_38 = 38 * f.x9;*/
+
+        var f0_2 = (long)f.x0 << 1;
+        var f1_2 = (long)f.x1 << 1;
+        var f2_2 = (long)f.x2 << 1;
+        var f3_2 = (long)f.x3 << 1;
+        var f4_2 = (long)f.x4 << 1;
+        var f5_2 = (long)f.x5 << 1;
+        var f6_2 = (long)f.x6 << 1;
+        var f7_2 = (long)f.x7 << 1;
+
+        var f5_38 = 38 * (long)f.x5;
+        var f6_19 = 19 * (long)f.x6;
+        var f7_38 = 38 * (long)f.x7;
+        var f8_19 = 19 * (long)f.x8;
+        var f9_38 = 38 * (long)f.x9;
 
         /*var vec_f0_2 = Vector256.Create(f0_2);
         Span<int> stack_fm = stackalloc int[8];
@@ -350,16 +365,16 @@ public static class Avx2Methods
         var h2 = vec_acc[2];
         var h3 = vec_acc[3];*/
 
-        var h0 = (f.x0 * (long)f.x0) + (f1_2 * (long)f9_38) + (f2_2 * (long)f8_19) + (f3_2 * (long)f7_38) + (f4_2 * (long)f6_19) + (f.x5 * (long)f5_38);
-        var h1 = (f0_2 * (long)f.x1) + (f.x2 * (long)f9_38) + (f3_2 * (long)f8_19) + (f.x4 * (long)f7_38) + (f5_2 * (long)f6_19);
-        var h2 = (f0_2 * (long)f.x2) + (f1_2 * (long)f.x1) + (f3_2 * (long)f9_38) + (f4_2 * (long)f8_19) + (f5_2 * (long)f7_38) + (f.x6 * (long)f6_19);
-        var h3 = (f0_2 * (long)f.x3) + (f1_2 * (long)f.x2) + (f.x4 * (long)f9_38) + (f5_2 * (long)f8_19) + (f.x6 * (long)f7_38);
-        var h4 = (f0_2 * (long)f.x4) + (f1_2 * (long)f3_2) + (f.x2 * (long)f.x2) + (f5_2 * (long)f9_38) + (f6_2 * (long)f8_19) + (f.x7 * (long)f7_38);
-        var h5 = (f0_2 * (long)f.x5) + (f1_2 * (long)f.x4) + (f2_2 * (long)f.x3) + (f.x6 * (long)f9_38) + (f7_2 * (long)f8_19);
-        var h6 = (f0_2 * (long)f.x6) + (f1_2 * (long)f5_2) + (f2_2 * (long)f.x4) + (f3_2 * (long)f.x3) + (f7_2 * (long)f9_38) + (f.x8 * (long)f8_19);
-        var h7 = (f0_2 * (long)f.x7) + (f1_2 * (long)f.x6) + (f2_2 * (long)f.x5) + (f3_2 * (long)f.x4) + (f.x8 * (long)f9_38);
-        var h8 = (f0_2 * (long)f.x8) + (f1_2 * (long)f7_2) + (f2_2 * (long)f.x6) + (f3_2 * (long)f5_2) + (f.x4 * (long)f.x4) + (f.x9 * (long)f9_38);
-        var h9 = (f0_2 * (long)f.x9) + (f1_2 * (long)f.x8) + (f2_2 * (long)f.x7) + (f3_2 * (long)f.x6) + (f4_2 * (long)f.x5);
+        var h0 = (f.x0 * (long)f.x0) + (f1_2 * f9_38) + (f2_2 * f8_19) + (f3_2 * f7_38) + (f4_2 * f6_19) + (f.x5 * f5_38);
+        var h1 = (f0_2 * f.x1) + (f.x2 * f9_38) + (f3_2 * f8_19) + (f.x4 * f7_38) + (f5_2 * f6_19);
+        var h2 = (f0_2 * f.x2) + (f1_2 * f.x1) + (f3_2 * f9_38) + (f4_2 * f8_19) + (f5_2 * f7_38) + (f.x6 * f6_19);
+        var h3 = (f0_2 * f.x3) + (f1_2 * f.x2) + (f.x4 * f9_38) + (f5_2 * f8_19) + (f.x6 * f7_38);
+        var h4 = (f0_2 * f.x4) + (f1_2 * f3_2) + (f.x2 * (long)f.x2) + (f5_2 * f9_38) + (f6_2 * f8_19) + (f.x7 * f7_38);
+        var h5 = (f0_2 * f.x5) + (f1_2 * f.x4) + (f2_2 * f.x3) + (f.x6 * f9_38) + (f7_2 * f8_19);
+        var h6 = (f0_2 * f.x6) + (f1_2 * f5_2) + (f2_2 * f.x4) + (f3_2 * f.x3) + (f7_2 * f9_38) + (f.x8 * f8_19);
+        var h7 = (f0_2 * f.x7) + (f1_2 * f.x6) + (f2_2 * f.x5) + (f3_2 * f.x4) + (f.x8 * f9_38);
+        var h8 = (f0_2 * f.x8) + (f1_2 * f7_2) + (f2_2 * f.x6) + (f3_2 * f5_2) + (f.x4 * (long)f.x4) + (f.x9 * f9_38);
+        var h9 = (f0_2 * f.x9) + (f1_2 * f.x8) + (f2_2 * f.x7) + (f3_2 * f.x6) + (f4_2 * f.x5);
 
         const long r24 = 1 << 24;
         const long r25 = 1 << 25;

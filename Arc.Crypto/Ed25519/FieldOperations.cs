@@ -174,151 +174,80 @@ internal static class FieldOperations
 
     public static void fe_sq(out FieldElement h, ref FieldElement f)
     {
-        var f0 = f.x0;
-        var f1 = f.x1;
-        var f2 = f.x2;
-        var f3 = f.x3;
-        var f4 = f.x4;
-        var f5 = f.x5;
-        var f6 = f.x6;
-        var f7 = f.x7;
-        var f8 = f.x8;
-        var f9 = f.x9;
-        var f0_2 = 2 * f0;
-        var f1_2 = 2 * f1;
-        var f2_2 = 2 * f2;
-        var f3_2 = 2 * f3;
-        var f4_2 = 2 * f4;
-        var f5_2 = 2 * f5;
-        var f6_2 = 2 * f6;
-        var f7_2 = 2 * f7;
-        var f5_38 = 38 * f5;
-        var f6_19 = 19 * f6;
-        var f7_38 = 38 * f7;
-        var f8_19 = 19 * f8;
-        var f9_38 = 38 * f9;
-        var f0f0 = f0 * (long)f0;
-        var f0f1_2 = f0_2 * (long)f1;
-        var f0f2_2 = f0_2 * (long)f2;
-        var f0f3_2 = f0_2 * (long)f3;
-        var f0f4_2 = f0_2 * (long)f4;
-        var f0f5_2 = f0_2 * (long)f5;
-        var f0f6_2 = f0_2 * (long)f6;
-        var f0f7_2 = f0_2 * (long)f7;
-        var f0f8_2 = f0_2 * (long)f8;
-        var f0f9_2 = f0_2 * (long)f9;
-        var f1f1_2 = f1_2 * (long)f1;
-        var f1f2_2 = f1_2 * (long)f2;
-        var f1f3_4 = f1_2 * (long)f3_2;
-        var f1f4_2 = f1_2 * (long)f4;
-        var f1f5_4 = f1_2 * (long)f5_2;
-        var f1f6_2 = f1_2 * (long)f6;
-        var f1f7_4 = f1_2 * (long)f7_2;
-        var f1f8_2 = f1_2 * (long)f8;
-        var f1f9_76 = f1_2 * (long)f9_38;
-        var f2f2 = f2 * (long)f2;
-        var f2f3_2 = f2_2 * (long)f3;
-        var f2f4_2 = f2_2 * (long)f4;
-        var f2f5_2 = f2_2 * (long)f5;
-        var f2f6_2 = f2_2 * (long)f6;
-        var f2f7_2 = f2_2 * (long)f7;
-        var f2f8_38 = f2_2 * (long)f8_19;
-        var f2f9_38 = f2 * (long)f9_38;
-        var f3f3_2 = f3_2 * (long)f3;
-        var f3f4_2 = f3_2 * (long)f4;
-        var f3f5_4 = f3_2 * (long)f5_2;
-        var f3f6_2 = f3_2 * (long)f6;
-        var f3f7_76 = f3_2 * (long)f7_38;
-        var f3f8_38 = f3_2 * (long)f8_19;
-        var f3f9_76 = f3_2 * (long)f9_38;
-        var f4f4 = f4 * (long)f4;
-        var f4f5_2 = f4_2 * (long)f5;
-        var f4f6_38 = f4_2 * (long)f6_19;
-        var f4f7_38 = f4 * (long)f7_38;
-        var f4f8_38 = f4_2 * (long)f8_19;
-        var f4f9_38 = f4 * (long)f9_38;
-        var f5f5_38 = f5 * (long)f5_38;
-        var f5f6_38 = f5_2 * (long)f6_19;
-        var f5f7_76 = f5_2 * (long)f7_38;
-        var f5f8_38 = f5_2 * (long)f8_19;
-        var f5f9_76 = f5_2 * (long)f9_38;
-        var f6f6_19 = f6 * (long)f6_19;
-        var f6f7_38 = f6 * (long)f7_38;
-        var f6f8_38 = f6_2 * (long)f8_19;
-        var f6f9_38 = f6 * (long)f9_38;
-        var f7f7_38 = f7 * (long)f7_38;
-        var f7f8_38 = f7_2 * (long)f8_19;
-        var f7f9_76 = f7_2 * (long)f9_38;
-        var f8f8_19 = f8 * (long)f8_19;
-        var f8f9_38 = f8 * (long)f9_38;
-        var f9f9_38 = f9 * (long)f9_38;
-        var h0 = f0f0 + f1f9_76 + f2f8_38 + f3f7_76 + f4f6_38 + f5f5_38;
-        var h1 = f0f1_2 + f2f9_38 + f3f8_38 + f4f7_38 + f5f6_38;
-        var h2 = f0f2_2 + f1f1_2 + f3f9_76 + f4f8_38 + f5f7_76 + f6f6_19;
-        var h3 = f0f3_2 + f1f2_2 + f4f9_38 + f5f8_38 + f6f7_38;
-        var h4 = f0f4_2 + f1f3_4 + f2f2 + f5f9_76 + f6f8_38 + f7f7_38;
-        var h5 = f0f5_2 + f1f4_2 + f2f3_2 + f6f9_38 + f7f8_38;
-        var h6 = f0f6_2 + f1f5_4 + f2f4_2 + f3f3_2 + f7f9_76 + f8f8_19;
-        var h7 = f0f7_2 + f1f6_2 + f2f5_2 + f3f4_2 + f8f9_38;
-        var h8 = f0f8_2 + f1f7_4 + f2f6_2 + f3f5_4 + f4f4 + f9f9_38;
-        var h9 = f0f9_2 + f1f8_2 + f2f7_2 + f3f6_2 + f4f5_2;
+        var f0_2 = f.x0 << 1;
+        var f1_2 = f.x1 << 1;
+        var f2_2 = f.x2 << 1;
+        var f3_2 = f.x3 << 1;
+        var f4_2 = f.x4 << 1;
+        var f5_2 = f.x5 << 1;
+        var f6_2 = f.x6 << 1;
+        var f7_2 = f.x7 << 1;
 
-        long carry0;
-        long carry1;
-        long carry2;
-        long carry3;
-        long carry4;
-        long carry5;
-        long carry6;
-        long carry7;
-        long carry8;
-        long carry9;
+        var f5_38 = 38 * f.x5;
+        var f6_19 = 19 * f.x6;
+        var f7_38 = 38 * f.x7;
+        var f8_19 = 19 * f.x8;
+        var f9_38 = 38 * f.x9;
 
-        carry0 = (h0 + (long)(1 << 25)) >> 26;
+        var h0 = (f.x0 * (long)f.x0) + (f1_2 * (long)f9_38) + (f2_2 * (long)f8_19) + (f3_2 * (long)f7_38) + (f4_2 * (long)f6_19) + (f.x5 * (long)f5_38);
+        var h1 = (f0_2 * (long)f.x1) + (f.x2 * (long)f9_38) + (f3_2 * (long)f8_19) + (f.x4 * (long)f7_38) + (f5_2 * (long)f6_19);
+        var h2 = (f0_2 * (long)f.x2) + (f1_2 * (long)f.x1) + (f3_2 * (long)f9_38) + (f4_2 * (long)f8_19) + (f5_2 * (long)f7_38) + (f.x6 * (long)f6_19);
+        var h3 = (f0_2 * (long)f.x3) + (f1_2 * (long)f.x2) + (f.x4 * (long)f9_38) + (f5_2 * (long)f8_19) + (f.x6 * (long)f7_38);
+        var h4 = (f0_2 * (long)f.x4) + (f1_2 * (long)f3_2) + (f.x2 * (long)f.x2) + (f5_2 * (long)f9_38) + (f6_2 * (long)f8_19) + (f.x7 * (long)f7_38);
+        var h5 = (f0_2 * (long)f.x5) + (f1_2 * (long)f.x4) + (f2_2 * (long)f.x3) + (f.x6 * (long)f9_38) + (f7_2 * (long)f8_19);
+        var h6 = (f0_2 * (long)f.x6) + (f1_2 * (long)f5_2) + (f2_2 * (long)f.x4) + (f3_2 * (long)f.x3) + (f7_2 * (long)f9_38) + (f.x8 * (long)f8_19);
+        var h7 = (f0_2 * (long)f.x7) + (f1_2 * (long)f.x6) + (f2_2 * (long)f.x5) + (f3_2 * (long)f.x4) + (f.x8 * (long)f9_38);
+        var h8 = (f0_2 * (long)f.x8) + (f1_2 * (long)f7_2) + (f2_2 * (long)f.x6) + (f3_2 * (long)f5_2) + (f.x4 * (long)f.x4) + (f.x9 * (long)f9_38);
+        var h9 = (f0_2 * (long)f.x9) + (f1_2 * (long)f.x8) + (f2_2 * (long)f.x7) + (f3_2 * (long)f.x6) + (f4_2 * (long)f.x5);
+
+        const long r24 = 1 << 24;
+        const long r25 = 1 << 25;
+
+        long carry0 = (h0 + r25) >> 26;
         h1 += carry0;
         h0 -= carry0 << 26;
 
-        carry4 = (h4 + (long)(1 << 25)) >> 26;
+        long carry4 = (h4 + r25) >> 26;
         h5 += carry4;
         h4 -= carry4 << 26;
 
-        carry1 = (h1 + (long)(1 << 24)) >> 25;
+        long carry1 = (h1 + r24) >> 25;
         h2 += carry1;
         h1 -= carry1 << 25;
 
-        carry5 = (h5 + (long)(1 << 24)) >> 25;
+        long carry5 = (h5 + r24) >> 25;
         h6 += carry5;
         h5 -= carry5 << 25;
 
-        carry2 = (h2 + (long)(1 << 25)) >> 26;
+        long carry2 = (h2 + r25) >> 26;
         h3 += carry2;
         h2 -= carry2 << 26;
 
-        carry6 = (h6 + (long)(1 << 25)) >> 26;
+        long carry6 = (h6 + r25) >> 26;
         h7 += carry6;
         h6 -= carry6 << 26;
 
-        carry3 = (h3 + (long)(1 << 24)) >> 25;
+        long carry3 = (h3 + r24) >> 25;
         h4 += carry3;
         h3 -= carry3 << 25;
 
-        carry7 = (h7 + (long)(1 << 24)) >> 25;
+        long carry7 = (h7 + r24) >> 25;
         h8 += carry7;
         h7 -= carry7 << 25;
 
-        carry4 = (h4 + (long)(1 << 25)) >> 26;
+        carry4 = (h4 + r25) >> 26;
         h5 += carry4;
         h4 -= carry4 << 26;
 
-        carry8 = (h8 + (long)(1 << 25)) >> 26;
+        long carry8 = (h8 + r25) >> 26;
         h9 += carry8;
         h8 -= carry8 << 26;
 
-        carry9 = (h9 + (long)(1 << 24)) >> 25;
+        long carry9 = (h9 + r24) >> 25;
         h0 += carry9 * 19;
         h9 -= carry9 << 25;
 
-        carry0 = (h0 + (long)(1 << 25)) >> 26;
+        carry0 = (h0 + r25) >> 26;
         h1 += carry0;
         h0 -= carry0 << 26;
 
@@ -336,105 +265,31 @@ internal static class FieldOperations
 
     public static void fe_sq2(out FieldElement h, ref FieldElement f)
     {
-        var f0 = f.x0;
-        var f1 = f.x1;
-        var f2 = f.x2;
-        var f3 = f.x3;
-        var f4 = f.x4;
-        var f5 = f.x5;
-        var f6 = f.x6;
-        var f7 = f.x7;
-        var f8 = f.x8;
-        var f9 = f.x9;
-        var f0_2 = 2 * f0;
-        var f1_2 = 2 * f1;
-        var f2_2 = 2 * f2;
-        var f3_2 = 2 * f3;
-        var f4_2 = 2 * f4;
-        var f5_2 = 2 * f5;
-        var f6_2 = 2 * f6;
-        var f7_2 = 2 * f7;
-        var f5_38 = 38 * f5;
-        var f6_19 = 19 * f6;
-        var f7_38 = 38 * f7;
-        var f8_19 = 19 * f8;
-        var f9_38 = 38 * f9;
-        var f0f0 = f0 * (long)f0;
-        var f0f1_2 = f0_2 * (long)f1;
-        var f0f2_2 = f0_2 * (long)f2;
-        var f0f3_2 = f0_2 * (long)f3;
-        var f0f4_2 = f0_2 * (long)f4;
-        var f0f5_2 = f0_2 * (long)f5;
-        var f0f6_2 = f0_2 * (long)f6;
-        var f0f7_2 = f0_2 * (long)f7;
-        var f0f8_2 = f0_2 * (long)f8;
-        var f0f9_2 = f0_2 * (long)f9;
-        var f1f1_2 = f1_2 * (long)f1;
-        var f1f2_2 = f1_2 * (long)f2;
-        var f1f3_4 = f1_2 * (long)f3_2;
-        var f1f4_2 = f1_2 * (long)f4;
-        var f1f5_4 = f1_2 * (long)f5_2;
-        var f1f6_2 = f1_2 * (long)f6;
-        var f1f7_4 = f1_2 * (long)f7_2;
-        var f1f8_2 = f1_2 * (long)f8;
-        var f1f9_76 = f1_2 * (long)f9_38;
-        var f2f2 = f2 * (long)f2;
-        var f2f3_2 = f2_2 * (long)f3;
-        var f2f4_2 = f2_2 * (long)f4;
-        var f2f5_2 = f2_2 * (long)f5;
-        var f2f6_2 = f2_2 * (long)f6;
-        var f2f7_2 = f2_2 * (long)f7;
-        var f2f8_38 = f2_2 * (long)f8_19;
-        var f2f9_38 = f2 * (long)f9_38;
-        var f3f3_2 = f3_2 * (long)f3;
-        var f3f4_2 = f3_2 * (long)f4;
-        var f3f5_4 = f3_2 * (long)f5_2;
-        var f3f6_2 = f3_2 * (long)f6;
-        var f3f7_76 = f3_2 * (long)f7_38;
-        var f3f8_38 = f3_2 * (long)f8_19;
-        var f3f9_76 = f3_2 * (long)f9_38;
-        var f4f4 = f4 * (long)f4;
-        var f4f5_2 = f4_2 * (long)f5;
-        var f4f6_38 = f4_2 * (long)f6_19;
-        var f4f7_38 = f4 * (long)f7_38;
-        var f4f8_38 = f4_2 * (long)f8_19;
-        var f4f9_38 = f4 * (long)f9_38;
-        var f5f5_38 = f5 * (long)f5_38;
-        var f5f6_38 = f5_2 * (long)f6_19;
-        var f5f7_76 = f5_2 * (long)f7_38;
-        var f5f8_38 = f5_2 * (long)f8_19;
-        var f5f9_76 = f5_2 * (long)f9_38;
-        var f6f6_19 = f6 * (long)f6_19;
-        var f6f7_38 = f6 * (long)f7_38;
-        var f6f8_38 = f6_2 * (long)f8_19;
-        var f6f9_38 = f6 * (long)f9_38;
-        var f7f7_38 = f7 * (long)f7_38;
-        var f7f8_38 = f7_2 * (long)f8_19;
-        var f7f9_76 = f7_2 * (long)f9_38;
-        var f8f8_19 = f8 * (long)f8_19;
-        var f8f9_38 = f8 * (long)f9_38;
-        var f9f9_38 = f9 * (long)f9_38;
-        var h0 = f0f0 + f1f9_76 + f2f8_38 + f3f7_76 + f4f6_38 + f5f5_38;
-        var h1 = f0f1_2 + f2f9_38 + f3f8_38 + f4f7_38 + f5f6_38;
-        var h2 = f0f2_2 + f1f1_2 + f3f9_76 + f4f8_38 + f5f7_76 + f6f6_19;
-        var h3 = f0f3_2 + f1f2_2 + f4f9_38 + f5f8_38 + f6f7_38;
-        var h4 = f0f4_2 + f1f3_4 + f2f2 + f5f9_76 + f6f8_38 + f7f7_38;
-        var h5 = f0f5_2 + f1f4_2 + f2f3_2 + f6f9_38 + f7f8_38;
-        var h6 = f0f6_2 + f1f5_4 + f2f4_2 + f3f3_2 + f7f9_76 + f8f8_19;
-        var h7 = f0f7_2 + f1f6_2 + f2f5_2 + f3f4_2 + f8f9_38;
-        var h8 = f0f8_2 + f1f7_4 + f2f6_2 + f3f5_4 + f4f4 + f9f9_38;
-        var h9 = f0f9_2 + f1f8_2 + f2f7_2 + f3f6_2 + f4f5_2;
+        var f0_2 = (long)f.x0 << 1;
+        var f1_2 = (long)f.x1 << 1;
+        var f2_2 = (long)f.x2 << 1;
+        var f3_2 = (long)f.x3 << 1;
+        var f4_2 = (long)f.x4 << 1;
+        var f5_2 = (long)f.x5 << 1;
+        var f6_2 = (long)f.x6 << 1;
+        var f7_2 = (long)f.x7 << 1;
 
-        long carry0;
-        long carry1;
-        long carry2;
-        long carry3;
-        long carry4;
-        long carry5;
-        long carry6;
-        long carry7;
-        long carry8;
-        long carry9;
+        var f5_38 = 38 * (long)f.x5;
+        var f6_19 = 19 * (long)f.x6;
+        var f7_38 = 38 * (long)f.x7;
+        var f8_19 = 19 * (long)f.x8;
+        var f9_38 = 38 * (long)f.x9;
+
+        var h0 = (f.x0 * (long)f.x0) + (f1_2 * f9_38) + (f2_2 * (long)f8_19) + (f3_2 * (long)f7_38) + (f4_2 * (long)f6_19) + (f.x5 * (long)f5_38);
+        var h1 = (f0_2 * (long)f.x1) + (f.x2 * (long)f9_38) + (f3_2 * (long)f8_19) + (f.x4 * (long)f7_38) + (f5_2 * (long)f6_19);
+        var h2 = (f0_2 * (long)f.x2) + (f1_2 * (long)f.x1) + (f3_2 * (long)f9_38) + (f4_2 * (long)f8_19) + (f5_2 * (long)f7_38) + (f.x6 * (long)f6_19);
+        var h3 = (f0_2 * (long)f.x3) + (f1_2 * (long)f.x2) + (f.x4 * (long)f9_38) + (f5_2 * (long)f8_19) + (f.x6 * (long)f7_38);
+        var h4 = (f0_2 * (long)f.x4) + (f1_2 * (long)f3_2) + (f.x2 * (long)f.x2) + (f5_2 * (long)f9_38) + (f6_2 * (long)f8_19) + (f.x7 * (long)f7_38);
+        var h5 = (f0_2 * (long)f.x5) + (f1_2 * (long)f.x4) + (f2_2 * (long)f.x3) + (f.x6 * (long)f9_38) + (f7_2 * (long)f8_19);
+        var h6 = (f0_2 * (long)f.x6) + (f1_2 * (long)f5_2) + (f2_2 * (long)f.x4) + (f3_2 * (long)f.x3) + (f7_2 * (long)f9_38) + (f.x8 * (long)f8_19);
+        var h7 = (f0_2 * (long)f.x7) + (f1_2 * (long)f.x6) + (f2_2 * (long)f.x5) + (f3_2 * (long)f.x4) + (f.x8 * (long)f9_38);
+        var h8 = (f0_2 * (long)f.x8) + (f1_2 * (long)f7_2) + (f2_2 * (long)f.x6) + (f3_2 * (long)f5_2) + (f.x4 * (long)f.x4) + (f.x9 * (long)f9_38);
+        var h9 = (f0_2 * (long)f.x9) + (f1_2 * (long)f.x8) + (f2_2 * (long)f.x7) + (f3_2 * (long)f.x6) + (f4_2 * (long)f.x5);
 
         h0 += h0; // dif
         h1 += h1;
@@ -447,51 +302,54 @@ internal static class FieldOperations
         h8 += h8;
         h9 += h9;
 
-        carry0 = (h0 + (long)(1 << 25)) >> 26;
+        const long r24 = 1 << 24;
+        const long r25 = 1 << 25;
+
+        long carry0 = (h0 + r25) >> 26;
         h1 += carry0;
         h0 -= carry0 << 26;
 
-        carry4 = (h4 + (long)(1 << 25)) >> 26;
+        long carry4 = (h4 + r25) >> 26;
         h5 += carry4;
         h4 -= carry4 << 26;
 
-        carry1 = (h1 + (long)(1 << 24)) >> 25;
+        long carry1 = (h1 + r24) >> 25;
         h2 += carry1;
         h1 -= carry1 << 25;
 
-        carry5 = (h5 + (long)(1 << 24)) >> 25;
+        long carry5 = (h5 + r24) >> 25;
         h6 += carry5;
         h5 -= carry5 << 25;
 
-        carry2 = (h2 + (long)(1 << 25)) >> 26;
+        long carry2 = (h2 + r25) >> 26;
         h3 += carry2;
         h2 -= carry2 << 26;
 
-        carry6 = (h6 + (long)(1 << 25)) >> 26;
+        long carry6 = (h6 + r25) >> 26;
         h7 += carry6;
         h6 -= carry6 << 26;
 
-        carry3 = (h3 + (long)(1 << 24)) >> 25;
+        long carry3 = (h3 + r24) >> 25;
         h4 += carry3;
         h3 -= carry3 << 25;
 
-        carry7 = (h7 + (long)(1 << 24)) >> 25;
+        long carry7 = (h7 + r24) >> 25;
         h8 += carry7;
         h7 -= carry7 << 25;
 
-        carry4 = (h4 + (long)(1 << 25)) >> 26;
+        carry4 = (h4 + r25) >> 26;
         h5 += carry4;
         h4 -= carry4 << 26;
 
-        carry8 = (h8 + (long)(1 << 25)) >> 26;
+        long carry8 = (h8 + r25) >> 26;
         h9 += carry8;
         h8 -= carry8 << 26;
 
-        carry9 = (h9 + (long)(1 << 24)) >> 25;
+        long carry9 = (h9 + r24) >> 25;
         h0 += carry9 * 19;
         h9 -= carry9 << 25;
 
-        carry0 = (h0 + (long)(1 << 25)) >> 26;
+        carry0 = (h0 + r25) >> 26;
         h1 += carry0;
         h0 -= carry0 << 26;
 
