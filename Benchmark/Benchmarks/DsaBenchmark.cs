@@ -76,7 +76,7 @@ public class DsaBenchmark
     {
     }
 
-    /*[Benchmark]
+    [Benchmark]
     public byte[] SignSecp256r1()
     {
         return this.ecdsa.SignHash(this.hash);
@@ -105,7 +105,7 @@ public class DsaBenchmark
     public bool VerifySecp256r1()
     {
         return this.ecdsa.VerifyHash(this.hash, this.signSecp256r1);
-    }*/
+    }
 
     [Benchmark]
     public bool VerifyEd25519_NaCl()
