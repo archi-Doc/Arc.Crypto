@@ -105,13 +105,13 @@ public class DsaBenchmark
     public bool VerifySecp256r1()
     {
         return this.ecdsa.VerifyHash(this.hash, this.signSecp256r1);
-    }
+    }*/
 
     [Benchmark]
     public bool VerifyEd25519_NaCl()
     {
         return this.ed25519.VerifyMessage(this.message, this.signEd25519);
-    }*/
+    }
 
     [Benchmark]
     public bool VerifyEd25519()

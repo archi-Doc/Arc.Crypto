@@ -749,6 +749,7 @@ internal static class FieldOperations
         carry0 = (h0 + (long)(1 << 25)) >> 26;
         h1 += carry0;
         h0 -= carry0 << 26;
+
         carry4 = (h4 + (long)(1 << 25)) >> 26;
         h5 += carry4;
         h4 -= carry4 << 26;
@@ -756,6 +757,7 @@ internal static class FieldOperations
         carry1 = (h1 + (long)(1 << 24)) >> 25;
         h2 += carry1;
         h1 -= carry1 << 25;
+
         carry5 = (h5 + (long)(1 << 24)) >> 25;
         h6 += carry5;
         h5 -= carry5 << 25;
@@ -763,6 +765,7 @@ internal static class FieldOperations
         carry2 = (h2 + (long)(1 << 25)) >> 26;
         h3 += carry2;
         h2 -= carry2 << 26;
+
         carry6 = (h6 + (long)(1 << 25)) >> 26;
         h7 += carry6;
         h6 -= carry6 << 26;
@@ -770,6 +773,7 @@ internal static class FieldOperations
         carry3 = (h3 + (long)(1 << 24)) >> 25;
         h4 += carry3;
         h3 -= carry3 << 25;
+
         carry7 = (h7 + (long)(1 << 24)) >> 25;
         h8 += carry7;
         h7 -= carry7 << 25;
@@ -777,6 +781,7 @@ internal static class FieldOperations
         carry4 = (h4 + (long)(1 << 25)) >> 26;
         h5 += carry4;
         h4 -= carry4 << 26;
+
         carry8 = (h8 + (long)(1 << 25)) >> 26;
         h9 += carry8;
         h8 -= carry8 << 26;
