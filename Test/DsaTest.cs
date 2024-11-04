@@ -15,9 +15,8 @@ public class DsaTest
     [Fact]
     public void Test1()
     {
-        NSec.Cryptography.Ed25519 nsec = new(); // NSec
-        var algorithm = NSec.Cryptography.SignatureAlgorithm.Ed25519;
-
+        // NSec.Cryptography.Ed25519 nsec = new(); // NSec
+        // var algorithm = NSec.Cryptography.SignatureAlgorithm.Ed25519;
         var random = new Xoroshiro128StarStar(12);
         Span<byte> sign = stackalloc byte[Ed25519Helper.SignatureSizeInBytes];
         Span<byte> pri2 = stackalloc byte[64];

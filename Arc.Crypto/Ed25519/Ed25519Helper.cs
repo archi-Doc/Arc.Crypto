@@ -1,6 +1,8 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Arc.Crypto.Ed25519;
 
 namespace Arc.Crypto;
@@ -22,7 +24,8 @@ public static class Ed25519Helper
 
         publicKey = new byte[PublicKeySizeInBytes];
         expandedPrivateKey = new byte[ExpandedPrivateKeySizeInBytes];
-        Ed25519Operations.CreateKeyFromSeed(privateKeySeed, publicKey, expandedPrivateKey);
+        // Ed25519Operations.CreateKeyFromSeed(privateKeySeed, publicKey, expandedPrivateKey);
+        LibsodiumInterops.crypto_sign_ed25519_seed_keypair(publicKey, expandedPrivateKey, privateKeySeed);
     }
 
     public static void Sign(ReadOnlySpan<byte> message, ReadOnlySpan<byte> expandedPrivateKey, Span<byte> signature)
