@@ -381,6 +381,12 @@ internal static class FieldOperations
 
     public static unsafe void fe_mul(out FieldElement h, ref FieldElement f, ref FieldElement g)
     {
+        if (!Avx2.IsSupported)
+        {
+            fe_mul_original(out h, ref f, ref g);
+            return;
+        }
+
         var g0 = (long)g.x0;
         var g1 = (long)g.x1;
         var g2 = (long)g.x2;
@@ -592,7 +598,7 @@ internal static class FieldOperations
         h.x9 = (int)h9;
     }
 
-    /*public static void fe_mul_original(out FieldElement h, ref FieldElement f, ref FieldElement g)
+    public static void fe_mul_original(out FieldElement h, ref FieldElement f, ref FieldElement g)
     {
         var f0 = f.x0;
         var f1 = f.x1;
@@ -802,7 +808,7 @@ internal static class FieldOperations
         h.x7 = (int)h7;
         h.x8 = (int)h8;
         h.x9 = (int)h9;
-    }*/
+    }
 
     public static void fe_neg(out FieldElement h, ref FieldElement f)
     {
