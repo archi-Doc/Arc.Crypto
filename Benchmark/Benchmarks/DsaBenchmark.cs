@@ -14,9 +14,6 @@ namespace Benchmark;
 #pragma warning disable SA1405 // Debug.Assert should provide message text
 
 [Config(typeof(BenchmarkConfig))]
-[ShortRunJob]
-[NativeMemoryProfiler]
-[MemoryDiagnoser]
 public class DsaBenchmark
 {
     private readonly ECCurve curve;
