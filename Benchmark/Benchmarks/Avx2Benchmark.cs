@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using BenchmarkDotNet.Attributes;
+using Iced.Intel;
 
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 #pragma warning disable SA1307 // Accessible fields should begin with upper-case letter
@@ -294,9 +295,8 @@ public static class Avx2Methods
         h.x9 = (int)h9;
     }
 
-    public static void fe_sq2(out FieldElement h, ref FieldElement f)
-    {
-        var f0 = f.x0;
+    public static unsafe void fe_sq2(out FieldElement h, ref FieldElement f)
+    {// 150
         var f1 = f.x1;
         var f2 = f.x2;
         var f3 = f.x3;
@@ -306,7 +306,8 @@ public static class Avx2Methods
         var f7 = f.x7;
         var f8 = f.x8;
         var f9 = f.x9;
-        var f0_2 = f0 << 1;
+
+        var f0_2 = f.x0 << 1;
         var f1_2 = f1 << 1;
         var f2_2 = f2 << 1;
         var f3_2 = f3 << 1;
@@ -314,12 +315,24 @@ public static class Avx2Methods
         var f5_2 = f5 << 1;
         var f6_2 = f6 << 1;
         var f7_2 = f7 << 1;
-        var f5_38 = 38 * f5;
-        var f6_19 = 19 * f6;
-        var f7_38 = 38 * f7;
-        var f8_19 = 19 * f8;
-        var f9_38 = 38 * f9;
-        var f0f0 = f0 * (long)f0;
+
+        long f5_38 = 38 * f5;
+        long f6_19 = 19 * f6;
+        long f7_38 = 38 * f7;
+        long f8_19 = 19 * f8;
+        long f9_38 = 38 * f9;
+
+        var f0f0 = f.x0 * (long)f.x0;
+
+        /*var vec_f0_2 = Vector256.Create(f0_2);
+        Span<int> stack_fm = stackalloc int[8];
+        fixed (int* ptr29 = &f.x2)
+        {
+            var vec_f29 = Avx.LoadVector256(ptr29);
+            var vec_fm = vec_3819 * vec_f29;
+            vec_fm.StoreUnsafe(ref MemoryMarshal.GetReference(stack_fm));
+        }*/
+
         var f0f1_2 = f0_2 * (long)f1;
         var f0f2_2 = f0_2 * (long)f2;
         var f0f3_2 = f0_2 * (long)f3;
@@ -337,43 +350,43 @@ public static class Avx2Methods
         var f1f6_2 = f1_2 * (long)f6;
         var f1f7_4 = f1_2 * (long)f7_2;
         var f1f8_2 = f1_2 * (long)f8;
-        var f1f9_76 = f1_2 * (long)f9_38;
+        var f1f9_76 = f1_2 * f9_38;
         var f2f2 = f2 * (long)f2;
         var f2f3_2 = f2_2 * (long)f3;
         var f2f4_2 = f2_2 * (long)f4;
         var f2f5_2 = f2_2 * (long)f5;
         var f2f6_2 = f2_2 * (long)f6;
         var f2f7_2 = f2_2 * (long)f7;
-        var f2f8_38 = f2_2 * (long)f8_19;
-        var f2f9_38 = f2 * (long)f9_38;
+        var f2f8_38 = f2_2 * f8_19;
+        var f2f9_38 = f2 * f9_38;
         var f3f3_2 = f3_2 * (long)f3;
         var f3f4_2 = f3_2 * (long)f4;
         var f3f5_4 = f3_2 * (long)f5_2;
         var f3f6_2 = f3_2 * (long)f6;
-        var f3f7_76 = f3_2 * (long)f7_38;
-        var f3f8_38 = f3_2 * (long)f8_19;
-        var f3f9_76 = f3_2 * (long)f9_38;
+        var f3f7_76 = f3_2 * f7_38;
+        var f3f8_38 = f3_2 * f8_19;
+        var f3f9_76 = f3_2 * f9_38;
         var f4f4 = f4 * (long)f4;
         var f4f5_2 = f4_2 * (long)f5;
-        var f4f6_38 = f4_2 * (long)f6_19;
-        var f4f7_38 = f4 * (long)f7_38;
-        var f4f8_38 = f4_2 * (long)f8_19;
-        var f4f9_38 = f4 * (long)f9_38;
-        var f5f5_38 = f5 * (long)f5_38;
-        var f5f6_38 = f5_2 * (long)f6_19;
-        var f5f7_76 = f5_2 * (long)f7_38;
-        var f5f8_38 = f5_2 * (long)f8_19;
-        var f5f9_76 = f5_2 * (long)f9_38;
-        var f6f6_19 = f6 * (long)f6_19;
-        var f6f7_38 = f6 * (long)f7_38;
-        var f6f8_38 = f6_2 * (long)f8_19;
-        var f6f9_38 = f6 * (long)f9_38;
-        var f7f7_38 = f7 * (long)f7_38;
-        var f7f8_38 = f7_2 * (long)f8_19;
-        var f7f9_76 = f7_2 * (long)f9_38;
-        var f8f8_19 = f8 * (long)f8_19;
-        var f8f9_38 = f8 * (long)f9_38;
-        var f9f9_38 = f9 * (long)f9_38;
+        var f4f6_38 = f4_2 * f6_19;
+        var f4f7_38 = f4 * f7_38;
+        var f4f8_38 = f4_2 * f8_19;
+        var f4f9_38 = f4 * f9_38;
+        var f5f5_38 = f5 * f5_38;
+        var f5f6_38 = f5_2 * f6_19;
+        var f5f7_76 = f5_2 * f7_38;
+        var f5f8_38 = f5_2 * f8_19;
+        var f5f9_76 = f5_2 * f9_38;
+        var f6f6_19 = f6 * f6_19;
+        var f6f7_38 = f6 * f7_38;
+        var f6f8_38 = f6_2 * f8_19;
+        var f6f9_38 = f6 * f9_38;
+        var f7f7_38 = f7 * f7_38;
+        var f7f8_38 = f7_2 * f8_19;
+        var f7f9_76 = f7_2 * f9_38;
+        var f8f8_19 = f8 * f8_19;
+        var f8f9_38 = f8 * f9_38;
+        var f9f9_38 = f9 * f9_38;
         var h0 = f0f0 + f1f9_76 + f2f8_38 + f3f7_76 + f4f6_38 + f5f5_38;
         var h1 = f0f1_2 + f2f9_38 + f3f8_38 + f4f7_38 + f5f6_38;
         var h2 = f0f2_2 + f1f1_2 + f3f9_76 + f4f8_38 + f5f7_76 + f6f6_19;
