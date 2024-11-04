@@ -636,7 +636,7 @@ public static class Avx2Methods
     }
 
     public static unsafe void fe_mul(out FieldElement h, ref FieldElement f, ref FieldElement g)
-    {// 245
+    {// 240
         var g0 = g.x0;
         var g1 = g.x1;
         var g2 = g.x2;
