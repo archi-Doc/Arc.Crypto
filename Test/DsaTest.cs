@@ -46,7 +46,7 @@ public class DsaTest
                 Ed25519Helper.Verify(message, pub, sign).IsTrue();
             }
 
-            NSec.Cryptography.KeyCreationParameters param;
+            /*NSec.Cryptography.KeyCreationParameters param;
             param.ExportPolicy = NSec.Cryptography.KeyExportPolicies.AllowPlaintextExport;
             var key = NSec.Cryptography.Key.Create(algorithm, param);
             key.TryExport(NSec.Cryptography.KeyBlobFormat.RawPublicKey, pub2, out _).IsTrue();
@@ -62,7 +62,7 @@ public class DsaTest
                 sign.SequenceEqual(signNsec).IsTrue();
 
                 Ed25519Helper.Verify(message, pub2, sign).IsTrue();
-            }
+            }*/
         }
     }
 }

@@ -46,7 +46,7 @@ internal static class Ed25519Operations
 
             incrementalHash.AppendData(az.Slice(32, 32));
             incrementalHash.AppendData(message);
-            incrementalHash.GetHashAndReset(r);
+            incrementalHash.GetHashAndReset(r); // nonce
 
             ScalarOperations.sc_reduce(r);
             GroupOperations.ge_scalarmult_base(out R, r);
