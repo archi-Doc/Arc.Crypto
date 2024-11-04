@@ -296,31 +296,21 @@ public static class Avx2Methods
     }
 
     public static unsafe void fe_sqB(out FieldElement h, ref FieldElement f)
-    {// 150
-        var f1 = f.x1;
-        var f2 = f.x2;
-        var f3 = f.x3;
-        var f4 = f.x4;
-        var f5 = f.x5;
-        var f6 = f.x6;
-        var f7 = f.x7;
-        var f8 = f.x8;
-        var f9 = f.x9;
-
+    {// 140
         var f0_2 = f.x0 << 1;
-        var f1_2 = f1 << 1;
-        var f2_2 = f2 << 1;
-        var f3_2 = f3 << 1;
-        var f4_2 = f4 << 1;
-        var f5_2 = f5 << 1;
-        var f6_2 = f6 << 1;
-        var f7_2 = f7 << 1;
+        var f1_2 = f.x1 << 1;
+        var f2_2 = f.x2 << 1;
+        var f3_2 = f.x3 << 1;
+        var f4_2 = f.x4 << 1;
+        var f5_2 = f.x5 << 1;
+        var f6_2 = f.x6 << 1;
+        var f7_2 = f.x7 << 1;
 
-        long f5_38 = 38 * f5;
-        long f6_19 = 19 * f6;
-        long f7_38 = 38 * f7;
-        long f8_19 = 19 * f8;
-        long f9_38 = 38 * f9;
+        var f5_38 = 38 * f.x5;
+        var f6_19 = 19 * f.x6;
+        var f7_38 = 38 * f.x7;
+        var f8_19 = 19 * f.x8;
+        var f9_38 = 38 * f.x9;
 
         /*var vec_f0_2 = Vector256.Create(f0_2);
         Span<int> stack_fm = stackalloc int[8];
@@ -331,18 +321,45 @@ public static class Avx2Methods
             vec_fm.StoreUnsafe(ref MemoryMarshal.GetReference(stack_fm));
         }*/
 
-        var h0 = (f.x0 * (long)f.x0) + (f1_2 * f9_38) + (f2_2 * (long)f8_19) + (f3_2 * (long)f7_38) + (f4_2 * (long)f6_19) + (f5 * (long)f5_38);
-        var h1 = (f0_2 * (long)f1) + (f2 * (long)f9_38) + (f3_2 * (long)f8_19) + (f4 * (long)f7_38) + (f5_2 * (long)f6_19);
-        var h2 = (f0_2 * (long)f2) + (f1_2 * (long)f1) + (f3_2 * (long)f9_38) + (f4_2 * (long)f8_19) + (f5_2 * (long)f7_38) + (f6 * (long)f6_19);
-        var h3 = (f0_2 * (long)f3) + (f1_2 * (long)f2) + (f4 * (long)f9_38) + (f5_2 * (long)f8_19) + (f6 * (long)f7_38);
+        /*var vec1 = Vector256.Create(f.x0, 0, f0_2, 0, f0_2, 0, f0_2, 0);
+        var vec2 = Vector256.Create(f.x0, 0, f1, 0, f2, 0, f3, 0);
+        var vec_acc = Avx2.Multiply(vec1, vec2);
 
-        var h4 = (f0_2 * (long)f4) + (f1_2 * (long)f3_2) + (f2 * (long)f2) + (f5_2 * (long)f9_38) + (f6_2 * (long)f8_19) + (f7 * (long)f7_38);
-        var h5 = (f0_2 * (long)f5) + (f1_2 * (long)f4) + (f2_2 * (long)f3) + (f6 * (long)f9_38) + (f7_2 * (long)f8_19);
-        var h6 = (f0_2 * (long)f6) + (f1_2 * (long)f5_2) + (f2_2 * (long)f4) + (f3_2 * (long)f3) + (f7_2 * (long)f9_38) + (f8 * (long)f8_19);
-        var h7 = (f0_2 * (long)f7) + (f1_2 * (long)f6) + (f2_2 * (long)f5) + (f3_2 * (long)f4) + (f8 * (long)f9_38);
+        vec1 = Vector256.Create(f1_2, 0, f2, 0, f1_2, 0, f1_2, 0);
+        vec2 = Vector256.Create(f9_38, 0, f9_38, 0, f1, 0, f2, 0);
+        vec_acc = Vector256.Add(vec_acc, Avx2.Multiply(vec1, vec2));
 
-        var h8 = (f0_2 * (long)f8) + (f1_2 * (long)f7_2) + (f2_2 * (long)f6) + (f3_2 * (long)f5_2) + (f4 * (long)f4) + (f9 * (long)f9_38);
-        var h9 = (f0_2 * (long)f9) + (f1_2 * (long)f8) + (f2_2 * (long)f7) + (f3_2 * (long)f6) + (f4_2 * (long)f5);
+        vec1 = Vector256.Create(f2_2, 0, f3_2, 0, f3_2, 0, f4, 0);
+        vec2 = Vector256.Create(f8_19, 0, f8_19, 0, f9_38, 0, f9_38, 0);
+        vec_acc = Vector256.Add(vec_acc, Avx2.Multiply(vec1, vec2));
+
+        vec1 = Vector256.Create(f3_2, 0, f4, 0, f4_2, 0, f5_2, 0);
+        vec2 = Vector256.Create(f7_38, 0, f7_38, 0, f8_19, 0, f8_19, 0);
+        vec_acc = Vector256.Add(vec_acc, Avx2.Multiply(vec1, vec2));
+
+        vec1 = Vector256.Create(f4_2, 0, f5_2, 0, f5_2, 0, f6, 0);
+        vec2 = Vector256.Create(f6_19, 0, f6_19, 0, f7_38, 0, f7_38, 0);
+        vec_acc = Vector256.Add(vec_acc, Avx2.Multiply(vec1, vec2));
+
+        vec1 = Vector256.Create(f5, 0, 0, 0, f6, 0, 0, 0);
+        vec2 = Vector256.Create(f5_38, 0, 0, 0, f6_19, 0, 0, 0);
+        vec_acc = Vector256.Add(vec_acc, Avx2.Multiply(vec1, vec2));
+
+        var h0 = vec_acc[0];
+        var h1 = vec_acc[1];
+        var h2 = vec_acc[2];
+        var h3 = vec_acc[3];*/
+
+        var h0 = (f.x0 * (long)f.x0) + (f1_2 * (long)f9_38) + (f2_2 * (long)f8_19) + (f3_2 * (long)f7_38) + (f4_2 * (long)f6_19) + (f.x5 * (long)f5_38);
+        var h1 = (f0_2 * (long)f.x1) + (f.x2 * (long)f9_38) + (f3_2 * (long)f8_19) + (f.x4 * (long)f7_38) + (f5_2 * (long)f6_19);
+        var h2 = (f0_2 * (long)f.x2) + (f1_2 * (long)f.x1) + (f3_2 * (long)f9_38) + (f4_2 * (long)f8_19) + (f5_2 * (long)f7_38) + (f.x6 * (long)f6_19);
+        var h3 = (f0_2 * (long)f.x3) + (f1_2 * (long)f.x2) + (f.x4 * (long)f9_38) + (f5_2 * (long)f8_19) + (f.x6 * (long)f7_38);
+        var h4 = (f0_2 * (long)f.x4) + (f1_2 * (long)f3_2) + (f.x2 * (long)f.x2) + (f5_2 * (long)f9_38) + (f6_2 * (long)f8_19) + (f.x7 * (long)f7_38);
+        var h5 = (f0_2 * (long)f.x5) + (f1_2 * (long)f.x4) + (f2_2 * (long)f.x3) + (f.x6 * (long)f9_38) + (f7_2 * (long)f8_19);
+        var h6 = (f0_2 * (long)f.x6) + (f1_2 * (long)f5_2) + (f2_2 * (long)f.x4) + (f3_2 * (long)f.x3) + (f7_2 * (long)f9_38) + (f.x8 * (long)f8_19);
+        var h7 = (f0_2 * (long)f.x7) + (f1_2 * (long)f.x6) + (f2_2 * (long)f.x5) + (f3_2 * (long)f.x4) + (f.x8 * (long)f9_38);
+        var h8 = (f0_2 * (long)f.x8) + (f1_2 * (long)f7_2) + (f2_2 * (long)f.x6) + (f3_2 * (long)f5_2) + (f.x4 * (long)f.x4) + (f.x9 * (long)f9_38);
+        var h9 = (f0_2 * (long)f.x9) + (f1_2 * (long)f.x8) + (f2_2 * (long)f.x7) + (f3_2 * (long)f.x6) + (f4_2 * (long)f.x5);
 
         const long r24 = 1 << 24;
         const long r25 = 1 << 25;
