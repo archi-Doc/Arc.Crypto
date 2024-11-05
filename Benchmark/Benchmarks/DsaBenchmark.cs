@@ -5,7 +5,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using Rebex.Security.Cryptography;
 
 namespace Benchmark;
