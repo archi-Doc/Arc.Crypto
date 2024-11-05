@@ -38,6 +38,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arc.Crypto\Arc.Crypto.csproj" />
+    <Content Include="..\Arc.Crypto\runtimes\$(NETCoreSdkRuntimeIdentifier)\native\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

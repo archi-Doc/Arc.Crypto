@@ -80,12 +80,12 @@ public class StandardHashBenchmark
         return hash[0];
     }
 
-    [Benchmark]
+    /*[Benchmark]
     public Blake3.Hash Blake3_256()
     {
         var hash = Blake3.Hasher.Hash(this.data.AsSpan(0, this.Length));
         return hash;
-    }
+    }*/
 
     [Benchmark]
     public byte Blake3B_256()
