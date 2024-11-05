@@ -11,7 +11,7 @@ using System.Security.Cryptography;
 
 namespace Arc.Crypto;
 
-public static class Id128Helper
+/*public static class Id128Helper
 {
     public static Int128 Create()
         => Create(DateTimeOffset.UtcNow);
@@ -27,4 +27,4 @@ public static class Id128Helper
 
         return Unsafe.ReadUnaligned<Int128>(ref MemoryMarshal.GetReference(span));
     }
-}
+}*/
