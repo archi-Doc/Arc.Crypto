@@ -1,0 +1,47 @@
+name: native
+
+on: workflow_dispatch
+
+defaults:
+  run:
+    working-directory: lib/blake3_dotnet
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, windows-latest, macos-11]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Build Linux
+      if: matrix.os == 'ubuntu-20.04'
+      run: |
+          chmod 755 *.sh
+          echo "building linux-x64"
+          ./build-linux-x64.sh
+          echo "building linux-arm64"
+          sudo apt-get install gcc-aarch64-linux-gnu      
+          ./build-linux-arm64.sh
+          echo "building linux-arm"
+          sudo apt-get install gcc-arm-linux-gnueabihf      
+          ./build-linux-arm.sh
+    - name: Build macOS
+      if: matrix.os == 'macos-11'
+      run: |
+          chmod 755 *.sh
+          ./build-osx-x64.sh
+          ./build-osx-arm64.sh
+    - name: Build Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+          ./build-win-x64.ps1
+          ./build-win-x86.ps1
+          ./build-win-arm64.ps1
+#          ./build-win-arm.ps1
+    - name: Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: native-${{ matrix.os }}
+        path: lib/blake3_dotnet/build/
