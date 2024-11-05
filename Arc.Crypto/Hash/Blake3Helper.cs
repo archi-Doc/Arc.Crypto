@@ -10,8 +10,8 @@ namespace Arc.Crypto;
 /// </summary>
 public static class Blake3Helper
 {
-    private const int SizeInBytes = 32;
-    private const int LimitPreemptive = 1024;
+    internal const int SizeInBytes = 32;
+    internal const int LimitPreemptive = 1024;
 
     /// <summary>
     /// Computes the BLAKE3 hash of the input data and returns the hash as a byte array.
