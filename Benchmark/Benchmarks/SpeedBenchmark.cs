@@ -69,11 +69,17 @@ public class SpeedBenchmark
     [Benchmark]
     public byte[] Sha2_512() => this.sha2_512.GetHash(this.data, 0, this.data.Length);*/
 
-    [Benchmark]
+    // [Benchmark]
     public byte[] Sha3_256() => this.sha3_256.GetHash(this.data, 0, this.data.Length);
 
-    [Benchmark]
+    // [Benchmark]
     public byte[] Sha3_256Ob() => this.sha3_256ob.GetHash(this.data, 0, this.data.Length);
+
+    [Benchmark]
+    public byte[] Blake2B_256()
+    {
+        return Blake2BHelper.Get256_ByteArray(this.data.AsSpan(0, this.data.Length));
+    }
 
     /*[Benchmark]
     public byte[] Sha3_384() => this.sha3_384.GetHash(this.data, 0, this.data.Length);
