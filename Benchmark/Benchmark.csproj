@@ -30,6 +30,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
+    <PackageReference Include="Tinyhand" Version="0.82.1" />
   </ItemGroup>
 
   <ItemGroup>
