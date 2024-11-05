@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using Rebex.Security.Cryptography;
 
 namespace Benchmark;
@@ -18,13 +19,13 @@ public class DsaBenchmark
     private readonly ECCurve curve;
     private readonly ECDsa ecdsa;
     private readonly Ed25519 ed25519;
-    private readonly NSec.Cryptography.SignatureAlgorithm algorithm;
-    private readonly NSec.Cryptography.Key key;
+    // private readonly NSec.Cryptography.SignatureAlgorithm algorithm;
+    // private readonly NSec.Cryptography.Key key;
     private readonly byte[] message;
     private readonly byte[] hash;
     private readonly byte[] signSecp256r1;
     private readonly byte[] signEd25519;
-    private readonly byte[] signEd25519B;
+    // private readonly byte[] signEd25519B;
     private readonly byte[] pri2;
     private readonly byte[] pub2;
     private readonly byte[] signature;
@@ -57,10 +58,10 @@ public class DsaBenchmark
         Debug.Assert(this.signature.SequenceEqual(this.signEd25519));
         verify = Ed25519Helper.Verify(this.message, this.pub2, this.signature);
 
-        this.algorithm = NSec.Cryptography.SignatureAlgorithm.Ed25519;
+        /*this.algorithm = NSec.Cryptography.SignatureAlgorithm.Ed25519;
         this.key = NSec.Cryptography.Key.Create(this.algorithm);
         this.signEd25519B = this.algorithm.Sign(this.key, this.message);
-        verify = this.algorithm.Verify(this.key.PublicKey, this.message, this.signEd25519B);
+        verify = this.algorithm.Verify(this.key.PublicKey, this.message, this.signEd25519B);*/
     }
 
     [Params(10)]
@@ -88,11 +89,11 @@ public class DsaBenchmark
         return this.ed25519.SignMessage(this.message);
     }
 
-    // [Benchmark]
+    /*[Benchmark]
     public byte[] SignEd25519B_NSec()
     {
         return this.algorithm.Sign(this.key, this.message);
-    }
+    }*/
 
     [Benchmark]
     public byte[] SignEd25519()
@@ -112,6 +113,13 @@ public class DsaBenchmark
     {
         return this.ed25519.VerifyMessage(this.message, this.signEd25519);
     }
+
+    /*[Benchmark]
+    public bool VerifyEd25519_NSec()
+    {
+        var b = this.algorithm.Verify(this.key.PublicKey, this.message, this.signEd25519B);
+        return b;
+    }*/
 
     [Benchmark]
     public bool VerifyEd25519()
