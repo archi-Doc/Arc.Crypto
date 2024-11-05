@@ -86,4 +86,14 @@ public class StandardHashBenchmark
         var hash = Blake3.Hasher.Hash(this.data.AsSpan(0, this.Length));
         return hash;
     }
+
+    [Benchmark]
+    public byte Blake3B_256()
+    {
+        Span<byte> hash = stackalloc byte[32];
+        Blake3Helper.Get256_Span(this.data.AsSpan(0, this.Length), hash);
+        var hash2 = Blake3.Hasher.Hash(this.data.AsSpan(0, this.Length));
+        hash.SequenceEqual(hash2.AsSpan());
+        return hash[0];
+    }
 }
