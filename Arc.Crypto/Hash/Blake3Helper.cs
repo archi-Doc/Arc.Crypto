@@ -5,11 +5,19 @@ using System.Runtime.InteropServices;
 
 namespace Arc.Crypto;
 
+/// <summary>
+/// Provides helper methods for computing BLAKE3 hashes.
+/// </summary>
 public static class Blake3Helper
 {
     private const int SizeInBytes = 32;
     private const int LimitPreemptive = 1024;
 
+    /// <summary>
+    /// Computes the BLAKE3 hash of the input data and returns the hash as a byte array.
+    /// </summary>
+    /// <param name="input">The input data to hash.</param>
+    /// <returns>A 32-byte array containing the BLAKE3 hash.</returns>
     public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[SizeInBytes];
@@ -17,6 +25,11 @@ public static class Blake3Helper
         return output;
     }
 
+    /// <summary>
+    /// Computes the BLAKE3 hash of the input data and returns the hash as a tuple of four long values.
+    /// </summary>
+    /// <param name="input">The input data to hash.</param>
+    /// <returns>A tuple containing four long values representing the BLAKE3 hash.</returns>
     public static (long Hash0, long Hash1, long Hash2, long Hash3) Get256_Long(ReadOnlySpan<byte> input)
     {
         Span<long> hash = stackalloc long[4];
@@ -24,6 +37,11 @@ public static class Blake3Helper
         return (hash[0], hash[1], hash[2], hash[3]);
     }
 
+    /// <summary>
+    /// Computes the BLAKE3 hash of the input data and returns the hash as a Struct256.
+    /// </summary>
+    /// <param name="input">The input data to hash.</param>
+    /// <returns>A Struct256 containing the BLAKE3 hash.</returns>
     public static unsafe Struct256 Get256_Struct(ReadOnlySpan<byte> input)
     {
         Struct256 st;
@@ -32,6 +50,12 @@ public static class Blake3Helper
         return st;
     }
 
+    /// <summary>
+    /// Computes the BLAKE3 hash of the input data and writes the hash to the output span.
+    /// </summary>
+    /// <param name="input">The input data to hash.</param>
+    /// <param name="output">The span to write the 32-byte BLAKE3 hash to.</param>
+    /// <exception cref="ArgumentException">Thrown when the output span length is not 32 bytes.</exception>
     public static unsafe void Get256_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         if (output.Length != SizeInBytes)
