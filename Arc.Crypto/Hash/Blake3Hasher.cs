@@ -8,6 +8,12 @@ using System.Text;
 
 namespace Arc.Crypto;
 
+/// <summary>
+/// Represents a BLAKE3 cryptographic hasher.
+/// </summary>
+/// <remarks>
+/// This struct is used to compute BLAKE3 hashes. It must be disposed explicitly to free unmanaged resources.
+/// </remarks>
 public unsafe struct Blake3Hasher : IDisposable
 {
     /// <summary>
@@ -278,13 +284,5 @@ public unsafe struct Blake3Hasher : IDisposable
     private static void ThrowNullReferenceException()
     {
         throw new NullReferenceException("The Hasher is not initialized or already destroyed.");
-    }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowArgumentNullException()
-    {
-        // ReSharper disable once NotResolvedInText
-        throw new ArgumentNullException("data");
     }
 }
