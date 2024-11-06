@@ -2,7 +2,7 @@
 
 using BenchmarkDotNet.Attributes;
 
-namespace Benchmark.Benchmarks;
+namespace Benchmark;
 
 [Config(typeof(BenchmarkConfig))]
 public class StringBenchmark

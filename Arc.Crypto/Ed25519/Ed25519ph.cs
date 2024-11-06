@@ -34,7 +34,7 @@ public ref struct Ed25519ph
 
     public void FinalizeAndSign(ReadOnlySpan<byte> expandedPrivateKey, Span<byte> signature)
     {
-        if (expandedPrivateKey.Length != Ed25519Helper.ExpandedPrivateKeySizeInBytes)
+        if (expandedPrivateKey.Length != Ed25519Helper.SecretKeySizeInBytes)
         {
             throw new ArgumentOutOfRangeException(nameof(expandedPrivateKey));
         }

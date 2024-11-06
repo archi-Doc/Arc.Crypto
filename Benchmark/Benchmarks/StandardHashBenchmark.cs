@@ -7,7 +7,7 @@ using BenchmarkDotNet.Attributes;
 
 #pragma warning disable SA1310 // Field names should not contain underscore
 
-namespace Benchmark.Benchmarks;
+namespace Benchmark;
 
 [Config(typeof(BenchmarkConfig))]
 public class StandardHashBenchmark
@@ -44,7 +44,7 @@ public class StandardHashBenchmark
     public byte[] Sha256() => this.sha256.ComputeHash(this.data, 0, this.Length);*/
 
     [Benchmark]
-    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Sha256Helper() => Sha2Helper.Get256_UInt64(this.data.AsSpan(0, this.Length));
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Sha2_256Helper() => Sha2Helper.Get256_UInt64(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
     public byte[] Sha3_256() => this.sha3_256.GetHash(this.data.AsSpan(0, this.Length));
@@ -88,10 +88,22 @@ public class StandardHashBenchmark
     }*/
 
     [Benchmark]
-    public byte Blake3B_256()
+    public byte Blake3_256()
     {
         Span<byte> hash = stackalloc byte[32];
         Blake3Helper.Get256_Span(this.data.AsSpan(0, this.Length), hash);
+        return hash[0];
+    }
+
+    [Benchmark]
+    public byte Blake3Hasher_256()
+    {
+        using var hasher = Blake3Hasher.New();
+        var half = this.Length / 2;
+        hasher.Update(this.data.AsSpan(0, half));
+        hasher.Update(this.data.AsSpan(half, this.Length - half));
+        Span<byte> hash = stackalloc byte[32];
+        hasher.Finalize(hash);
         return hash[0];
     }
 }

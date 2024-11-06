@@ -49,7 +49,7 @@ public class DsaBenchmark
 
         var pri = this.ed25519.GetPrivateKey();
         var pub = this.ed25519.GetPublicKey();
-        Ed25519Helper.KeyPairFromSeed(Sha3Helper.Get256_ByteArray([]), out this.pub2, out this.pri2);
+        Ed25519Helper.CreateKey(Sha3Helper.Get256_ByteArray([]), out this.pub2, out this.pri2);
         Debug.Assert(pri.SequenceEqual(this.pri2));
         Debug.Assert(pub.SequenceEqual(this.pub2));
         this.signature = new byte[Ed25519Helper.SignatureSizeInBytes];

@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
 
-namespace Benchmark.Benchmarks;
+namespace Benchmark;
 
 [Config(typeof(BenchmarkConfig))]
 public class Sha256Benchmark
