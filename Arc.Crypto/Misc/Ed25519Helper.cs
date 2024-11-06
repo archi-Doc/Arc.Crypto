@@ -39,7 +39,7 @@ public static class Ed25519Helper
             throw new ArgumentOutOfRangeException(nameof(signature));
         }
 
-        // Ed25519Operations.Sign(signature, message, expandedPrivateKey);
+        LibsodiumInterops.crypto_sign_ed25519_detached(signature, out var signatureLength, message, (ulong)message.Length, expandedPrivateKey);
     }
 
     public static bool Verify(ReadOnlySpan<byte> message, ReadOnlySpan<byte> publicKey, ReadOnlySpan<byte> signature)
@@ -54,7 +54,6 @@ public static class Ed25519Helper
             throw new ArgumentOutOfRangeException(nameof(signature));
         }
 
-        // return Ed25519Operations.Verify(signature, message, publicKey);
-        return true;
+        return LibsodiumInterops.crypto_sign_ed25519_verify_detached(signature, message, (ulong)message.Length, publicKey) == 0;
     }
 }

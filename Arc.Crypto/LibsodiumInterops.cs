@@ -17,6 +17,11 @@ internal static partial class LibsodiumInterops
 {
     internal const string Name = "libsodium";
 
+    [StructLayout(LayoutKind.Explicit, Size = 208)]
+    internal struct crypto_sign_ed25519ph_state
+    {
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 384)]
     internal struct crypto_generichash_blake2b_state
     {
@@ -24,7 +29,35 @@ internal static partial class LibsodiumInterops
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_sign_statebytes();
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int crypto_sign_ed25519_seed_keypair(Span<byte> pk, Span<byte> sk, ReadOnlySpan<byte> seed);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_sign_ed25519_detached(Span<byte> sig, out ulong siglen_p, ReadOnlySpan<byte> m, ulong mlen, ReadOnlySpan<byte> sk);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_sign_ed25519_verify_detached(ReadOnlySpan<byte> sig, ReadOnlySpan<byte> m, ulong mlen, ReadOnlySpan<byte> pk);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_sign_ed25519ph_init(ref crypto_sign_ed25519ph_state state);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_sign_ed25519ph_update(ref crypto_sign_ed25519ph_state state, ReadOnlySpan<byte> m, ulong mlen);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_sign_ed25519ph_final_create(ref crypto_sign_ed25519ph_state state, Span<byte> sig, out ulong siglen_p, ReadOnlySpan<byte> sk);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_sign_ed25519ph_final_verify(ref crypto_sign_ed25519ph_state state, ReadOnlySpan<byte> sig, ReadOnlySpan<byte> pk);
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
