@@ -11,5 +11,10 @@ internal class Program
     public static async Task Main(string[] args)
     {
         Console.WriteLine("Sandbox");
+
+        var secretKey = Ed25519SecretKey.New();
+        var st = secretKey.ToString();
+        st = secretKey.UnsafeToString();
+        Ed25519SecretKey.TryParse(st, out var secretKey2);
     }
 }

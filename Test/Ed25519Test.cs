@@ -33,6 +33,7 @@ public class Ed25519Test
             publicKey.SequenceEqual(publicKey2).IsTrue();
             Ed25519Helper.SecretKeyToSeed(secretKey, seed2);
             seed.SequenceEqual(seed2).IsTrue();
+            secretKey.Slice(0, Ed25519Helper.SeedSizeInBytes).SequenceEqual(seed).IsTrue(); // Secret key = Seed + Public key
         }
 
         for (var i = 0; i < 32; i++)
@@ -52,10 +53,7 @@ public class Ed25519Test
                 var m = message.AsSpan();
                 var half = message.Length / 2;
                 ed25519ph.Update(m);
-                // ed25519ph.Update(m.Slice(0, half));
-                // ed25519ph.Update(m.Slice(half, message.Length - half));
-                ed25519ph.FinalizeAndSign(secretKey, signature2);
-                // signature.SequenceEqual(signature2).IsTrue();
+                ed25519ph.FinalizeAndSign(secretKey, signature2); // signature.SequenceEqual(signature2).IsTrue();
 
                 ed25519ph.Update(m.Slice(0, half));
                 ed25519ph.Update(m.Slice(half, message.Length - half));

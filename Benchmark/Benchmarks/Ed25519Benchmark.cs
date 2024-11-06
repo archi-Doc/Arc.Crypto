@@ -53,6 +53,13 @@ public class Ed25519Benchmark
     }
 
     [Benchmark]
+    public byte[] SecretKeyToSeed2()
+    {
+        Ed25519Helper.SecretKeyToSeed2(this.secretKey, this.seed2);
+        return this.seed2;
+    }
+
+    [Benchmark]
     public byte[] SecretKeyToPublicKey()
     {
         Ed25519Helper.SecretKeyToPublicKey(this.secretKey, this.publicKey2);

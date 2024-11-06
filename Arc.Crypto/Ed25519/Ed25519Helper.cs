@@ -58,12 +58,27 @@ public static class Ed25519Helper
             throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
 
-        if (seed.Length != SeedSizeInBytes)
+        if (seed.Length < SeedSizeInBytes)
         {
             throw new ArgumentNullException(nameof(seed));
         }
 
         LibsodiumInterops.crypto_sign_ed25519_sk_to_seed(seed, secretKey);
+    }
+
+    public static void SecretKeyToSeed2(ReadOnlySpan<byte> secretKey, Span<byte> seed)
+    {
+        if (secretKey.Length != SecretKeySizeInBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(secretKey));
+        }
+
+        if (seed.Length < SeedSizeInBytes)
+        {
+            throw new ArgumentNullException(nameof(seed));
+        }
+
+        secretKey.Slice(0, SeedSizeInBytes).CopyTo(seed);
     }
 
     public static void SecretKeyToPublicKey(ReadOnlySpan<byte> secretKey, Span<byte> publicKey)
@@ -73,7 +88,7 @@ public static class Ed25519Helper
             throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
 
-        if (publicKey.Length != PublicKeySizeInBytes)
+        if (publicKey.Length < PublicKeySizeInBytes)
         {
             throw new ArgumentNullException(nameof(publicKey));
         }
