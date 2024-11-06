@@ -57,6 +57,13 @@ public class DsaBenchmark
         Debug.Assert(this.signature.SequenceEqual(this.signEd25519));
         verify = Ed25519Helper.Verify(this.message, this.pub2, this.signature);
 
+        var st = Ed25519ph.New();
+        st.Update(this.message);
+        st.FinalizeAndSign(this.pri2, this.signature);
+        var st2 = Ed25519ph.New();
+        st2.Update(this.message);
+        verify = st2.FinalizeAndVerify(this.pub2, this.signature);
+
         /*this.algorithm = NSec.Cryptography.SignatureAlgorithm.Ed25519;
         this.key = NSec.Cryptography.Key.Create(this.algorithm);
         this.signEd25519B = this.algorithm.Sign(this.key, this.message);

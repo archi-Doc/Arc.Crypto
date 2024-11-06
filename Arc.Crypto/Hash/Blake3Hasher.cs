@@ -84,6 +84,16 @@ public unsafe struct Blake3Hasher : IDisposable
 
     #endregion
 
+#pragma warning disable SA1642
+    /// <summary>
+    /// Invalid constructor.
+    /// </summary>
+    [Obsolete("Use New() to create a new instance of Blake3Hasher", true)]
+    public Blake3Hasher()
+    {
+    }
+#pragma warning restore SA1642
+
     private Blake3Hasher(void* hasher)
     {
         this.hasher = hasher;

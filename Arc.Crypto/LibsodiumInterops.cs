@@ -17,19 +17,10 @@ internal static partial class LibsodiumInterops
 {
     internal const string Name = "libsodium";
 
-    [StructLayout(LayoutKind.Explicit, Size = 208)]
-    internal struct crypto_sign_ed25519ph_state
-    {
-    }
-
     [StructLayout(LayoutKind.Explicit, Size = 384)]
     internal struct crypto_generichash_blake2b_state
     {
     }
-
-    [LibraryImport(Name)]
-    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int crypto_sign_statebytes();
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -45,19 +36,19 @@ internal static partial class LibsodiumInterops
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int crypto_sign_ed25519ph_init(ref crypto_sign_ed25519ph_state state);
+    internal static partial int crypto_sign_ed25519ph_init(ref Ed25519ph state);
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int crypto_sign_ed25519ph_update(ref crypto_sign_ed25519ph_state state, ReadOnlySpan<byte> m, ulong mlen);
+    internal static partial int crypto_sign_ed25519ph_update(ref Ed25519ph state, ReadOnlySpan<byte> m, ulong mlen);
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int crypto_sign_ed25519ph_final_create(ref crypto_sign_ed25519ph_state state, Span<byte> sig, out ulong siglen_p, ReadOnlySpan<byte> sk);
+    internal static partial int crypto_sign_ed25519ph_final_create(ref Ed25519ph state, Span<byte> sig, out ulong siglen_p, ReadOnlySpan<byte> sk);
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int crypto_sign_ed25519ph_final_verify(ref crypto_sign_ed25519ph_state state, ReadOnlySpan<byte> sig, ReadOnlySpan<byte> pk);
+    internal static partial int crypto_sign_ed25519ph_final_verify(ref Ed25519ph state, ReadOnlySpan<byte> sig, ReadOnlySpan<byte> pk);
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
