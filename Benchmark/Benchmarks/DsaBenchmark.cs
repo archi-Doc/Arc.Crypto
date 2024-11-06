@@ -1,5 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
@@ -28,6 +29,7 @@ public class DsaBenchmark
     private readonly byte[] pri2;
     private readonly byte[] pub2;
     private readonly byte[] signature;
+    private readonly byte[] signature_ph;
 
     public DsaBenchmark()
     {
@@ -49,7 +51,9 @@ public class DsaBenchmark
 
         var pri = this.ed25519.GetPrivateKey();
         var pub = this.ed25519.GetPublicKey();
-        Ed25519Helper.CreateKey(Sha3Helper.Get256_ByteArray([]), out this.pub2, out this.pri2);
+        this.pri2 = new byte[Ed25519Helper.SecretKeySizeInBytes];
+        this.pub2 = new byte[Ed25519Helper.PublicKeySizeInBytes];
+        Ed25519Helper.CreateKey(Sha3Helper.Get256_ByteArray([]), this.pri2, this.pub2);
         Debug.Assert(pri.SequenceEqual(this.pri2));
         Debug.Assert(pub.SequenceEqual(this.pub2));
         this.signature = new byte[Ed25519Helper.SignatureSizeInBytes];
@@ -59,19 +63,16 @@ public class DsaBenchmark
 
         var st = Ed25519ph.New();
         st.Update(this.message);
-        st.FinalizeAndSign(this.pri2, this.signature);
-        var st2 = Ed25519ph.New();
-        st2.Update(this.message);
-        verify = st2.FinalizeAndVerify(this.pub2, this.signature);
+        this.signature_ph = new byte[Ed25519Helper.SignatureSizeInBytes];
+        st.FinalizeAndSign(this.pri2, this.signature_ph);
+        st.Update(this.message);
+        verify = st.FinalizeAndVerify(this.pub2, this.signature_ph);
 
         /*this.algorithm = NSec.Cryptography.SignatureAlgorithm.Ed25519;
         this.key = NSec.Cryptography.Key.Create(this.algorithm);
         this.signEd25519B = this.algorithm.Sign(this.key, this.message);
         verify = this.algorithm.Verify(this.key.PublicKey, this.message, this.signEd25519B);*/
     }
-
-    [Params(10)]
-    public int Length { get; set; }
 
     [GlobalSetup]
     public void Setup()
@@ -109,6 +110,18 @@ public class DsaBenchmark
     }
 
     [Benchmark]
+    public byte[] SignEd25519ph()
+    {
+        var ed25519ph = Ed25519ph.New();
+        var m = this.message.AsSpan();
+        var half = this.message.Length / 2;
+        ed25519ph.Update(m.Slice(0, half));
+        ed25519ph.Update(m.Slice(half, this.message.Length - half));
+        ed25519ph.FinalizeAndSign(this.pri2, this.signature_ph);
+        return this.signature_ph;
+    }
+
+    [Benchmark]
     public bool VerifySecp256r1()
     {
         return this.ecdsa.VerifyHash(this.hash, this.signSecp256r1);
@@ -130,6 +143,19 @@ public class DsaBenchmark
     [Benchmark]
     public bool VerifyEd25519()
     {
-        return Ed25519Helper.Verify(this.message, this.pub2, this.signature);
+        var verify = Ed25519Helper.Verify(this.message, this.pub2, this.signature);
+        return verify;
+    }
+
+    [Benchmark]
+    public bool VerifyEd25519ph()
+    {
+        var ed25519ph = Ed25519ph.New();
+        var m = this.message.AsSpan();
+        var half = this.message.Length / 2;
+        ed25519ph.Update(m.Slice(0, half));
+        ed25519ph.Update(m.Slice(half, this.message.Length - half));
+        var verify = ed25519ph.FinalizeAndVerify(this.pub2, this.signature_ph);
+        return verify;
     }
 }

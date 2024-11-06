@@ -27,16 +27,16 @@ public ref struct Ed25519ph
     }
 #pragma warning restore SA1642
 
-    public void Update(ReadOnlySpan<byte> message)
+    public void Update(scoped ReadOnlySpan<byte> message)
     {
         var n = LibsodiumInterops.crypto_sign_ed25519ph_update(ref this, message, (ulong)message.Length);
     }
 
-    public void FinalizeAndSign(ReadOnlySpan<byte> expandedPrivateKey, Span<byte> signature)
+    public void FinalizeAndSign(scoped ReadOnlySpan<byte> secretKey, scoped Span<byte> signature)
     {
-        if (expandedPrivateKey.Length != Ed25519Helper.SecretKeySizeInBytes)
+        if (secretKey.Length != Ed25519Helper.SecretKeySizeInBytes)
         {
-            throw new ArgumentOutOfRangeException(nameof(expandedPrivateKey));
+            throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
 
         if (signature.Length != Ed25519Helper.SignatureSizeInBytes)
@@ -44,10 +44,11 @@ public ref struct Ed25519ph
             throw new ArgumentOutOfRangeException(nameof(signature));
         }
 
-        LibsodiumInterops.crypto_sign_ed25519ph_final_create(ref this, signature, out var signatureLength, expandedPrivateKey);
+        LibsodiumInterops.crypto_sign_ed25519ph_final_create(ref this, signature, out var signatureLength, secretKey);
+        LibsodiumInterops.crypto_sign_ed25519ph_init(ref this);
     }
 
-    public bool FinalizeAndVerify(ReadOnlySpan<byte> publicKey, ReadOnlySpan<byte> signature)
+    public bool FinalizeAndVerify(scoped ReadOnlySpan<byte> publicKey, scoped ReadOnlySpan<byte> signature)
     {
         if (publicKey.Length != Ed25519Helper.PublicKeySizeInBytes)
         {
@@ -59,6 +60,8 @@ public ref struct Ed25519ph
             throw new ArgumentOutOfRangeException(nameof(signature));
         }
 
-        return LibsodiumInterops.crypto_sign_ed25519ph_final_verify(ref this, signature, publicKey) == 0;
+        var verify = LibsodiumInterops.crypto_sign_ed25519ph_final_verify(ref this, signature, publicKey) == 0;
+        LibsodiumInterops.crypto_sign_ed25519ph_init(ref this);
+        return verify;
     }
 }

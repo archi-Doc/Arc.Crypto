@@ -133,7 +133,7 @@ public unsafe struct Blake3Hasher : IDisposable
     /// The 8 KiB buffer currently used by std::io::copy is enough to leverage AVX2, for example, but not enough to leverage AVX-512.
     /// A 16 KiB buffer is large enough to leverage all currently supported SIMD instruction sets.
     /// </remarks>
-    public void Update(ReadOnlySpan<byte> data)
+    public void Update(scoped ReadOnlySpan<byte> data)
     {
         if (this.hasher == null)
         {
@@ -158,7 +158,7 @@ public unsafe struct Blake3Hasher : IDisposable
     /// The 8 KiB buffer currently used by std::io::copy is enough to leverage AVX2, for example, but not enough to leverage AVX-512.
     /// A 16 KiB buffer is large enough to leverage all currently supported SIMD instruction sets.
     /// </remarks>
-    public void Update<T>(ReadOnlySpan<T> data)
+    public void Update<T>(scoped ReadOnlySpan<T> data)
         where T : unmanaged
     {
         if (this.hasher == null)
@@ -184,7 +184,7 @@ public unsafe struct Blake3Hasher : IDisposable
     /// Where memory mapping is not possible, good multi-threading performance requires doing IO on a background thread, to avoid sleeping all your worker threads while the input buffer is (serially) refilled.
     /// This is quite complicated compared to memory mapping.
     /// </remarks>
-    public void UpdateWithJoin(ReadOnlySpan<byte> data)
+    public void UpdateWithJoin(scoped ReadOnlySpan<byte> data)
     {
         if (data == null)
         {
@@ -215,7 +215,7 @@ public unsafe struct Blake3Hasher : IDisposable
     /// Where memory mapping is not possible, good multi-threading performance requires doing IO on a background thread, to avoid sleeping all your worker threads while the input buffer is (serially) refilled.
     /// This is quite complicated compared to memory mapping.
     /// </remarks>
-    public void UpdateWithJoin<T>(ReadOnlySpan<T> data)
+    public void UpdateWithJoin<T>(scoped ReadOnlySpan<T> data)
         where T : unmanaged
     {
         if (this.hasher == null)
@@ -254,7 +254,7 @@ public unsafe struct Blake3Hasher : IDisposable
     /// <remarks>
     /// This method is idempotent. Calling it twice will give the same result. You can also add more input and finalize again.
     /// </remarks>
-    public void Finalize(Span<byte> hash)
+    public void Finalize(scoped Span<byte> hash)
     {
         if (this.hasher == null)
         {

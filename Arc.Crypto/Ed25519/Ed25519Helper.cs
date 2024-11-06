@@ -6,6 +6,9 @@ using System.Runtime.InteropServices;
 
 namespace Arc.Crypto;
 
+/// <summary>
+/// Provides helper methods for computing Ed25519 digital signatures.
+/// </summary>
 public static class Ed25519Helper
 {
     public const int SeedSizeInBytes = 32;
@@ -13,17 +16,69 @@ public static class Ed25519Helper
     public const int PublicKeySizeInBytes = 32;
     public const int SignatureSizeInBytes = 64;
 
-    public static void CreateKey(ReadOnlySpan<byte> seed, out byte[] publicKey, out byte[] secretKey)
+    public static void CreateKey(Span<byte> secretKey, Span<byte> publicKey)
+    {
+        if (publicKey.Length != PublicKeySizeInBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(publicKey));
+        }
+
+        if (secretKey.Length != SecretKeySizeInBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(secretKey));
+        }
+
+        LibsodiumInterops.crypto_sign_ed25519_keypair(publicKey, secretKey);
+    }
+
+    public static void CreateKey(ReadOnlySpan<byte> seed, Span<byte> secretKey, Span<byte> publicKey)
     {
         if (seed.Length != SeedSizeInBytes)
         {
             throw new ArgumentNullException(nameof(seed));
         }
 
-        publicKey = new byte[PublicKeySizeInBytes];
-        secretKey = new byte[SecretKeySizeInBytes];
-        // Ed25519Operations.CreateKeyFromSeed(privateKeySeed, publicKey, expandedPrivateKey);
+        if (publicKey.Length != PublicKeySizeInBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(publicKey));
+        }
+
+        if (secretKey.Length != SecretKeySizeInBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(secretKey));
+        }
+
         LibsodiumInterops.crypto_sign_ed25519_seed_keypair(publicKey, secretKey, seed);
+    }
+
+    public static void SecretKeyToSeed(ReadOnlySpan<byte> secretKey, Span<byte> seed)
+    {
+        if (secretKey.Length != SecretKeySizeInBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(secretKey));
+        }
+
+        if (seed.Length != SeedSizeInBytes)
+        {
+            throw new ArgumentNullException(nameof(seed));
+        }
+
+        LibsodiumInterops.crypto_sign_ed25519_sk_to_seed(seed, secretKey);
+    }
+
+    public static void SecretKeyToPublicKey(ReadOnlySpan<byte> secretKey, Span<byte> publicKey)
+    {
+        if (secretKey.Length != SecretKeySizeInBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(secretKey));
+        }
+
+        if (publicKey.Length != PublicKeySizeInBytes)
+        {
+            throw new ArgumentNullException(nameof(publicKey));
+        }
+
+        LibsodiumInterops.crypto_sign_ed25519_sk_to_pk(publicKey, secretKey);
     }
 
     public static void Sign(ReadOnlySpan<byte> message, ReadOnlySpan<byte> secretKey, Span<byte> signature)
