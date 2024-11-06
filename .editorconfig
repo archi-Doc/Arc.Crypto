@@ -168,6 +168,8 @@ dotnet_diagnostic.SA1011.severity = silent
 dotnet_diagnostic.SA1200.severity = none
 # SA1201: Elements should appear in the correct order
 dotnet_diagnostic.SA1201.severity = suggestion
+# SA1309: Field names should not begin with underscore
+dotnet_diagnostic.SA1309.severity = suggestion
 # SA1402: File may only contain a single type
 dotnet_diagnostic.SA1402.severity = suggestion
 # SA1512: Single-line comments should not be followed by blank line
@@ -185,6 +187,13 @@ dotnet_diagnostic.SA1649.severity = silent
 
 dotnet_diagnostic.SA1591.severity = suggestion
 dotnet_diagnostic.SA1602.severity = suggestion
+dotnet_diagnostic.SA1405.severity = suggestion
+dotnet_diagnostic.SA1300.severity = suggestion
+dotnet_diagnostic.SA1302.severity = suggestion
+dotnet_diagnostic.SA1124.severity = suggestion
+dotnet_diagnostic.SA1010.severity = silent
+dotnet_diagnostic.CS0162.severity = silent
+
 
 [*.{cs,vb}]
 csharp_style_namespace_declarations=file_scoped:warning

@@ -72,7 +72,11 @@ public unsafe struct Blake3Hasher : IDisposable
         }
     }
 
+    #region FieldAndProperty
+
     private void* hasher;
+
+    #endregion
 
     private Blake3Hasher(void* hasher)
     {
