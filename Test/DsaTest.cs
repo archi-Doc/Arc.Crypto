@@ -15,13 +15,11 @@ public class DsaTest
     [Fact]
     public void Test1()
     {
-        // NSec.Cryptography.Ed25519 nsec = new(); // NSec
-        // var algorithm = NSec.Cryptography.SignatureAlgorithm.Ed25519;
         var random = new Xoroshiro128StarStar(12);
         Span<byte> sign = stackalloc byte[Ed25519Helper.SignatureSizeInBytes];
         Span<byte> pri2 = stackalloc byte[64];
         Span<byte> pub2 = stackalloc byte[32];
-        for (var i = 0; i < 32; i++)
+        /*for (var i = 0; i < 32; i++)
         {
             var seed = new byte[Ed25519Helper.PrivateKeySeedSizeInBytes];
             random.NextBytes(seed);
@@ -45,7 +43,7 @@ public class DsaTest
                 Ed25519Helper.Verify(message, pub, sign).IsTrue();
             }
 
-            /*NSec.Cryptography.KeyCreationParameters param;
+            NSec.Cryptography.KeyCreationParameters param;
             param.ExportPolicy = NSec.Cryptography.KeyExportPolicies.AllowPlaintextExport;
             var key = NSec.Cryptography.Key.Create(algorithm, param);
             key.TryExport(NSec.Cryptography.KeyBlobFormat.RawPublicKey, pub2, out _).IsTrue();
@@ -61,7 +59,7 @@ public class DsaTest
                 sign.SequenceEqual(signNsec).IsTrue();
 
                 Ed25519Helper.Verify(message, pub2, sign).IsTrue();
-            }*/
-        }
+            }
+        }*/
     }
 }

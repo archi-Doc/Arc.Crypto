@@ -10,7 +10,7 @@ namespace Arc.Crypto;
 /// </summary>
 public static class Blake3Helper
 {
-    internal const int SizeInBytes = 32;
+    public const int SizeInBytes = 32;
     internal const int LimitPreemptive = 1024;
 
     /// <summary>
