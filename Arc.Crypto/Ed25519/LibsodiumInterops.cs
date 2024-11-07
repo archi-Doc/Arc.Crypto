@@ -142,6 +142,14 @@ internal static partial class LibsodiumInterops
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int crypto_sign_ed25519ph_final_verify(ref Ed25519ph state, scoped ReadOnlySpan<byte> sig, scoped ReadOnlySpan<byte> pk);
 
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_sign_ed25519_pk_to_curve25519(Span<byte> x25519_pk, ReadOnlySpan<byte> ed25519_pk);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_sign_ed25519_sk_to_curve25519(Span<byte> x25519_sk, ReadOnlySpan<byte> ed25519_sk);
+
     #endregion
 
     #region Blake2B
