@@ -22,6 +22,24 @@ internal static partial class LibsodiumInterops
     {
     }
 
+    #region
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial void crypto_secretbox_keygen(scoped Span<byte> key);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_secretbox_easy(Span<byte> c, ReadOnlySpan<byte> m, ulong mlen, ReadOnlySpan<byte> n, ReadOnlySpan<byte> k);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_secretbox_open_easy(Span<byte> m, ReadOnlySpan<byte> c, ulong clen, ReadOnlySpan<byte> n, ReadOnlySpan<byte> k);
+
+    #endregion
+
+    #region Ed25519
+
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int crypto_sign_ed25519_seed_keypair(scoped Span<byte> pk, scoped Span<byte> sk, scoped ReadOnlySpan<byte> seed);
@@ -62,6 +80,10 @@ internal static partial class LibsodiumInterops
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int crypto_sign_ed25519ph_final_verify(ref Ed25519ph state, scoped ReadOnlySpan<byte> sig, scoped ReadOnlySpan<byte> pk);
 
+    #endregion
+
+    #region Blake2B
+
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static unsafe partial int crypto_generichash_blake2b(Span<byte> @out, nuint outlen, scoped ReadOnlySpan<byte> @in, ulong inlen, IntPtr key, nuint keylen);
@@ -77,4 +99,6 @@ internal static partial class LibsodiumInterops
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int crypto_generichash_blake2b_final(ref crypto_generichash_blake2b_state state, scoped Span<byte> @out, nuint outlen);
+
+    #endregion
 }
