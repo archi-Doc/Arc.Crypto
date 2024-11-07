@@ -28,7 +28,7 @@ public static class CryptoSignHelper
             throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
 
-        LibsodiumInterops.crypto_sign_ed25519_keypair(publicKey, secretKey);
+        LibsodiumInterops.crypto_sign_keypair(publicKey, secretKey);
     }
 
     public static void CreateKey(ReadOnlySpan<byte> seed, Span<byte> secretKey, Span<byte> publicKey)
@@ -48,7 +48,7 @@ public static class CryptoSignHelper
             throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
 
-        LibsodiumInterops.crypto_sign_ed25519_seed_keypair(publicKey, secretKey, seed);
+        LibsodiumInterops.crypto_sign_seed_keypair(publicKey, secretKey, seed);
     }
 
     public static void SecretKeyToSeed(ReadOnlySpan<byte> secretKey, Span<byte> seed)

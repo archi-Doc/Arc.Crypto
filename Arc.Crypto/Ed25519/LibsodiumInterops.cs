@@ -96,7 +96,7 @@ internal static partial class LibsodiumInterops
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int crypto_box_open_easy(unsigned char* m, const unsigned char* c, unsigned long long clen, const unsigned char* n,                         const unsigned char* pk, const unsigned char* sk);
+    internal static partial int crypto_box_open_easy(Span<byte> m, ReadOnlySpan<byte> c, ulong clen, ReadOnlySpan<byte> n, ReadOnlySpan<byte> pk, ReadOnlySpan<byte> sk);
 
     #endregion
 
@@ -104,11 +104,11 @@ internal static partial class LibsodiumInterops
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int crypto_sign_ed25519_seed_keypair(scoped Span<byte> pk, scoped Span<byte> sk, scoped ReadOnlySpan<byte> seed);
+    internal static partial int crypto_sign_seed_keypair(scoped Span<byte> pk, scoped Span<byte> sk, scoped ReadOnlySpan<byte> seed);
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int crypto_sign_ed25519_keypair(scoped Span<byte> pk, scoped Span<byte> sk);
+    internal static partial int crypto_sign_keypair(scoped Span<byte> pk, scoped Span<byte> sk);
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
