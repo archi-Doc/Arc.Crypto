@@ -166,7 +166,7 @@ public class CipherBenchmark
     [Benchmark]
     public byte[] Aegis256Decrypt2()
     {
-        AegisDotNet.AEGIS256.Decrypt(this.message2, this.cipherAegis2, this.nonce32, this.key, default, 32);
+        AegisDotNet.AEGIS256.Decrypt(this.message2, this.cipherAegis, this.nonce32, this.key, default, 32);
         return this.message2;
     }
 }
