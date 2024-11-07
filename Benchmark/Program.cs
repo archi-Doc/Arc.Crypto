@@ -28,7 +28,7 @@ public class Program
         var switcher = new BenchmarkSwitcher(new[]
         {
             typeof(CipherBenchmark),
-            typeof(Ed25519Benchmark),
+            typeof(Curve25519Benchmark),
             typeof(SerializeHashBenchmark),
             typeof(Avx2Benchmark),
             typeof(DsaBenchmark),

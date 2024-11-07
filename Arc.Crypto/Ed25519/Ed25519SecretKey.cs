@@ -94,7 +94,7 @@ public partial class Ed25519SecretKey : IValidatable, IEquatable<Ed25519SecretKe
 
     public static bool TryParse(ReadOnlySpan<char> base64url, [MaybeNullWhen(false)] out Ed25519SecretKey secretKey)
     {
-        Span<byte> key = stackalloc byte[Ed25519Helper.SecretKeySizeInBytes];
+        Span<byte> key = stackalloc byte[CryptoSignHelper.SecretKeySizeInBytes];
         if (TryParseKey(base64url, key))
         {
             secretKey = new(key.ToArray());
@@ -109,29 +109,29 @@ public partial class Ed25519SecretKey : IValidatable, IEquatable<Ed25519SecretKe
 
     public static Ed25519SecretKey New()
     {
-        var secretKey = new byte[Ed25519Helper.SecretKeySizeInBytes];
-        Span<byte> publicKey = stackalloc byte[Ed25519Helper.PublicKeySizeInBytes];
-        Ed25519Helper.CreateKey(secretKey, publicKey);
+        var secretKey = new byte[CryptoSignHelper.SecretKeySizeInBytes];
+        Span<byte> publicKey = stackalloc byte[CryptoSignHelper.PublicKeySizeInBytes];
+        CryptoSignHelper.CreateKey(secretKey, publicKey);
         return new(secretKey);
     }
 
     public static Ed25519SecretKey New(ReadOnlySpan<byte> seed)
     {
-        var secretKey = new byte[Ed25519Helper.SecretKeySizeInBytes];
-        Span<byte> publicKey = stackalloc byte[Ed25519Helper.PublicKeySizeInBytes];
-        Ed25519Helper.CreateKey(seed, secretKey, publicKey);
+        var secretKey = new byte[CryptoSignHelper.SecretKeySizeInBytes];
+        Span<byte> publicKey = stackalloc byte[CryptoSignHelper.PublicKeySizeInBytes];
+        CryptoSignHelper.CreateKey(seed, secretKey, publicKey);
         return new(secretKey);
     }
 
     public Ed25519SecretKey()
     {
-        var aa = 3 + Base64.Url.GetEncodedLength(Ed25519Helper.SeedSizeInBytes + KeyHelper.ChecksumLength) + 3 + 1 + Base64.Url.GetEncodedLength(Ed25519Helper.PublicKeySizeInBytes + KeyHelper.ChecksumLength) + 1;
+        var aa = 3 + Base64.Url.GetEncodedLength(CryptoSignHelper.SeedSizeInBytes + KeyHelper.ChecksumLength) + 3 + 1 + Base64.Url.GetEncodedLength(CryptoSignHelper.PublicKeySizeInBytes + KeyHelper.ChecksumLength) + 1;
     }
 
     protected Ed25519SecretKey(byte[] secretKey)
     {
-        var aa = 3 + Base64.Url.GetEncodedLength(Ed25519Helper.SeedSizeInBytes + KeyHelper.ChecksumLength) + 3 + 1 + Base64.Url.GetEncodedLength(Ed25519Helper.PublicKeySizeInBytes + KeyHelper.ChecksumLength) + 1;
-        if (secretKey.Length != Ed25519Helper.SecretKeySizeInBytes)
+        var aa = 3 + Base64.Url.GetEncodedLength(CryptoSignHelper.SeedSizeInBytes + KeyHelper.ChecksumLength) + 3 + 1 + Base64.Url.GetEncodedLength(CryptoSignHelper.PublicKeySizeInBytes + KeyHelper.ChecksumLength) + 1;
+        if (secretKey.Length != CryptoSignHelper.SecretKeySizeInBytes)
         {
             throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
@@ -180,30 +180,30 @@ public partial class Ed25519SecretKey : IValidatable, IEquatable<Ed25519SecretKe
 
     public void GetPublicKey(Span<byte> publicKey)
     {
-        if (publicKey.Length != Ed25519Helper.PublicKeySizeInBytes)
+        if (publicKey.Length != CryptoSignHelper.PublicKeySizeInBytes)
         {
             throw new ArgumentOutOfRangeException(nameof(publicKey));
         }
 
-        Ed25519Helper.SecretKeyToPublicKey(this.secretKey, publicKey);
+        CryptoSignHelper.SecretKeyToPublicKey(this.secretKey, publicKey);
     }
 
     public bool TryWritePublicKey(Span<byte> publicKey, out int written)
     {
-        if (publicKey.Length < Ed25519Helper.PublicKeySizeInBytes)
+        if (publicKey.Length < CryptoSignHelper.PublicKeySizeInBytes)
         {
             written = 0;
             return false;
         }
 
-        Ed25519Helper.SecretKeyToPublicKey(this.secretKey, publicKey);
-        written = Ed25519Helper.PublicKeySizeInBytes;
+        CryptoSignHelper.SecretKeyToPublicKey(this.secretKey, publicKey);
+        written = CryptoSignHelper.PublicKeySizeInBytes;
         return true;
     }
 
     public virtual bool Validate()
     {
-        if (this.secretKey.Length != Ed25519Helper.SecretKeySizeInBytes)
+        if (this.secretKey.Length != CryptoSignHelper.SecretKeySizeInBytes)
         {
             return false;
         }
@@ -235,11 +235,11 @@ public partial class Ed25519SecretKey : IValidatable, IEquatable<Ed25519SecretKe
             return false;
         }
 
-        Span<byte> privateSpan = stackalloc byte[Ed25519Helper.SecretKeySizeInBytes + KeyHelper.ChecksumLength]; // scoped
+        Span<byte> privateSpan = stackalloc byte[CryptoSignHelper.SecretKeySizeInBytes + KeyHelper.ChecksumLength]; // scoped
         this.secretKey.CopyTo(privateSpan);
         KeyHelper.SetChecksum(privateSpan);
 
-        Span<byte> publicSpan = stackalloc byte[Ed25519Helper.PublicKeySizeInBytes + KeyHelper.ChecksumLength];
+        Span<byte> publicSpan = stackalloc byte[CryptoSignHelper.PublicKeySizeInBytes + KeyHelper.ChecksumLength];
         this.TryWritePublicKey(publicSpan, out _);
         KeyHelper.SetChecksum(publicSpan);
 

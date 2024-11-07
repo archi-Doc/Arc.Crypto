@@ -9,7 +9,7 @@ namespace Arc.Crypto;
 /// <summary>
 /// Provides helper methods for computing Ed25519 digital signatures.
 /// </summary>
-public static class Ed25519Helper
+public static class CryptoSignHelper
 {
     public const int SeedSizeInBytes = 32;
     public const int SecretKeySizeInBytes = 64;

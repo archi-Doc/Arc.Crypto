@@ -1,57 +1,52 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Arc.Crypto;
 
 /// <summary>
-/// Provides helper methods for computing Ed25519 digital signatures.
+/// Key exchange: X25519, Encryption: XSalsa20, Authentication: Poly1305.
 /// </summary>
 public static class CryptoBoxHelper
 {
-    public const int KeySizeInBytes = 32;
-    public const int NonceSizeInBytes = 24; // crypto_secretbox_xsalsa20poly1305_NONCEBYTES
-    public const int MacSizeInBytes = 16; // crypto_secretbox_MACBYTES = crypto_secretbox_xsalsa20poly1305_MACBYTES
+    public const int SeedSizeInBytes = 32; // crypto_box_SEEDBYTES = crypto_box_curve25519xsalsa20poly1305_SEEDBYTES
+    public const int SecretKeySizeInBytes = 32; // crypto_box_SECRETKEYBYTES = crypto_box_curve25519xsalsa20poly1305_SECRETKEYBYTES
+    public const int PublicKeySizeInBytes = 32; // crypto_box_PUBLICKEYBYTES = crypto_box_curve25519xsalsa20poly1305_PUBLICKEYBYTES
+    public const int NonceSizeInBytes = 24; // crypto_box_curve25519xsalsa20poly1305_NONCEBYTES
+    public const int MacSizeInBytes = 16; // crypto_box_curve25519xsalsa20poly1305_MACBYTES 
 
-    public static void CreateKey(Span<byte> key)
+    public static void CreateKey(Span<byte> secretKey, Span<byte> publicKey)
     {
-        if (key.Length != KeySizeInBytes)
+        if (secretKey.Length != SecretKeySizeInBytes)
         {
-            throw new ArgumentOutOfRangeException(nameof(key));
+            throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
 
-        LibsodiumInterops.crypto_secretbox_keygen(key);
+        if (publicKey.Length != PublicKeySizeInBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(publicKey));
+        }
+
+        LibsodiumInterops.crypto_box_keypair(publicKey, secretKey);
     }
 
-    public static void Encrypt(ReadOnlySpan<byte> message, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, Span<byte> cipher)
+    public static void CreateKey(ReadOnlySpan<byte> seed, Span<byte> secretKey, Span<byte> publicKey)
     {
-        if (nonce.Length != NonceSizeInBytes)
+        if (seed.Length != SeedSizeInBytes)
         {
-            throw new ArgumentOutOfRangeException(nameof(nonce));
+            throw new ArgumentNullException(nameof(seed));
         }
 
-        if (key.Length != KeySizeInBytes)
+        if (secretKey.Length != SecretKeySizeInBytes)
         {
-            throw new ArgumentOutOfRangeException(nameof(key));
+            throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
 
-        LibsodiumInterops.crypto_secretbox_easy(cipher, message, (ulong)message.Length, nonce, key);
-    }
-
-    public static void Decrypt(ReadOnlySpan<byte> cipher, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, Span<byte> message)
-    {
-        if (nonce.Length != NonceSizeInBytes)
+        if (publicKey.Length != PublicKeySizeInBytes)
         {
-            throw new ArgumentOutOfRangeException(nameof(nonce));
+            throw new ArgumentOutOfRangeException(nameof(publicKey));
         }
 
-        if (key.Length != KeySizeInBytes)
-        {
-            throw new ArgumentOutOfRangeException(nameof(key));
-        }
-
-        LibsodiumInterops.crypto_secretbox_open_easy(message, cipher, (ulong)cipher.Length, nonce, key);
+        LibsodiumInterops.crypto_box_seed_keypair(publicKey, secretKey, seed);
     }
 }

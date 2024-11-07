@@ -44,14 +44,14 @@ public class CipherBenchmark
         this.message.AsSpan().CopyTo(this.messageAesNi);
 
         this.key = new byte[32];
-        CryptoBoxHelper.CreateKey(this.key);
+        CryptoSecretBoxHelper.CreateKey(this.key);
         this.nonce24 = new byte[24];
         random.NextBytes(this.nonce24);
         this.nonce32 = new byte[32];
         random.NextBytes(this.nonce32);
-        this.cipher = new byte[this.message.Length + CryptoBoxHelper.MacSizeInBytes];
-        this.cipher2 = new byte[this.message.Length + CryptoBoxHelper.MacSizeInBytes];
-        CryptoBoxHelper.Encrypt(this.message, this.nonce24, this.key, this.cipher);
+        this.cipher = new byte[this.message.Length + CryptoSecretBoxHelper.MacSizeInBytes];
+        this.cipher2 = new byte[this.message.Length + CryptoSecretBoxHelper.MacSizeInBytes];
+        CryptoSecretBoxHelper.Encrypt(this.message, this.nonce24, this.key, this.cipher);
 
         this.aes = Aes.Create();
         this.aes.KeySize = 256;
@@ -84,7 +84,7 @@ public class CipherBenchmark
     public byte[] crypto_secretbox_keygen()
     {
         var key = new byte[32];
-        CryptoBoxHelper.CreateKey(key);
+        CryptoSecretBoxHelper.CreateKey(key);
         return key;
     }
 
@@ -92,7 +92,7 @@ public class CipherBenchmark
     public byte[] crypto_secretbox_encrypt()
     {
         // var c = new byte[this.message.Length + CryptoBoxHelper.MacSizeInBytes];
-        CryptoBoxHelper.Encrypt(this.message, this.nonce24, this.key, this.cipher2);
+        CryptoSecretBoxHelper.Encrypt(this.message, this.nonce24, this.key, this.cipher2);
         return this.cipher2;
     }
 
@@ -145,7 +145,7 @@ public class CipherBenchmark
     public byte[] crypto_secretbox_decrypt()
     {
         // var m = new byte[this.message.Length];
-        CryptoBoxHelper.Decrypt(this.cipher, this.nonce24, this.key, this.message2);
+        CryptoSecretBoxHelper.Decrypt(this.cipher, this.nonce24, this.key, this.message2);
         return this.message2;
     }
 

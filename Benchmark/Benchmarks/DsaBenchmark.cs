@@ -51,19 +51,19 @@ public class DsaBenchmark
 
         var pri = this.ed25519.GetPrivateKey();
         var pub = this.ed25519.GetPublicKey();
-        this.pri2 = new byte[Ed25519Helper.SecretKeySizeInBytes];
-        this.pub2 = new byte[Ed25519Helper.PublicKeySizeInBytes];
-        Ed25519Helper.CreateKey(Sha3Helper.Get256_ByteArray([]), this.pri2, this.pub2);
+        this.pri2 = new byte[CryptoSignHelper.SecretKeySizeInBytes];
+        this.pub2 = new byte[CryptoSignHelper.PublicKeySizeInBytes];
+        CryptoSignHelper.CreateKey(Sha3Helper.Get256_ByteArray([]), this.pri2, this.pub2);
         Debug.Assert(pri.SequenceEqual(this.pri2));
         Debug.Assert(pub.SequenceEqual(this.pub2));
-        this.signature = new byte[Ed25519Helper.SignatureSizeInBytes];
-        Ed25519Helper.Sign(this.message, this.pri2, this.signature);
+        this.signature = new byte[CryptoSignHelper.SignatureSizeInBytes];
+        CryptoSignHelper.Sign(this.message, this.pri2, this.signature);
         Debug.Assert(this.signature.SequenceEqual(this.signEd25519));
-        verify = Ed25519Helper.Verify(this.message, this.pub2, this.signature);
+        verify = CryptoSignHelper.Verify(this.message, this.pub2, this.signature);
 
         var st = Ed25519ph.New();
         st.Update(this.message);
-        this.signature_ph = new byte[Ed25519Helper.SignatureSizeInBytes];
+        this.signature_ph = new byte[CryptoSignHelper.SignatureSizeInBytes];
         st.FinalizeAndSign(this.pri2, this.signature_ph);
         st.Update(this.message);
         verify = st.FinalizeAndVerify(this.pub2, this.signature_ph);
@@ -105,7 +105,7 @@ public class DsaBenchmark
     [Benchmark]
     public byte[] SignEd25519()
     {
-        Ed25519Helper.Sign(this.message, this.pri2, this.signature);
+        CryptoSignHelper.Sign(this.message, this.pri2, this.signature);
         return this.signature;
     }
 
@@ -143,7 +143,7 @@ public class DsaBenchmark
     [Benchmark]
     public bool VerifyEd25519()
     {
-        var verify = Ed25519Helper.Verify(this.message, this.pub2, this.signature);
+        var verify = CryptoSignHelper.Verify(this.message, this.pub2, this.signature);
         return verify;
     }
 
