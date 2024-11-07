@@ -104,13 +104,6 @@ public class CipherBenchmark
     }
 
     [Benchmark]
-    public byte[] AesEncrypt2()
-    {
-        this.aes.TryEncryptCbc(this.message, this.nonce24.AsSpan(0, 16), this.cipherAes2, out var written, PaddingMode.None);
-        return this.cipherAes2;
-    }
-
-    [Benchmark]
     public byte[] AesNiEncryptAndDecrypt()
     {
         this.nonce24.AsSpan(0, 16).CopyTo(this.iv);
@@ -142,6 +135,13 @@ public class CipherBenchmark
     }
 
     [Benchmark]
+    public byte[] Aegis256Encrypt2()
+    {
+        AegisDotNet.AEGIS256.Encrypt(this.cipherAegis2, this.message, this.nonce32, this.key, default, 32);
+        return this.cipherAegis2;
+    }
+
+    [Benchmark]
     public byte[] crypto_secretbox_decrypt()
     {
         // var m = new byte[this.message.Length];
@@ -160,6 +160,13 @@ public class CipherBenchmark
     public byte[] Aegis256Decrypt()
     {
         Aegis256Helper.Decrypt(this.cipherAegis, this.nonce32, this.key, this.message2, out var messageLength);
+        return this.message2;
+    }
+
+    [Benchmark]
+    public byte[] Aegis256Decrypt2()
+    {
+        AegisDotNet.AEGIS256.Decrypt(this.message2, this.cipherAegis2, this.nonce32, this.key, default, 32);
         return this.message2;
     }
 }
