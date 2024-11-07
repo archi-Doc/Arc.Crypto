@@ -1,10 +1,8 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
-namespace Arc.Crypto;
+namespace Benchmark;
 
 /// <summary>
 /// Provides helper methods for computing Ed25519 digital signatures.
