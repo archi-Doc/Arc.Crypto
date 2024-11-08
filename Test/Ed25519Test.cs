@@ -16,38 +16,38 @@ public class Ed25519Test
     public void Test1()
     {
         var random = new Xoroshiro128StarStar(12);
-        Span<byte> seed = stackalloc byte[CryptoSignHelper.SeedSizeInBytes];
-        Span<byte> seed2 = stackalloc byte[CryptoSignHelper.SeedSizeInBytes];
-        Span<byte> signature = stackalloc byte[CryptoSignHelper.SignatureSizeInBytes];
-        Span<byte> signature2 = stackalloc byte[CryptoSignHelper.SignatureSizeInBytes];
-        Span<byte> secretKey = stackalloc byte[CryptoSignHelper.SecretKeySizeInBytes];
-        Span<byte> publicKey = stackalloc byte[CryptoSignHelper.PublicKeySizeInBytes];
-        Span<byte> publicKey2 = stackalloc byte[CryptoSignHelper.PublicKeySizeInBytes];
+        Span<byte> seed = stackalloc byte[CryptoSign.SeedSize];
+        Span<byte> seed2 = stackalloc byte[CryptoSign.SeedSize];
+        Span<byte> signature = stackalloc byte[CryptoSign.SignatureSize];
+        Span<byte> signature2 = stackalloc byte[CryptoSign.SignatureSize];
+        Span<byte> secretKey = stackalloc byte[CryptoSign.SecretKeySize];
+        Span<byte> publicKey = stackalloc byte[CryptoSign.PublicKeySize];
+        Span<byte> publicKey2 = stackalloc byte[CryptoSign.PublicKeySize];
 
         for (var i = 0; i < 100; i++)
         {// Create key, secret key -> public key, secret key -> seed
             random.NextBytes(seed);
-            CryptoSignHelper.CreateKey(seed, secretKey, publicKey);
+            CryptoSign.CreateKey(seed, secretKey, publicKey);
 
-            CryptoSignHelper.SecretKeyToPublicKey(secretKey, publicKey2);
+            CryptoSign.SecretKeyToPublicKey(secretKey, publicKey2);
             publicKey.SequenceEqual(publicKey2).IsTrue();
-            CryptoSignHelper.SecretKeyToSeed(secretKey, seed2);
+            CryptoSign.SecretKeyToSeed(secretKey, seed2);
             seed.SequenceEqual(seed2).IsTrue();
-            secretKey.Slice(0, CryptoSignHelper.SeedSizeInBytes).SequenceEqual(seed).IsTrue(); // Secret key = Seed + Public key
+            secretKey.Slice(0, CryptoSign.SeedSize).SequenceEqual(seed).IsTrue(); // Secret key = Seed + Public key
         }
 
         for (var i = 0; i < 32; i++)
         {
             random.NextBytes(seed);
-            CryptoSignHelper.CreateKey(seed, secretKey, publicKey);
+            CryptoSign.CreateKey(seed, secretKey, publicKey);
 
             for (var j = 0; j < 1000; j += 13)
             {
                 var message = new byte[i + j];
                 random.NextBytes(message);
 
-                CryptoSignHelper.Sign(message, secretKey, signature);
-                CryptoSignHelper.Verify(message, publicKey, signature).IsTrue();
+                CryptoSign.Sign(message, secretKey, signature);
+                CryptoSign.Verify(message, publicKey, signature).IsTrue();
 
                 var ed25519ph = Ed25519ph.New();
                 var m = message.AsSpan();

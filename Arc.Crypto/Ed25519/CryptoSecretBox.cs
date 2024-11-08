@@ -1,20 +1,20 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-
 namespace Arc.Crypto;
 
-public static class CryptoSecretBoxHelper
+/// <summary>
+/// Helper class for calling crypto_secretbox function, which implements secret-key authenticated encryption in Libsodium.<br/>
+/// Encryption: XSalsa20 stream cipher, Authentication: Poly1305 MAC.
+/// </summary>
+public static class CryptoSecretBox
 {
-    public const int KeySizeInBytes = 32;
-    public const int NonceSizeInBytes = 24; // crypto_secretbox_xsalsa20poly1305_NONCEBYTES
-    public const int MacSizeInBytes = 16; // crypto_secretbox_MACBYTES = crypto_secretbox_xsalsa20poly1305_MACBYTES
+    public const int KeySize = 32;
+    public const int NonceSize = 24; // crypto_secretbox_xsalsa20poly1305_NONCEBYTES
+    public const int MacSize = 16; // crypto_secretbox_MACBYTES = crypto_secretbox_xsalsa20poly1305_MACBYTES
 
     public static void CreateKey(Span<byte> key)
     {
-        if (key.Length != KeySizeInBytes)
+        if (key.Length != KeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(key));
         }
@@ -24,12 +24,12 @@ public static class CryptoSecretBoxHelper
 
     public static void Encrypt(ReadOnlySpan<byte> message, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, Span<byte> cipher)
     {
-        if (nonce.Length != NonceSizeInBytes)
+        if (nonce.Length != NonceSize)
         {
             throw new ArgumentOutOfRangeException(nameof(nonce));
         }
 
-        if (key.Length != KeySizeInBytes)
+        if (key.Length != KeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(key));
         }
@@ -39,12 +39,12 @@ public static class CryptoSecretBoxHelper
 
     public static void Decrypt(ReadOnlySpan<byte> cipher, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, Span<byte> message)
     {
-        if (nonce.Length != NonceSizeInBytes)
+        if (nonce.Length != NonceSize)
         {
             throw new ArgumentOutOfRangeException(nameof(nonce));
         }
 
-        if (key.Length != KeySizeInBytes)
+        if (key.Length != KeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(key));
         }

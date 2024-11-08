@@ -7,23 +7,24 @@ using System.Runtime.InteropServices;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Provides helper methods for computing Ed25519 digital signatures.
+/// Helper class for calling crypto_sign function, which implements public-key signature algorithm in Libsodium.<br/>
+/// Single-part signature: Ed25519, Multi-part signature: Ed25519ph.
 /// </summary>
-public static class CryptoSignHelper
+public static class CryptoSign
 {
-    public const int SeedSizeInBytes = 32;
-    public const int SecretKeySizeInBytes = 64;
-    public const int PublicKeySizeInBytes = 32;
-    public const int SignatureSizeInBytes = 64;
+    public const int SeedSize = 32;
+    public const int SecretKeySize = 64;
+    public const int PublicKeySize = 32;
+    public const int SignatureSize = 64;
 
     public static void CreateKey(Span<byte> secretKey, Span<byte> publicKey)
     {
-        if (publicKey.Length != PublicKeySizeInBytes)
+        if (publicKey.Length != PublicKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(publicKey));
         }
 
-        if (secretKey.Length != SecretKeySizeInBytes)
+        if (secretKey.Length != SecretKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
@@ -33,17 +34,17 @@ public static class CryptoSignHelper
 
     public static void CreateKey(ReadOnlySpan<byte> seed, Span<byte> secretKey, Span<byte> publicKey)
     {
-        if (seed.Length != SeedSizeInBytes)
+        if (seed.Length != SeedSize)
         {
             throw new ArgumentNullException(nameof(seed));
         }
 
-        if (publicKey.Length != PublicKeySizeInBytes)
+        if (publicKey.Length != PublicKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(publicKey));
         }
 
-        if (secretKey.Length != SecretKeySizeInBytes)
+        if (secretKey.Length != SecretKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
@@ -53,12 +54,12 @@ public static class CryptoSignHelper
 
     public static void SecretKeyToSeed(ReadOnlySpan<byte> secretKey, Span<byte> seed)
     {
-        if (secretKey.Length != SecretKeySizeInBytes)
+        if (secretKey.Length != SecretKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
 
-        if (seed.Length < SeedSizeInBytes)
+        if (seed.Length < SeedSize)
         {
             throw new ArgumentNullException(nameof(seed));
         }
@@ -68,27 +69,27 @@ public static class CryptoSignHelper
 
     public static void SecretKeyToSeed2(ReadOnlySpan<byte> secretKey, Span<byte> seed)
     {
-        if (secretKey.Length != SecretKeySizeInBytes)
+        if (secretKey.Length != SecretKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
 
-        if (seed.Length < SeedSizeInBytes)
+        if (seed.Length < SeedSize)
         {
             throw new ArgumentNullException(nameof(seed));
         }
 
-        secretKey.Slice(0, SeedSizeInBytes).CopyTo(seed);
+        secretKey.Slice(0, SeedSize).CopyTo(seed);
     }
 
     public static void SecretKeyToPublicKey(ReadOnlySpan<byte> secretKey, Span<byte> publicKey)
     {
-        if (secretKey.Length != SecretKeySizeInBytes)
+        if (secretKey.Length != SecretKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
 
-        if (publicKey.Length < PublicKeySizeInBytes)
+        if (publicKey.Length < PublicKeySize)
         {
             throw new ArgumentNullException(nameof(publicKey));
         }
@@ -98,12 +99,12 @@ public static class CryptoSignHelper
 
     public static void Sign(ReadOnlySpan<byte> message, ReadOnlySpan<byte> secretKey, Span<byte> signature)
     {
-        if (secretKey.Length != SecretKeySizeInBytes)
+        if (secretKey.Length != SecretKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
 
-        if (signature.Length != SignatureSizeInBytes)
+        if (signature.Length != SignatureSize)
         {
             throw new ArgumentOutOfRangeException(nameof(signature));
         }
@@ -113,12 +114,12 @@ public static class CryptoSignHelper
 
     public static bool Verify(ReadOnlySpan<byte> message, ReadOnlySpan<byte> publicKey, ReadOnlySpan<byte> signature)
     {
-        if (publicKey.Length != PublicKeySizeInBytes)
+        if (publicKey.Length != PublicKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(publicKey));
         }
 
-        if (signature.Length != SignatureSizeInBytes)
+        if (signature.Length != SignatureSize)
         {
             throw new ArgumentOutOfRangeException(nameof(signature));
         }

@@ -25,24 +25,24 @@ public class Curve25519Benchmark
     public Curve25519Benchmark()
     {
         var random = new Xoshiro256StarStar(12);
-        this.seed = new byte[CryptoSignHelper.SeedSizeInBytes];
-        this.seed2 = new byte[CryptoSignHelper.SeedSizeInBytes];
+        this.seed = new byte[CryptoSign.SeedSize];
+        this.seed2 = new byte[CryptoSign.SeedSize];
         random.NextBytes(this.seed);
         random.NextBytes(this.seed2);
-        this.nonce24 = new byte[CryptoBoxHelper.NonceSizeInBytes];
+        this.nonce24 = new byte[CryptoBox.NonceSize];
         random.NextBytes(this.nonce24);
 
-        this.cryptoSignSecretKey = new byte[CryptoSignHelper.SecretKeySizeInBytes];
-        this.cryptoSignPublicKey = new byte[CryptoSignHelper.PublicKeySizeInBytes];
-        this.cryptoSignPublicKey2 = new byte[CryptoSignHelper.PublicKeySizeInBytes];
-        CryptoSignHelper.CreateKey(this.seed, this.cryptoSignSecretKey, this.cryptoSignPublicKey);
+        this.cryptoSignSecretKey = new byte[CryptoSign.SecretKeySize];
+        this.cryptoSignPublicKey = new byte[CryptoSign.PublicKeySize];
+        this.cryptoSignPublicKey2 = new byte[CryptoSign.PublicKeySize];
+        CryptoSign.CreateKey(this.seed, this.cryptoSignSecretKey, this.cryptoSignPublicKey);
 
-        this.cryptoBoxPublicKey = new byte[CryptoBoxHelper.SecretKeySizeInBytes];
-        this.cryptoBoxSecretKey = new byte[CryptoBoxHelper.PublicKeySizeInBytes];
-        CryptoBoxHelper.CreateKey(this.seed, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey);
-        this.cryptoBoxPublicKey2 = new byte[CryptoBoxHelper.SecretKeySizeInBytes];
-        this.cryptoBoxSecretKey2 = new byte[CryptoBoxHelper.PublicKeySizeInBytes];
-        CryptoBoxHelper.CreateKey(this.seed2, this.cryptoBoxSecretKey2, this.cryptoBoxPublicKey2);
+        this.cryptoBoxPublicKey = new byte[CryptoBox.SecretKeySize];
+        this.cryptoBoxSecretKey = new byte[CryptoBox.PublicKeySize];
+        CryptoBox.CreateKey(this.seed, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey);
+        this.cryptoBoxPublicKey2 = new byte[CryptoBox.SecretKeySize];
+        this.cryptoBoxSecretKey2 = new byte[CryptoBox.PublicKeySize];
+        CryptoBox.CreateKey(this.seed2, this.cryptoBoxSecretKey2, this.cryptoBoxPublicKey2);
 
         this.message = new byte[32];
         this.message2 = new byte[32];
@@ -51,62 +51,62 @@ public class Curve25519Benchmark
             this.message[i] = (byte)(i & 255);
         }
 
-        this.cipher = new byte[this.message.Length + CryptoBoxHelper.MacSizeInBytes];
+        this.cipher = new byte[this.message.Length + CryptoBox.MacSize];
     }
 
     [Benchmark]
     public byte[] CryptoSign_CreateKey()
     {
-        var secretKey = new byte[CryptoSignHelper.SecretKeySizeInBytes];
-        var publicKey = new byte[CryptoSignHelper.PublicKeySizeInBytes];
-        CryptoSignHelper.CreateKey(secretKey, publicKey);
+        var secretKey = new byte[CryptoSign.SecretKeySize];
+        var publicKey = new byte[CryptoSign.PublicKeySize];
+        CryptoSign.CreateKey(secretKey, publicKey);
         return secretKey;
     }
 
     [Benchmark]
     public byte[] CryptoSign_CreateKeyFromSeed()
     {
-        var secretKey = new byte[CryptoSignHelper.SecretKeySizeInBytes];
-        var publicKey = new byte[CryptoSignHelper.PublicKeySizeInBytes];
-        CryptoSignHelper.CreateKey(this.seed, secretKey, publicKey);
+        var secretKey = new byte[CryptoSign.SecretKeySize];
+        var publicKey = new byte[CryptoSign.PublicKeySize];
+        CryptoSign.CreateKey(this.seed, secretKey, publicKey);
         return secretKey;
     }
 
     [Benchmark]
     public byte[] CryptoSign_SecretKeyToSeed()
     {
-        CryptoSignHelper.SecretKeyToSeed(this.cryptoSignSecretKey, this.seed2);
+        CryptoSign.SecretKeyToSeed(this.cryptoSignSecretKey, this.seed2);
         return this.seed2;
     }
 
     [Benchmark]
     public byte[] CryptoSign_SecretKeyToSeed2()
     {
-        CryptoSignHelper.SecretKeyToSeed2(this.cryptoSignSecretKey, this.seed2);
+        CryptoSign.SecretKeyToSeed2(this.cryptoSignSecretKey, this.seed2);
         return this.seed2;
     }
 
     [Benchmark]
     public byte[] CryptoSign_SecretKeyToPublicKey()
     {
-        CryptoSignHelper.SecretKeyToPublicKey(this.cryptoSignSecretKey, this.cryptoSignPublicKey2);
+        CryptoSign.SecretKeyToPublicKey(this.cryptoSignSecretKey, this.cryptoSignPublicKey2);
         return this.cryptoSignPublicKey2;
     }
 
     [Benchmark]
     public byte[] CryptoBox_CreateKey()
     {
-        var secretKey = new byte[CryptoBoxHelper.SecretKeySizeInBytes];
-        var publicKey = new byte[CryptoBoxHelper.PublicKeySizeInBytes];
-        CryptoBoxHelper.CreateKey(secretKey, publicKey);
+        var secretKey = new byte[CryptoBox.SecretKeySize];
+        var publicKey = new byte[CryptoBox.PublicKeySize];
+        CryptoBox.CreateKey(secretKey, publicKey);
         return secretKey;
     }
 
     [Benchmark]
     public byte[] CryptoBox_EncryptoDecrypto()
     {
-        CryptoBoxHelper.Encrypt(this.message, this.nonce24, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey2, this.cipher);
-        CryptoBoxHelper.Decrypt(this.cipher, this.nonce24, this.cryptoBoxSecretKey2, this.cryptoBoxPublicKey, this.message2);
+        CryptoBox.Encrypt(this.message, this.nonce24, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey2, this.cipher);
+        CryptoBox.Decrypt(this.cipher, this.nonce24, this.cryptoBoxSecretKey2, this.cryptoBoxPublicKey, this.message2);
         return this.message2;
     }
 }

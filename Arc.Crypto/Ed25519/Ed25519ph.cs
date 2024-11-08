@@ -31,12 +31,12 @@ public ref struct Ed25519ph
 
     public void FinalizeAndSign(scoped ReadOnlySpan<byte> secretKey, scoped Span<byte> signature)
     {
-        if (secretKey.Length != CryptoSignHelper.SecretKeySizeInBytes)
+        if (secretKey.Length != CryptoSign.SecretKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(secretKey));
         }
 
-        if (signature.Length != CryptoSignHelper.SignatureSizeInBytes)
+        if (signature.Length != CryptoSign.SignatureSize)
         {
             throw new ArgumentOutOfRangeException(nameof(signature));
         }
@@ -47,12 +47,12 @@ public ref struct Ed25519ph
 
     public bool FinalizeAndVerify(scoped ReadOnlySpan<byte> publicKey, scoped ReadOnlySpan<byte> signature)
     {
-        if (publicKey.Length != CryptoSignHelper.PublicKeySizeInBytes)
+        if (publicKey.Length != CryptoSign.PublicKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(publicKey));
         }
 
-        if (signature.Length != CryptoSignHelper.SignatureSizeInBytes)
+        if (signature.Length != CryptoSign.SignatureSize)
         {
             throw new ArgumentOutOfRangeException(nameof(signature));
         }
