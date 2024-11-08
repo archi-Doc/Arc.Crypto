@@ -4,7 +4,9 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Benchmark;
+namespace Test;
+
+#pragma warning disable SA1601 // Partial elements should be documented
 
 internal static partial class LibsodiumInterops
 {

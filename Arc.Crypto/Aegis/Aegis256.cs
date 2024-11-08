@@ -2,7 +2,7 @@
 
 namespace Arc.Crypto;
 
-public static class AEGIS256
+public static class Aegis256
 {
     public const int KeySize = 32;
     public const int NonceSize = 32;
@@ -31,17 +31,17 @@ public static class AEGIS256
             throw new ArgumentOutOfRangeException(nameof(key), key.Length, $"{nameof(key)} must be {KeySize} bytes long.");
         }
 
-        if (AEGIS256x86.IsSupported())
+        if (Aegis256x86.IsSupported())
         {
-            AEGIS256x86.Encrypt(ciphertext, plaintext, nonce, key, associatedData, tagSize);
+            Aegis256x86.Encrypt(ciphertext, plaintext, nonce, key, associatedData, tagSize);
         }
-        else if (AEGIS256Arm.IsSupported())
+        else if (Aegis256Arm.IsSupported())
         {
-            AEGIS256Arm.Encrypt(ciphertext, plaintext, nonce, key, associatedData, tagSize);
+            Aegis256Arm.Encrypt(ciphertext, plaintext, nonce, key, associatedData, tagSize);
         }
         else
         {
-            AEGIS256Soft.Encrypt(ciphertext, plaintext, nonce, key, associatedData, tagSize);
+            Aegis256Soft.Encrypt(ciphertext, plaintext, nonce, key, associatedData, tagSize);
         }
     }
 
@@ -72,17 +72,17 @@ public static class AEGIS256
             throw new ArgumentOutOfRangeException(nameof(key), key.Length, $"{nameof(key)} must be {KeySize} bytes long.");
         }
 
-        if (AEGIS256x86.IsSupported())
+        if (Aegis256x86.IsSupported())
         {
-            AEGIS256x86.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
+            Aegis256x86.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
         }
-        else if (AEGIS256Arm.IsSupported())
+        else if (Aegis256Arm.IsSupported())
         {
-            AEGIS256Arm.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
+            Aegis256Arm.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
         }
         else
         {
-            AEGIS256Soft.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
+            Aegis256Soft.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
         }
     }
 }
