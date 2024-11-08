@@ -1,6 +1,8 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Security.Cryptography;
 using Aes = System.Runtime.Intrinsics.Arm.Aes;
@@ -174,9 +176,9 @@ internal static class Aegis256Arm
     {
         Vector128<byte> z = S1 ^ S4 ^ S5 ^ (S2 & S3);
 
-        var pad = new byte[16];
+        Span<byte> pad = stackalloc byte[16];
         ciphertext.CopyTo(pad);
-        Vector128<byte> t = Vector128.Create(pad);
+        Vector128<byte> t = Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(pad)); // Vector128.Create(pad);
         Vector128<byte> output = t ^ z;
 
         Span<byte> p = pad;
@@ -184,18 +186,17 @@ internal static class Aegis256Arm
         p[..ciphertext.Length].CopyTo(plaintext);
 
         p[ciphertext.Length..].Clear();
-        Vector128<byte> v = Vector128.Create(pad);
+        Vector128<byte> v = Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(pad)); // Vector128.Create(pad);
         Update(v);
     }
 
     private static void Finalize(Span<byte> tag, ulong associatedDataLength, ulong plaintextLength)
     {
-        var b = new byte[16];
-        Span<byte> bb = b;
-        BinaryPrimitives.WriteUInt64LittleEndian(bb[..8], associatedDataLength * 8);
-        BinaryPrimitives.WriteUInt64LittleEndian(bb[8..], plaintextLength * 8);
+        Span<byte> b = stackalloc byte[16];
+        BinaryPrimitives.WriteUInt64LittleEndian(b[..8], associatedDataLength * 8);
+        BinaryPrimitives.WriteUInt64LittleEndian(b[8..], plaintextLength * 8);
 
-        Vector128<byte> t = S3 ^ Vector128.Create(b);
+        Vector128<byte> t = S3 ^ Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(b)); // Vector128.Create(b);
 
         for (int i = 0; i < 7; i++)
         {

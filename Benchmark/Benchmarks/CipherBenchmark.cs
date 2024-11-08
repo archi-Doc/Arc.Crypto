@@ -128,6 +128,13 @@ public class CipherBenchmark
     }
 
     [Benchmark]
+    public byte[] Aegis256Encrypt3()
+    {
+        Aegis256.Encrypt(this.cipherAegis2, this.message, this.nonce32, this.key, default, 32);
+        return this.cipherAegis2;
+    }
+
+    [Benchmark]
     public byte[] crypto_secretbox_decrypt()
     {
         // var m = new byte[this.message.Length];
@@ -153,6 +160,13 @@ public class CipherBenchmark
     public byte[] Aegis256Decrypt2()
     {
         AegisDotNet.AEGIS256.Decrypt(this.message2, this.cipherAegis, this.nonce32, this.key, default, 32);
+        return this.message2;
+    }
+
+    [Benchmark]
+    public byte[] Aegis256Decrypt3()
+    {
+        Aegis256.Decrypt(this.message2, this.cipherAegis, this.nonce32, this.key, default, 32);
         return this.message2;
     }
 }

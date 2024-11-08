@@ -1,6 +1,8 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Security.Cryptography;
 using Aes = System.Runtime.Intrinsics.X86.Aes;
@@ -189,10 +191,10 @@ internal static class Aegis128Lx86
         Vector128<byte> z0 = S6 ^ S1 ^ (S2 & S3);
         Vector128<byte> z1 = S2 ^ S5 ^ (S6 & S7);
 
-        var pad = new byte[32];
+        Span<byte> pad = stackalloc byte[32];
         ciphertext.CopyTo(pad);
-        Vector128<byte> t0 = Vector128.Create(pad[..16]);
-        Vector128<byte> t1 = Vector128.Create(pad[16..]);
+        Vector128<byte> t0 = Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(pad)); // Vector128.Create(pad[..16]);
+        Vector128<byte> t1 = Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(pad.Slice(16))); // Vector128.Create(pad[16..]);
         Vector128<byte> out0 = t0 ^ z0;
         Vector128<byte> out1 = t1 ^ z1;
 
@@ -202,19 +204,18 @@ internal static class Aegis128Lx86
         p[..ciphertext.Length].CopyTo(plaintext);
 
         p[ciphertext.Length..].Clear();
-        Vector128<byte> v0 = Vector128.Create(pad[..16]);
-        Vector128<byte> v1 = Vector128.Create(pad[16..]);
+        Vector128<byte> v0 = Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(pad)); // Vector128.Create(pad[..16]);
+        Vector128<byte> v1 = Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(pad.Slice(16))); // Vector128.Create(pad[16..]);
         Update(v0, v1);
     }
 
     private static void Finalize(Span<byte> tag, ulong associatedDataLength, ulong plaintextLength)
     {
-        var b = new byte[16];
-        Span<byte> bb = b;
-        BinaryPrimitives.WriteUInt64LittleEndian(bb[..8], associatedDataLength * 8);
-        BinaryPrimitives.WriteUInt64LittleEndian(bb[8..], plaintextLength * 8);
+        Span<byte> b = stackalloc byte[16];
+        BinaryPrimitives.WriteUInt64LittleEndian(b[..8], associatedDataLength * 8);
+        BinaryPrimitives.WriteUInt64LittleEndian(b[8..], plaintextLength * 8);
 
-        Vector128<byte> t = S2 ^ Vector128.Create(b);
+        Vector128<byte> t = S2 ^ Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(b)); // Vector128.Create(b);
 
         for (int i = 0; i < 7; i++)
         {
