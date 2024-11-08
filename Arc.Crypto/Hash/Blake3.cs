@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Provides methods for computing BLAKE3 hashes.
+/// Provides methods for computing BLAKE3 cryptographic hashes.
 /// </summary>
 /// <remarks>
 /// This class includes methods for computing 256-bit BLAKE3 hashes.

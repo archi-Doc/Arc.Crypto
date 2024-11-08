@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 
 namespace Benchmark;
 
+#pragma warning disable SA1202 // Elements should be ordered by access
+
 internal static partial class LibsodiumInterops
 {
     internal const string Name = "libsodium";
@@ -17,6 +19,68 @@ internal static partial class LibsodiumInterops
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int crypto_aead_aegis256_decrypt(Span<byte> m, out ulong mlen_p, IntPtr nsec, ReadOnlySpan<byte> c, ulong clen, IntPtr ad, ulong adlen, ReadOnlySpan<byte> npub, ReadOnlySpan<byte> k);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial void crypto_stream_xchacha20_keygen(scoped Span<byte> key);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_stream_xchacha20(Span<byte> c, ulong clen, ReadOnlySpan<byte> n, ReadOnlySpan<byte> k);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_stream_xchacha20_xor(Span<byte> c, ReadOnlySpan<byte> m, ulong mlen, ReadOnlySpan<byte> n, ReadOnlySpan<byte> k);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_stream_chacha20_xor(Span<byte> c, ReadOnlySpan<byte> m, ulong mlen, ReadOnlySpan<byte> n, ReadOnlySpan<byte> k);
+}
+
+public static class XChaCha20
+{
+    public const int KeySizeInBytes = 32; // crypto_stream_xchacha20_KEYBYTES
+    public const int NonceSizeInBytes = 24; // crypto_stream_xchacha20_NONCEBYTES
+
+    public static void CreateKey(Span<byte> key)
+    {
+        if (key.Length != KeySizeInBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(key));
+        }
+
+        LibsodiumInterops.crypto_stream_xchacha20_keygen(key);
+    }
+
+    public static void Xor(ReadOnlySpan<byte> message, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, Span<byte> cipher)
+    {
+        if (nonce.Length != NonceSizeInBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(nonce));
+        }
+
+        if (key.Length != KeySizeInBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(key));
+        }
+
+        LibsodiumInterops.crypto_stream_xchacha20_xor(cipher, message, (ulong)message.Length, nonce, key);
+    }
+
+    public static void Xor2(ReadOnlySpan<byte> message, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, Span<byte> cipher)
+    {
+        if (nonce.Length != NonceSizeInBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(nonce));
+        }
+
+        if (key.Length != KeySizeInBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(key));
+        }
+
+        LibsodiumInterops.crypto_stream_chacha20_xor(cipher, message, (ulong)message.Length, nonce, key);
+    }
 }
 
 /// <summary>

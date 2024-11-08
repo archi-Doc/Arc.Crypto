@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Provides methods for computing BLAKE2B hashes.
+/// Provides methods for computing BLAKE2B cryptographic hashes.
 /// </summary>
 /// <remarks>
 /// This class includes methods for computing 256-bit and 512-bit BLAKE2B hashes.
