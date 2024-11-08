@@ -16,15 +16,6 @@ namespace Arc.Crypto;
 /// </summary>
 public static class Sha3Helper
 {
-    public static readonly ObjectPool<IncrementalHash> IncrementalSha256Pool = new(static () => IncrementalHash.CreateHash(HashAlgorithmName.SHA3_256));
-
-    public static readonly ObjectPool<IncrementalHash> IncrementalSha512Pool = new(static () => IncrementalHash.CreateHash(HashAlgorithmName.SHA3_512));
-
-    private static readonly ObjectPool<HashAlgorithm> Sha256 = new(static () => System.Security.Cryptography.SHA3_256.Create());
-
-    private static readonly ObjectPool<HashAlgorithm> Sha384 = new(static () => System.Security.Cryptography.SHA3_384.Create());
-
-    private static readonly ObjectPool<HashAlgorithm> Sha512 = new(static () => System.Security.Cryptography.SHA3_512.Create());
 
     /// <summary>
     /// Computes the SHA3-256 hash and returns the byte array (32 bytes).<br/>
@@ -160,40 +151,6 @@ public static class Sha3Helper
         sponge.Squeeze();
         return (state[0], state[1], state[2], state[3], state[4], state[5], state[6], state[7]);
     }
-
-    /// <summary>
-    /// Computes the SHA2-256 hash and returns the hash (<see cref="ulong"/>).<br/>
-    /// Thread-safe and it does not allocate heap memory.
-    /// </summary>
-    /// <param name="input">The input to compute the hash for.</param>
-    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
-    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256_UInt64B(ReadOnlySpan<byte> input)
-    {
-        Span<ulong> state = stackalloc ulong[4];
-
-        var hashAlgorithm = Sha256.Get();
-        hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _);
-        Sha256.Return(hashAlgorithm);
-
-        return (state[0], state[1], state[2], state[3]);
-    }
-
-    /// <summary>
-    /// Computes the SHA3-512 hash and returns the hash (<see cref="ulong"/>).<br/>
-    /// Thread-safe and it does not allocate heap memory.
-    /// </summary>
-    /// <param name="input">The input to compute the hash for.</param>
-    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
-    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Get512_UInt64B(ReadOnlySpan<byte> input)
-    {
-        Span<ulong> state = stackalloc ulong[8];
-
-        var hashAlgorithm = Sha512.Get();
-        hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _);
-        Sha512.Return(hashAlgorithm);
-
-        return (state[0], state[1], state[2], state[3], state[4], state[5], state[6], state[7]);
-    }
 }
 
 /// <summary>
@@ -228,7 +185,6 @@ internal unsafe ref struct KeccakSpongeStruct
         this.Bitrate = 1600 - (this.OutputBits * 2);
         this.State = state;
         this.statePosition = 0;
-        // this.Initialize();
     }
 
     #region FieldAndProperty
@@ -244,19 +200,10 @@ internal unsafe ref struct KeccakSpongeStruct
     #endregion
 
     /// <summary>
-    /// Initializes the sponge state.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Initialize()
-    {
-        this.statePosition = 0;
-        this.State.Clear();
-    }
-
-    /// <summary>
     /// Absorbs data into the sponge state.
     /// </summary>
     /// <param name="bytes">The read-only span to absorb.</param>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public unsafe void Absorb(ReadOnlySpan<byte> bytes)
     {
         var length = bytes.Length;
@@ -354,6 +301,7 @@ internal unsafe ref struct KeccakSpongeStruct
     // private static ulong Rotl64(ulong val, int shift) => BitOperations.RotateLeft(val, shift);
     private static ulong Rotl64(ulong val, int shift) => shift == 0 ? val : (val << shift) | (val >> (64 - shift)); // same
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void Sha3_round(ulong* t, ulong* a, ulong rc)
     {
         ulong c0 = a[0] ^ a[5] ^ a[10] ^ a[15] ^ a[20];
@@ -424,17 +372,42 @@ internal unsafe ref struct KeccakSpongeStruct
         t[24] = b24 ^ (~b20 & b21);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [SkipLocalsInit]
     private void Permute(ulong* a)
     {
         Span<ulong> span = stackalloc ulong[25];
         fixed (ulong* t = span)
         {
-            for (var i = 0; i != 24; i += 2)
+            this.Sha3_round(t, a, RoundConstants[0]);
+            this.Sha3_round(a, t, RoundConstants[1]);
+            this.Sha3_round(t, a, RoundConstants[2]);
+            this.Sha3_round(a, t, RoundConstants[3]);
+            this.Sha3_round(t, a, RoundConstants[4]);
+            this.Sha3_round(a, t, RoundConstants[5]);
+            this.Sha3_round(t, a, RoundConstants[6]);
+            this.Sha3_round(a, t, RoundConstants[7]);
+            this.Sha3_round(t, a, RoundConstants[8]);
+            this.Sha3_round(a, t, RoundConstants[9]);
+            this.Sha3_round(t, a, RoundConstants[10]);
+            this.Sha3_round(a, t, RoundConstants[11]);
+            this.Sha3_round(t, a, RoundConstants[12]);
+            this.Sha3_round(a, t, RoundConstants[13]);
+            this.Sha3_round(t, a, RoundConstants[14]);
+            this.Sha3_round(a, t, RoundConstants[15]);
+            this.Sha3_round(t, a, RoundConstants[16]);
+            this.Sha3_round(a, t, RoundConstants[17]);
+            this.Sha3_round(t, a, RoundConstants[18]);
+            this.Sha3_round(a, t, RoundConstants[19]);
+            this.Sha3_round(t, a, RoundConstants[20]);
+            this.Sha3_round(a, t, RoundConstants[21]);
+            this.Sha3_round(t, a, RoundConstants[22]);
+            this.Sha3_round(a, t, RoundConstants[23]);
+
+            /*for (var i = 0; i != 24; i += 2)
             {
                 this.Sha3_round(t, a, RoundConstants[i + 0]);
                 this.Sha3_round(a, t, RoundConstants[i + 1]);
-            }
+            }*/
         }
     }
 }

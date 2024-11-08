@@ -27,7 +27,8 @@ public class StandardHashBenchmark
         this.hash64 = new byte[64];
     }
 
-    [Params(100, 1_000)]
+    // [Params(100, 1_000)]
+    [Params(100)]
     public int Length { get; set; }
 
     /*[Benchmark]
@@ -69,12 +70,6 @@ public class StandardHashBenchmark
     public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Sha3Helper_512() => Sha3Helper.Get512_UInt64(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
-    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Sha3Helper_256B() => Sha3Helper.Get256_UInt64B(this.data.AsSpan(0, this.Length));
-
-    [Benchmark]
-    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Sha3Helper_512B() => Sha3Helper.Get512_UInt64B(this.data.AsSpan(0, this.Length));
-
-    [Benchmark]
     public byte Blake2B_256()
     {
         Span<byte> hash = stackalloc byte[32];
@@ -89,13 +84,6 @@ public class StandardHashBenchmark
         Blake2B.Get512_Span(this.data.AsSpan(0, this.Length), hash);
         return hash[0];
     }
-
-    /*[Benchmark]
-    public Blake3.Hash Blake3_256()
-    {
-        var hash = Blake3.Hasher.Hash(this.data.AsSpan(0, this.Length));
-        return hash;
-    }*/
 
     [Benchmark]
     public byte Blake3_256()
