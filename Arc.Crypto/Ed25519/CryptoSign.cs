@@ -19,14 +19,14 @@ public static class CryptoSign
 
     public static void CreateKey(Span<byte> secretKey, Span<byte> publicKey)
     {
-        if (publicKey.Length != PublicKeySize)
-        {
-            throw new ArgumentOutOfRangeException(nameof(publicKey));
-        }
-
         if (secretKey.Length != SecretKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(secretKey));
+        }
+
+        if (publicKey.Length != PublicKeySize)
+        {
+            throw new ArgumentOutOfRangeException(nameof(publicKey));
         }
 
         LibsodiumInterops.crypto_sign_keypair(publicKey, secretKey);
@@ -39,14 +39,14 @@ public static class CryptoSign
             throw new ArgumentNullException(nameof(seed));
         }
 
-        if (publicKey.Length != PublicKeySize)
-        {
-            throw new ArgumentOutOfRangeException(nameof(publicKey));
-        }
-
         if (secretKey.Length != SecretKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(secretKey));
+        }
+
+        if (publicKey.Length != PublicKeySize)
+        {
+            throw new ArgumentOutOfRangeException(nameof(publicKey));
         }
 
         LibsodiumInterops.crypto_sign_seed_keypair(publicKey, secretKey, seed);
@@ -64,22 +64,7 @@ public static class CryptoSign
             throw new ArgumentNullException(nameof(seed));
         }
 
-        LibsodiumInterops.crypto_sign_ed25519_sk_to_seed(seed, secretKey);
-    }
-
-    public static void SecretKeyToSeed2(ReadOnlySpan<byte> secretKey, Span<byte> seed)
-    {
-        if (secretKey.Length != SecretKeySize)
-        {
-            throw new ArgumentOutOfRangeException(nameof(secretKey));
-        }
-
-        if (seed.Length < SeedSize)
-        {
-            throw new ArgumentNullException(nameof(seed));
-        }
-
-        secretKey.Slice(0, SeedSize).CopyTo(seed);
+        secretKey.Slice(0, SeedSize).CopyTo(seed); // LibsodiumInterops.crypto_sign_ed25519_sk_to_seed(seed, secretKey);
     }
 
     public static void SecretKeyToPublicKey(ReadOnlySpan<byte> secretKey, Span<byte> publicKey)
@@ -94,7 +79,7 @@ public static class CryptoSign
             throw new ArgumentNullException(nameof(publicKey));
         }
 
-        LibsodiumInterops.crypto_sign_ed25519_sk_to_pk(publicKey, secretKey);
+        secretKey.Slice(SeedSize, PublicKeySize).CopyTo(publicKey); // LibsodiumInterops.crypto_sign_ed25519_sk_to_pk(publicKey, secretKey);
     }
 
     public static void Sign(ReadOnlySpan<byte> message, ReadOnlySpan<byte> secretKey, Span<byte> signature)

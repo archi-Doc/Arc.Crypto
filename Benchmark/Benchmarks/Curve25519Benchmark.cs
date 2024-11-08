@@ -80,13 +80,6 @@ public class Curve25519Benchmark
     }
 
     [Benchmark]
-    public byte[] CryptoSign_SecretKeyToSeed2()
-    {
-        CryptoSign.SecretKeyToSeed2(this.cryptoSignSecretKey, this.seed2);
-        return this.seed2;
-    }
-
-    [Benchmark]
     public byte[] CryptoSign_SecretKeyToPublicKey()
     {
         CryptoSign.SecretKeyToPublicKey(this.cryptoSignSecretKey, this.cryptoSignPublicKey2);

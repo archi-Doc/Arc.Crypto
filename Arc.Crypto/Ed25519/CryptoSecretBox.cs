@@ -34,11 +34,21 @@ public static class CryptoSecretBox
             throw new ArgumentOutOfRangeException(nameof(key));
         }
 
+        if (cipher.Length != message.Length + MacSize)
+        {
+            throw new ArgumentOutOfRangeException(nameof(cipher));
+        }
+
         LibsodiumInterops.crypto_secretbox_easy(cipher, message, (ulong)message.Length, nonce, key);
     }
 
     public static void Decrypt(ReadOnlySpan<byte> cipher, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, Span<byte> message)
     {
+        if (cipher.Length < MacSize)
+        {
+            throw new ArgumentOutOfRangeException(nameof(cipher));
+        }
+
         if (nonce.Length != NonceSize)
         {
             throw new ArgumentOutOfRangeException(nameof(nonce));
@@ -47,6 +57,11 @@ public static class CryptoSecretBox
         if (key.Length != KeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(key));
+        }
+
+        if (message.Length != cipher.Length - MacSize)
+        {
+            throw new ArgumentOutOfRangeException(nameof(message));
         }
 
         LibsodiumInterops.crypto_secretbox_open_easy(message, cipher, (ulong)cipher.Length, nonce, key);
