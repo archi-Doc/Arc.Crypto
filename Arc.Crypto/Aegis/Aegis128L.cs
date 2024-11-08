@@ -1,6 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-namespace AegisDotNet;
+namespace Arc.Crypto;
 
 public static class AEGIS128L
 {

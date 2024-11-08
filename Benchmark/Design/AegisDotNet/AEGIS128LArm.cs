@@ -1,9 +1,14 @@
-﻿using System.Buffers.Binary;
+﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
+
+using System.Buffers.Binary;
 using System.Runtime.Intrinsics;
 using System.Security.Cryptography;
 using Aes = System.Runtime.Intrinsics.Arm.Aes;
 
 namespace AegisDotNet;
+
+#pragma warning disable SA1132 // Do not combine fields
+#pragma warning disable SA1306 // Field names should begin with lower-case letter
 
 internal static class AEGIS128LArm
 {
@@ -17,28 +22,35 @@ internal static class AEGIS128LArm
 
         int i = 0;
         Span<byte> pad = stackalloc byte[32];
-        while (i + 32 <= associatedData.Length) {
+        while (i + 32 <= associatedData.Length)
+        {
             Absorb(associatedData.Slice(i, 32));
             i += 32;
         }
-        if (associatedData.Length % 32 != 0) {
+
+        if (associatedData.Length % 32 != 0)
+        {
             pad.Clear();
             associatedData[i..].CopyTo(pad);
             Absorb(pad);
         }
 
         i = 0;
-        while (i + 32 <= plaintext.Length) {
+        while (i + 32 <= plaintext.Length)
+        {
             Enc(ciphertext.Slice(i, 32), plaintext.Slice(i, 32));
             i += 32;
         }
-        if (plaintext.Length % 32 != 0) {
+
+        if (plaintext.Length % 32 != 0)
+        {
             Span<byte> tmp = stackalloc byte[32];
             pad.Clear();
             plaintext[i..].CopyTo(pad);
             Enc(tmp, pad);
             tmp[..(plaintext.Length % 32)].CopyTo(ciphertext[i..^tagSize]);
         }
+
         CryptographicOperations.ZeroMemory(pad);
 
         Finalize(ciphertext[^tagSize..], (ulong)associatedData.Length, (ulong)plaintext.Length);
@@ -49,11 +61,14 @@ internal static class AEGIS128LArm
         Init(key, nonce);
 
         int i = 0;
-        while (i + 32 <= associatedData.Length) {
+        while (i + 32 <= associatedData.Length)
+        {
             Absorb(associatedData.Slice(i, 32));
             i += 32;
         }
-        if (associatedData.Length % 32 != 0) {
+
+        if (associatedData.Length % 32 != 0)
+        {
             Span<byte> pad = stackalloc byte[32];
             pad.Clear();
             associatedData[i..].CopyTo(pad);
@@ -62,18 +77,22 @@ internal static class AEGIS128LArm
         }
 
         i = 0;
-        while (i + 32 <= ciphertext.Length - tagSize) {
+        while (i + 32 <= ciphertext.Length - tagSize)
+        {
             Dec(plaintext.Slice(i, 32), ciphertext.Slice(i, 32));
             i += 32;
         }
-        if ((ciphertext.Length - tagSize) % 32 != 0) {
+
+        if ((ciphertext.Length - tagSize) % 32 != 0)
+        {
             DecPartial(plaintext[i..], ciphertext[i..^tagSize]);
         }
 
         Span<byte> tag = stackalloc byte[tagSize];
         Finalize(tag, (ulong)associatedData.Length, (ulong)plaintext.Length);
 
-        if (!CryptographicOperations.FixedTimeEquals(tag, ciphertext[^tagSize..])) {
+        if (!CryptographicOperations.FixedTimeEquals(tag, ciphertext[^tagSize..]))
+        {
             CryptographicOperations.ZeroMemory(plaintext);
             CryptographicOperations.ZeroMemory(tag);
             throw new CryptographicException();
@@ -85,7 +104,7 @@ internal static class AEGIS128LArm
         ReadOnlySpan<byte> c = stackalloc byte[]
         {
             0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x0d, 0x15, 0x22, 0x37, 0x59, 0x90, 0xe9, 0x79, 0x62,
-            0xdb, 0x3d, 0x18, 0x55, 0x6d, 0xc2, 0x2f, 0xf1, 0x20, 0x11, 0x31, 0x42, 0x73, 0xb5, 0x28, 0xdd
+            0xdb, 0x3d, 0x18, 0x55, 0x6d, 0xc2, 0x2f, 0xf1, 0x20, 0x11, 0x31, 0x42, 0x73, 0xb5, 0x28, 0xdd,
         };
         Vector128<byte> c0 = Vector128.Create(c[..16]);
         Vector128<byte> c1 = Vector128.Create(c[16..]);
@@ -101,7 +120,8 @@ internal static class AEGIS128LArm
         S6 = k ^ c1;
         S7 = k ^ c0;
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++)
+        {
             Update(n, k);
         }
     }
@@ -189,21 +209,25 @@ internal static class AEGIS128LArm
 
     private static void Finalize(Span<byte> tag, ulong associatedDataLength, ulong plaintextLength)
     {
-        var b = new byte[16]; Span<byte> bb = b;
+        var b = new byte[16];
+        Span<byte> bb = b;
         BinaryPrimitives.WriteUInt64LittleEndian(bb[..8], associatedDataLength * 8);
         BinaryPrimitives.WriteUInt64LittleEndian(bb[8..], plaintextLength * 8);
 
         Vector128<byte> t = S2 ^ Vector128.Create(b);
 
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < 7; i++)
+        {
             Update(t, t);
         }
 
-        if (tag.Length == 16) {
+        if (tag.Length == 16)
+        {
             Vector128<byte> a = S0 ^ S1 ^ S2 ^ S3 ^ S4 ^ S5 ^ S6;
             a.CopyTo(tag);
         }
-        else {
+        else
+        {
             Vector128<byte> a1 = S0 ^ S1 ^ S2 ^ S3;
             Vector128<byte> a2 = S4 ^ S5 ^ S6 ^ S7;
             a1.CopyTo(tag[..16]);

@@ -5,7 +5,7 @@ using System.Runtime.Intrinsics;
 using System.Security.Cryptography;
 using Aes = System.Runtime.Intrinsics.Arm.Aes;
 
-namespace AegisDotNet;
+namespace Arc.Crypto;
 
 #pragma warning disable SA1132 // Do not combine fields
 #pragma warning disable SA1306 // Field names should begin with lower-case letter

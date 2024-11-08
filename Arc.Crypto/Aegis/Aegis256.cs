@@ -1,11 +1,11 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-namespace AegisDotNet;
+namespace Arc.Crypto;
 
-public static class AEGIS128L
+public static class AEGIS256
 {
-    public const int KeySize = 16;
-    public const int NonceSize = 16;
+    public const int KeySize = 32;
+    public const int NonceSize = 32;
     public const int MinTagSize = 16;
     public const int MaxTagSize = 32;
 
@@ -31,17 +31,17 @@ public static class AEGIS128L
             throw new ArgumentOutOfRangeException(nameof(key), key.Length, $"{nameof(key)} must be {KeySize} bytes long.");
         }
 
-        if (AEGIS128Lx86.IsSupported())
+        if (AEGIS256x86.IsSupported())
         {
-            AEGIS128Lx86.Encrypt(ciphertext, plaintext, nonce, key, associatedData, tagSize);
+            AEGIS256x86.Encrypt(ciphertext, plaintext, nonce, key, associatedData, tagSize);
         }
-        else if (AEGIS128LArm.IsSupported())
+        else if (AEGIS256Arm.IsSupported())
         {
-            AEGIS128LArm.Encrypt(ciphertext, plaintext, nonce, key, associatedData, tagSize);
+            AEGIS256Arm.Encrypt(ciphertext, plaintext, nonce, key, associatedData, tagSize);
         }
         else
         {
-            AEGIS128LSoft.Encrypt(ciphertext, plaintext, nonce, key, associatedData, tagSize);
+            AEGIS256Soft.Encrypt(ciphertext, plaintext, nonce, key, associatedData, tagSize);
         }
     }
 
@@ -72,17 +72,17 @@ public static class AEGIS128L
             throw new ArgumentOutOfRangeException(nameof(key), key.Length, $"{nameof(key)} must be {KeySize} bytes long.");
         }
 
-        if (AEGIS128Lx86.IsSupported())
+        if (AEGIS256x86.IsSupported())
         {
-            AEGIS128Lx86.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
+            AEGIS256x86.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
         }
-        else if (AEGIS128LArm.IsSupported())
+        else if (AEGIS256Arm.IsSupported())
         {
-            AEGIS128LArm.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
+            AEGIS256Arm.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
         }
         else
         {
-            AEGIS128LSoft.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
+            AEGIS256Soft.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
         }
     }
 }

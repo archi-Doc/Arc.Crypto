@@ -3,14 +3,14 @@
 using System.Buffers.Binary;
 using System.Runtime.Intrinsics;
 using System.Security.Cryptography;
-using Aes = System.Runtime.Intrinsics.X86.Aes;
+using Aes = System.Runtime.Intrinsics.Arm.Aes;
 
-namespace AegisDotNet;
+namespace Arc.Crypto;
 
 #pragma warning disable SA1132 // Do not combine fields
 #pragma warning disable SA1306 // Field names should begin with lower-case letter
 
-internal static class AEGIS128Lx86
+internal static class AEGIS128LArm
 {
     private static Vector128<byte> S0, S1, S2, S3, S4, S5, S6, S7;
 
