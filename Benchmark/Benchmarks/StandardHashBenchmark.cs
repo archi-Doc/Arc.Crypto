@@ -58,27 +58,21 @@ public class StandardHashBenchmark
     [Benchmark]
     public byte[] Sha2_512Libsodium()
     {
-        Sha2Helper.GetCryptoHash(this.data.AsSpan(0, this.Length), this.hash64);
+        LibsodiumInterops.crypto_hash(this.hash64, this.data.AsSpan(0, this.Length), (ulong)this.Length);
         return this.hash64;
     }
 
     [Benchmark]
-    public byte[] Sha3_256() => this.sha3_256.GetHash(this.data.AsSpan(0, this.Length));
-
-    [Benchmark]
     public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Sha3Helper_256() => Sha3Helper.Get256_UInt64(this.data.AsSpan(0, this.Length));
 
-    // [Benchmark]
-    public byte[] Sha3_384() => this.sha3_384.GetHash(this.data.AsSpan(0, this.Length));
-
-    // [Benchmark]
-    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) Sha3Helper_384() => Sha3Helper.Get384_UInt64(this.data.AsSpan(0, this.Length));
+    [Benchmark]
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Sha3Helper_512() => Sha3Helper.Get512_UInt64(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
-    public byte[] Sha3_512() => this.sha3_512.GetHash(this.data.AsSpan(0, this.Length));
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Sha3Helper_256B() => Sha3Helper.Get256_UInt64B(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
-    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Sha3Helper_5126() => Sha3Helper.Get512_UInt64(this.data.AsSpan(0, this.Length));
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Sha3Helper_512B() => Sha3Helper.Get512_UInt64B(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
     public byte Blake2B_256()

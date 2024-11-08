@@ -4,6 +4,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using Arc.Collections;
 
 #pragma warning disable SA1124 // Do not use regions
 
@@ -15,6 +16,16 @@ namespace Arc.Crypto;
 /// </summary>
 public static class Sha3Helper
 {
+    public static readonly ObjectPool<IncrementalHash> IncrementalSha256Pool = new(static () => IncrementalHash.CreateHash(HashAlgorithmName.SHA3_256));
+
+    public static readonly ObjectPool<IncrementalHash> IncrementalSha512Pool = new(static () => IncrementalHash.CreateHash(HashAlgorithmName.SHA3_512));
+
+    private static readonly ObjectPool<HashAlgorithm> Sha256 = new(static () => System.Security.Cryptography.SHA3_256.Create());
+
+    private static readonly ObjectPool<HashAlgorithm> Sha384 = new(static () => System.Security.Cryptography.SHA3_384.Create());
+
+    private static readonly ObjectPool<HashAlgorithm> Sha512 = new(static () => System.Security.Cryptography.SHA3_512.Create());
+
     /// <summary>
     /// Computes the SHA3-256 hash and returns the byte array (32 bytes).<br/>
     /// Thread-safe and it does not allocate heap memory.
@@ -147,6 +158,40 @@ public static class Sha3Helper
         var sponge = new KeccakSpongeStruct(512, state);
         sponge.Absorb(input);
         sponge.Squeeze();
+        return (state[0], state[1], state[2], state[3], state[4], state[5], state[6], state[7]);
+    }
+
+    /// <summary>
+    /// Computes the SHA2-256 hash and returns the hash (<see cref="ulong"/>).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
+    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256_UInt64B(ReadOnlySpan<byte> input)
+    {
+        Span<ulong> state = stackalloc ulong[4];
+
+        var hashAlgorithm = Sha256.Get();
+        hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _);
+        Sha256.Return(hashAlgorithm);
+
+        return (state[0], state[1], state[2], state[3]);
+    }
+
+    /// <summary>
+    /// Computes the SHA3-512 hash and returns the hash (<see cref="ulong"/>).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
+    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Get512_UInt64B(ReadOnlySpan<byte> input)
+    {
+        Span<ulong> state = stackalloc ulong[8];
+
+        var hashAlgorithm = Sha512.Get();
+        hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _);
+        Sha512.Return(hashAlgorithm);
+
         return (state[0], state[1], state[2], state[3], state[4], state[5], state[6], state[7]);
     }
 }

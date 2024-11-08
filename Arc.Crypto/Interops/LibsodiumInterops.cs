@@ -146,9 +146,5 @@ internal static partial class LibsodiumInterops
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int crypto_generichash_blake2b_final(ref crypto_generichash_blake2b_state state, scoped Span<byte> @out, nuint outlen);
 
-    [LibraryImport(Name)]
-    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int crypto_hash(scoped Span<byte> @out, scoped ReadOnlySpan<byte> @in, ulong inlen);
-
     #endregion
 }

@@ -14,6 +14,10 @@ internal static partial class LibsodiumInterops
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_hash(scoped Span<byte> @out, scoped ReadOnlySpan<byte> @in, ulong inlen);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int crypto_aead_aegis256_encrypt(Span<byte> c, out ulong clen_p, ReadOnlySpan<byte> m, ulong mlen, IntPtr ad, ulong adlen, IntPtr nsec, ReadOnlySpan<byte> npub, ReadOnlySpan<byte> k);
 
     [LibraryImport(Name)]

@@ -96,7 +96,7 @@ public static class CryptoSign
 
         // LibsodiumInterops.crypto_sign_ed25519_sk_to_curve25519(boxSecretKey, signSecretKey);
         Span<byte> hash = stackalloc byte[64];
-        LibsodiumInterops.crypto_hash(hash, signSecretKey.Slice(0, 32), 32); // Sha2Helper.Get512_Span(signSecretKey.Slice(0, 32), hash);
+        Sha2Helper.Get512_Span(signSecretKey.Slice(0, 32), hash);
         hash.Slice(0, 32).CopyTo(boxSecretKey);
     }
 
