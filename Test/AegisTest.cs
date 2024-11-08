@@ -35,4 +35,25 @@ public class AegisTest
             cipher.SequenceEqual(cipher2).IsTrue();
         }
     }
+
+    [Fact]
+    public void Test128()
+    {
+        var random = new Xoroshiro128StarStar(12);
+        Span<byte> key = stackalloc byte[Aegis128L.KeySize];
+        Span<byte> nonce = stackalloc byte[Aegis128L.NonceSize];
+
+        for (var j = 0; j < 1000; j += 13)
+        {
+            var message = new byte[j];
+            var message2 = new byte[j];
+            random.NextBytes(message);
+            var cipher = new byte[message.Length + Aegis128L.MaxTagSize];
+            var cipher2 = new byte[message.Length + Aegis128L.MaxTagSize];
+
+            Aegis128L.Encrypt(cipher, message, nonce, key, default, 32);
+            Aegis128L.Decrypt(message2, cipher, nonce, key, default, 32);
+            message.SequenceEqual(message2).IsTrue();
+        }
+    }
 }
