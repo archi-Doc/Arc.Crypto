@@ -45,7 +45,7 @@ public static class Aegis256
         }
     }
 
-    public static void Decrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData = default, int tagSize = MinTagSize)
+    public static bool Decrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData = default, int tagSize = MinTagSize)
     {
         if (tagSize != MinTagSize && tagSize != MaxTagSize)
         {
@@ -74,15 +74,15 @@ public static class Aegis256
 
         if (Aegis256x86.IsSupported())
         {
-            Aegis256x86.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
+            return Aegis256x86.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
         }
         else if (Aegis256Arm.IsSupported())
         {
-            Aegis256Arm.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
+            return Aegis256Arm.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
         }
         else
         {
-            Aegis256Soft.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
+            return Aegis256Soft.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
         }
     }
 }

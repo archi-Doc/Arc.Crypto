@@ -45,7 +45,7 @@ public static class Aegis128L
         }
     }
 
-    public static void Decrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData = default, int tagSize = MinTagSize)
+    public static bool Decrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData = default, int tagSize = MinTagSize)
     {
         if (tagSize != MinTagSize && tagSize != MaxTagSize)
         {
@@ -74,15 +74,15 @@ public static class Aegis128L
 
         if (Aegis128Lx86.IsSupported())
         {
-            Aegis128Lx86.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
+            return Aegis128Lx86.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
         }
         else if (Aegis128LArm.IsSupported())
         {
-            Aegis128LArm.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
+            return Aegis128LArm.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
         }
         else
         {
-            Aegis128LSoft.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
+            return Aegis128LSoft.Decrypt(plaintext, ciphertext, nonce, key, associatedData, tagSize);
         }
     }
 }

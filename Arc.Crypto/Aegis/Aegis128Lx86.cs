@@ -58,7 +58,7 @@ internal static class Aegis128Lx86
         Finalize(ciphertext[^tagSize..], (ulong)associatedData.Length, (ulong)plaintext.Length);
     }
 
-    internal static void Decrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData = default, int tagSize = Aegis128L.MinTagSize)
+    internal static bool Decrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData = default, int tagSize = Aegis128L.MinTagSize)
     {
         Init(key, nonce);
 
@@ -97,8 +97,10 @@ internal static class Aegis128Lx86
         {
             CryptographicOperations.ZeroMemory(plaintext);
             CryptographicOperations.ZeroMemory(tag);
-            throw new CryptographicException();
+            return false;
         }
+
+        return true;
     }
 
     private static void Init(ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce)

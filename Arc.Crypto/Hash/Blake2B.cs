@@ -6,8 +6,12 @@ using System.Runtime.InteropServices;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Provides helper methods for computing BLAKE2B hashes.
+/// Provides methods for computing BLAKE2B hashes.
 /// </summary>
+/// <remarks>
+/// This class includes methods for computing 256-bit and 512-bit BLAKE2B hashes.
+/// The hash can be returned in various formats including byte arrays, tuples of longs, and custom structs.
+/// </remarks>
 public static class Blake2B
 {
     private const int Hash256Size = 32;
