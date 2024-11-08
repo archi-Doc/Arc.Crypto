@@ -68,7 +68,7 @@ public class StandardHashBenchmark
     public byte Blake2B_256()
     {
         Span<byte> hash = stackalloc byte[32];
-        Blake2BHelper.Get256_Span(this.data.AsSpan(0, this.Length), hash);
+        Blake2B.Get256_Span(this.data.AsSpan(0, this.Length), hash);
         return hash[0];
     }
 
@@ -76,7 +76,7 @@ public class StandardHashBenchmark
     public byte Blake2B_512()
     {
         Span<byte> hash = stackalloc byte[64];
-        Blake2BHelper.Get512_Span(this.data.AsSpan(0, this.Length), hash);
+        Blake2B.Get512_Span(this.data.AsSpan(0, this.Length), hash);
         return hash[0];
     }
 
@@ -91,7 +91,7 @@ public class StandardHashBenchmark
     public byte Blake3_256()
     {
         Span<byte> hash = stackalloc byte[32];
-        Blake3Helper.Get256_Span(this.data.AsSpan(0, this.Length), hash);
+        Blake3.Get256_Span(this.data.AsSpan(0, this.Length), hash);
         return hash[0];
     }
 

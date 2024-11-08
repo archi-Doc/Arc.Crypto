@@ -20,7 +20,7 @@ public partial class SerializeHashClass
 
     public void PrepareHash()
     {
-        (this.Hash0, this.Hash1, this.Hash2, this.Hash3) = Blake3Helper.Get256_Long(this.Data);
+        (this.Hash0, this.Hash1, this.Hash2, this.Hash3) = Blake3.Get256_Long(this.Data);
     }
 
     [Key(0)]
@@ -53,7 +53,7 @@ public partial class SerializeHashClass2
 
     public void PrepareHash()
     {
-        this.Hash = Blake3Helper.Get256_Struct(this.Data);
+        this.Hash = Blake3.Get256_Struct(this.Data);
     }
 
     [Key(0)]

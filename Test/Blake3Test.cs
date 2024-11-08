@@ -13,7 +13,7 @@ public class Blake3Test
     [Fact]
     public void Test1()
     {
-        Span<byte> span = stackalloc byte[Blake3Helper.SizeInBytes];
+        Span<byte> span = stackalloc byte[Blake3.Size];
         var data = new byte[1025];
         for (var i = 0; i < data.Length; i++)
         {
@@ -32,7 +32,7 @@ public class Blake3Test
 
         foreach (var x in lengthToHash)
         {
-            Blake3Helper.Get256_Span(data.AsSpan(0, x.Key), span);
+            Blake3.Get256_Span(data.AsSpan(0, x.Key), span);
             span.SequenceEqual(x.Value.AsSpan()).IsTrue();
         }
 
@@ -49,7 +49,7 @@ public class Blake3Test
         void AddHash(int length, string hex)
         {
             var bin = Hex.FromStringToByteArray(hex);
-            bin.Length.Is(Blake3Helper.SizeInBytes);
+            bin.Length.Is(Blake3.Size);
 
             lengthToHash.TryAdd(length, bin);
         }

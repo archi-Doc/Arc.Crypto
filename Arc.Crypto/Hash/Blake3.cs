@@ -8,9 +8,9 @@ namespace Arc.Crypto;
 /// <summary>
 /// Provides helper methods for computing BLAKE3 hashes.
 /// </summary>
-public static class Blake3Helper
+public static class Blake3
 {
-    public const int SizeInBytes = 32;
+    public const int Size = 32;
     internal const int LimitPreemptive = 1024;
 
     /// <summary>
@@ -20,7 +20,7 @@ public static class Blake3Helper
     /// <returns>A 32-byte array containing the BLAKE3 hash.</returns>
     public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
     {
-        var output = new byte[SizeInBytes];
+        var output = new byte[Size];
         Get256_Span(input, output);
         return output;
     }
@@ -58,9 +58,9 @@ public static class Blake3Helper
     /// <exception cref="ArgumentException">Thrown when the output span length is not 32 bytes.</exception>
     public static unsafe void Get256_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
-        if (output.Length != SizeInBytes)
+        if (output.Length != Size)
         {
-            throw new ArgumentException($"The {nameof(output)} length must be {SizeInBytes} bytes.");
+            throw new ArgumentException($"The {nameof(output)} length must be {Size} bytes.");
         }
 
         fixed (void* ptrOut = output, ptr = input)

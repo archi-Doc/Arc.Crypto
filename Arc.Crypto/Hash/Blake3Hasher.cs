@@ -265,7 +265,7 @@ public unsafe struct Blake3Hasher : IDisposable
         fixed (void* ptr = &pData)
         {
             var size = hash.Length;
-            if (size == Blake3Helper.SizeInBytes)
+            if (size == Blake3.Size)
             {
                 Blake3Interops.blake3_finalize(this.hasher, ptr);
             }
@@ -279,7 +279,7 @@ public unsafe struct Blake3Hasher : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void FastUpdate(void* hasher, void* ptr, long size)
     {
-        if (size <= Blake3Helper.LimitPreemptive)
+        if (size <= Blake3.LimitPreemptive)
         {
             Blake3Interops.blake3_update(hasher, ptr, (void*)size);
         }

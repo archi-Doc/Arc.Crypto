@@ -8,10 +8,10 @@ namespace Arc.Crypto;
 /// <summary>
 /// Provides helper methods for computing BLAKE2B hashes.
 /// </summary>
-public static class Blake2BHelper
+public static class Blake2B
 {
-    private const int Hash256SizeInBytes = 32;
-    private const int Hash512SizeInBytes = 64;
+    private const int Hash256Size = 32;
+    private const int Hash512Size = 64;
 
     /// <summary>
     /// Computes a 256-bit BLAKE2B hash of the input data and returns it as a byte array.
@@ -20,7 +20,7 @@ public static class Blake2BHelper
     /// <returns>A 256-bit hash as a byte array.</returns>
     public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
     {
-        var output = new byte[Hash256SizeInBytes];
+        var output = new byte[Hash256Size];
         Get256_Span(input, output);
         return output;
     }
@@ -58,13 +58,13 @@ public static class Blake2BHelper
     /// <exception cref="ArgumentException">Thrown when the output span length is not 32 bytes.</exception>
     public static void Get256_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
-        if (output.Length != Hash256SizeInBytes)
+        if (output.Length != Hash256Size)
         {
-            throw new ArgumentException($"The {nameof(output)} length must be {Hash256SizeInBytes} bytes.");
+            throw new ArgumentException($"The {nameof(output)} length must be {Hash256Size} bytes.");
         }
 
         int result;
-        result = LibsodiumInterops.crypto_generichash_blake2b(output, Hash256SizeInBytes, input, (ulong)input.Length, IntPtr.Zero, 0);
+        result = LibsodiumInterops.crypto_generichash_blake2b(output, Hash256Size, input, (ulong)input.Length, IntPtr.Zero, 0);
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public static class Blake2BHelper
     /// <returns>A 512-bit hash as a byte array.</returns>
     public static byte[] Get512_ByteArray(ReadOnlySpan<byte> input)
     {
-        var output = new byte[Hash512SizeInBytes];
+        var output = new byte[Hash512Size];
         Get512_Span(input, output);
         return output;
     }
@@ -87,12 +87,12 @@ public static class Blake2BHelper
     /// <exception cref="ArgumentException">Thrown when the output span length is not 64 bytes.</exception>
     public static void Get512_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
-        if (output.Length != Hash512SizeInBytes)
+        if (output.Length != Hash512Size)
         {
-            throw new ArgumentException($"The {nameof(output)} length must be {Hash512SizeInBytes} bytes.");
+            throw new ArgumentException($"The {nameof(output)} length must be {Hash512Size} bytes.");
         }
 
         int result;
-        result = LibsodiumInterops.crypto_generichash_blake2b(output, Hash512SizeInBytes, input, (ulong)input.Length, IntPtr.Zero, 0);
+        result = LibsodiumInterops.crypto_generichash_blake2b(output, Hash512Size, input, (ulong)input.Length, IntPtr.Zero, 0);
     }
 }
