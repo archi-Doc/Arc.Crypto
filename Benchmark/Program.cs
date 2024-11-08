@@ -22,7 +22,7 @@ public class Program
         Console.WriteLine("Arc.Crypto Benchmark.");
 
         // RandomVaultBenchmark.Test1();
-        DebugRun<CipherBenchmark>();
+        DebugRun<StandardHashBenchmark>();
 
         // var summary = BenchmarkRunner.Run<SpeedBenchmark>();
         var switcher = new BenchmarkSwitcher(new[]

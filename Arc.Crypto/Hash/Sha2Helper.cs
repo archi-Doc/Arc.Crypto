@@ -29,6 +29,16 @@ public static class Sha2Helper
 
     private static readonly ObjectPool<HashAlgorithm> Sha512 = new(static () => System.Security.Cryptography.SHA512.Create());
 
+    public static void GetCryptoHash(ReadOnlySpan<byte> input, Span<byte> output)
+    {
+        if (output.Length < 32)
+        {
+            throw new ArgumentOutOfRangeException(nameof(output));
+        }
+
+        LibsodiumInterops.crypto_hash(output, input, (ulong)input.Length);
+    }
+
     /// <summary>
     /// Computes the SHA2-256 hash and returns the byte array (32 bytes).<br/>
     /// Thread-safe and it does not allocate heap memory.

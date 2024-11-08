@@ -102,4 +102,18 @@ public class Curve25519Benchmark
         CryptoBox.Decrypt(this.cipher, this.nonce24, this.cryptoBoxSecretKey2, this.cryptoBoxPublicKey, this.message2);
         return this.message2;
     }
+
+    [Benchmark]
+    public byte[] SecretKey_SignToBox()
+    {
+        CryptoSign.SecretKey_SignToBox(this.cryptoSignSecretKey, this.cryptoBoxSecretKey);
+        return this.cryptoBoxSecretKey;
+    }
+
+    [Benchmark]
+    public byte[] PublicKey_SignToBox()
+    {
+        CryptoSign.PublicKey_SignToBox(this.cryptoSignPublicKey, this.cryptoBoxPublicKey);
+        return this.cryptoBoxPublicKey;
+    }
 }

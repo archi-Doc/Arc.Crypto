@@ -18,11 +18,13 @@ public class StandardHashBenchmark
     private readonly Sha3_256 sha3_256 = new();
     private readonly Sha3_384 sha3_384 = new();
     private readonly Sha3_512 sha3_512 = new();
+    private readonly byte[] hash64;
 
     public StandardHashBenchmark()
     {
         this.data = new byte[N];
         new Random(42).NextBytes(this.data);
+        this.hash64 = new byte[64];
     }
 
     [Params(100, 1_000)]
@@ -45,6 +47,20 @@ public class StandardHashBenchmark
 
     [Benchmark]
     public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Sha2_256Helper() => Sha2Helper.Get256_UInt64(this.data.AsSpan(0, this.Length));
+
+    [Benchmark]
+    public byte[] Sha2_512Helper()
+    {
+        Sha2Helper.Get512_Span(this.data.AsSpan(0, this.Length), this.hash64);
+        return this.hash64;
+    }
+
+    [Benchmark]
+    public byte[] Sha2_512Libsodium()
+    {
+        Sha2Helper.GetCryptoHash(this.data.AsSpan(0, this.Length), this.hash64);
+        return this.hash64;
+    }
 
     [Benchmark]
     public byte[] Sha3_256() => this.sha3_256.GetHash(this.data.AsSpan(0, this.Length));
