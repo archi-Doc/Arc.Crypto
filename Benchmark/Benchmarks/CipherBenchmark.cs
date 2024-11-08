@@ -78,7 +78,7 @@ public class CipherBenchmark
     {
     }
 
-    [Benchmark]
+    /*[Benchmark]
     public byte[] crypto_secretbox_keygen()
     {
         var key = new byte[32];
@@ -89,7 +89,6 @@ public class CipherBenchmark
     [Benchmark]
     public byte[] crypto_secretbox_encrypt()
     {
-        // var c = new byte[this.message.Length + CryptoBoxHelper.MacSizeInBytes];
         CryptoSecretBox.Encrypt(this.message, this.nonce24, this.key, this.cipher2);
         return this.cipher2;
     }
@@ -113,30 +112,30 @@ public class CipherBenchmark
     {
         XChaCha20.Xor2(this.message, this.nonce24, this.key, this.cipherXChacha20);
         return this.cipherXChacha20;
-    }
+    }*/
 
     [Benchmark]
     public byte[] Aegis256Encrypt()
-    {
-        Aegis256Helper.Encrypt(this.message, this.nonce32, this.key, this.cipherAegis2, out var cipherLength);
-        return this.cipherAegis2;
-    }
-
-    [Benchmark]
-    public byte[] Aegis256Encrypt2()
-    {
-        AegisDotNet.AEGIS256.Encrypt(this.cipherAegis2, this.message, this.nonce32, this.key, default, 32);
-        return this.cipherAegis2;
-    }
-
-    [Benchmark]
-    public byte[] Aegis256Encrypt3()
     {
         Aegis256.Encrypt(this.cipherAegis2, this.message, this.nonce32, this.key, default, 32);
         return this.cipherAegis2;
     }
 
     [Benchmark]
+    public byte[] Aegis256Encrypt_AegisDotNet()
+    {
+        AegisDotNet.AEGIS256.Encrypt(this.cipherAegis2, this.message, this.nonce32, this.key, default, 32);
+        return this.cipherAegis2;
+    }
+
+    // [Benchmark]
+    public byte[] Aegis256Encrypt_Libsodium()
+    {
+        Aegis256Helper.Encrypt(this.message, this.nonce32, this.key, this.cipherAegis2, out var cipherLength);
+        return this.cipherAegis2;
+    }
+
+    /*[Benchmark]
     public byte[] crypto_secretbox_decrypt()
     {
         // var m = new byte[this.message.Length];
@@ -149,26 +148,26 @@ public class CipherBenchmark
     {
         this.aes.TryDecryptCbc(this.cipherAes.AsSpan(0, this.aesSize), this.nonce24.AsSpan(0, 16), this.message2, out var written, PaddingMode.PKCS7);
         return this.message2;
-    }
+    }*/
 
     [Benchmark]
     public byte[] Aegis256Decrypt()
     {
-        Aegis256Helper.Decrypt(this.cipherAegis, this.nonce32, this.key, this.message2, out var messageLength);
+        Aegis256.Decrypt(this.message2, this.cipherAegis, this.nonce32, this.key, default, 32);
         return this.message2;
     }
 
     [Benchmark]
-    public byte[] Aegis256Decrypt2()
+    public byte[] Aegis256Decrypt_AegisDotNet()
     {
         AegisDotNet.AEGIS256.Decrypt(this.message2, this.cipherAegis, this.nonce32, this.key, default, 32);
         return this.message2;
     }
 
-    [Benchmark]
-    public byte[] Aegis256Decrypt3()
+    // [Benchmark]
+    public byte[] Aegis256Decrypt_Libsodium()
     {
-        Aegis256.Decrypt(this.message2, this.cipherAegis, this.nonce32, this.key, default, 32);
+        Aegis256Helper.Decrypt(this.cipherAegis, this.nonce32, this.key, this.message2, out var messageLength);
         return this.message2;
     }
 }

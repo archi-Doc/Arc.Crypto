@@ -1,6 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
 namespace Arc.Crypto;
@@ -8,6 +9,7 @@ namespace Arc.Crypto;
 #pragma warning disable SA1132 // Do not combine fields
 #pragma warning disable SA1306 // Field names should begin with lower-case letter
 
+[SkipLocalsInit]
 internal static class Aegis128LSoft
 {
     private static UInt128 S0, S1, S2, S3, S4, S5, S6, S7;
@@ -124,6 +126,7 @@ internal static class Aegis128LSoft
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Update(UInt128 m0, UInt128 m1)
     {
         UInt128 s0 = AES.Encrypt(S7, S0 ^ m0);
@@ -145,6 +148,7 @@ internal static class Aegis128LSoft
         S7 = s7;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Absorb(ReadOnlySpan<byte> associatedData)
     {
         UInt128 ad0 = BinaryPrimitives.ReadUInt128BigEndian(associatedData[..16]);
@@ -152,6 +156,7 @@ internal static class Aegis128LSoft
         Update(ad0, ad1);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Enc(Span<byte> ciphertext, ReadOnlySpan<byte> plaintext)
     {
         UInt128 z0 = S6 ^ S1 ^ (S2 & S3);
@@ -167,6 +172,7 @@ internal static class Aegis128LSoft
         BinaryPrimitives.WriteUInt128BigEndian(ciphertext[16..], out1);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Dec(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext)
     {
         UInt128 z0 = S6 ^ S1 ^ (S2 & S3);
@@ -182,6 +188,7 @@ internal static class Aegis128LSoft
         BinaryPrimitives.WriteUInt128BigEndian(plaintext[16..], out1);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static void DecPartial(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext)
     {
         UInt128 z0 = S6 ^ S1 ^ (S2 & S3);
@@ -204,6 +211,7 @@ internal static class Aegis128LSoft
         Update(v0, v1);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static void Finalize(Span<byte> tag, ulong associatedDataLength, ulong plaintextLength)
     {
         Span<byte> b = stackalloc byte[16];

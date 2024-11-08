@@ -12,6 +12,7 @@ namespace Arc.Crypto;
 #pragma warning disable SA1132 // Do not combine fields
 #pragma warning disable SA1306 // Field names should begin with lower-case letter
 
+[SkipLocalsInit]
 internal static class Aegis256x86
 {
     private static Vector128<byte> S0, S1, S2, S3, S4, S5;
@@ -133,6 +134,7 @@ internal static class Aegis256x86
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Update(Vector128<byte> message)
     {
         Vector128<byte> s0 = Aes.Encrypt(S5, S0 ^ message);
@@ -150,12 +152,14 @@ internal static class Aegis256x86
         S5 = s5;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Absorb(ReadOnlySpan<byte> associatedData)
     {
         Vector128<byte> ad = Vector128.Create(associatedData);
         Update(ad);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Enc(Span<byte> ciphertext, ReadOnlySpan<byte> plaintext)
     {
         Vector128<byte> z = S1 ^ S4 ^ S5 ^ (S2 & S3);
@@ -165,6 +169,7 @@ internal static class Aegis256x86
         ci.CopyTo(ciphertext);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Dec(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext)
     {
         Vector128<byte> z = S1 ^ S4 ^ S5 ^ (S2 & S3);
@@ -174,6 +179,7 @@ internal static class Aegis256x86
         xi.CopyTo(plaintext);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static void DecPartial(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext)
     {
         Vector128<byte> z = S1 ^ S4 ^ S5 ^ (S2 & S3);
@@ -193,6 +199,7 @@ internal static class Aegis256x86
         Update(v);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static void Finalize(Span<byte> tag, ulong associatedDataLength, ulong plaintextLength)
     {
         Span<byte> b = stackalloc byte[16];

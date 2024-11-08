@@ -12,6 +12,7 @@ namespace Arc.Crypto;
 #pragma warning disable SA1132 // Do not combine fields
 #pragma warning disable SA1306 // Field names should begin with lower-case letter
 
+[SkipLocalsInit]
 internal static class Aegis128LArm
 {
     private static Vector128<byte> S0, S1, S2, S3, S4, S5, S6, S7;
@@ -130,6 +131,7 @@ internal static class Aegis128LArm
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Update(Vector128<byte> m0, Vector128<byte> m1)
     {
         Vector128<byte> s0 = Aes.Encrypt(S7, S0 ^ m0);
@@ -151,6 +153,7 @@ internal static class Aegis128LArm
         S7 = s7;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Absorb(ReadOnlySpan<byte> associatedData)
     {
         Vector128<byte> ad0 = Vector128.Create(associatedData[..16]);
@@ -158,6 +161,7 @@ internal static class Aegis128LArm
         Update(ad0, ad1);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Enc(Span<byte> ciphertext, ReadOnlySpan<byte> plaintext)
     {
         Vector128<byte> z0 = S6 ^ S1 ^ (S2 & S3);
@@ -173,6 +177,7 @@ internal static class Aegis128LArm
         out1.CopyTo(ciphertext[16..]);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Dec(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext)
     {
         Vector128<byte> z0 = S6 ^ S1 ^ (S2 & S3);
@@ -188,6 +193,7 @@ internal static class Aegis128LArm
         out1.CopyTo(plaintext[16..]);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static void DecPartial(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext)
     {
         Vector128<byte> z0 = S6 ^ S1 ^ (S2 & S3);
@@ -211,6 +217,7 @@ internal static class Aegis128LArm
         Update(v0, v1);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static void Finalize(Span<byte> tag, ulong associatedDataLength, ulong plaintextLength)
     {
         Span<byte> b = stackalloc byte[16];
