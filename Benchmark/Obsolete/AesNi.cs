@@ -8,7 +8,7 @@ using System.Runtime.Intrinsics.X86;
 
 namespace Arc.Crypto;
 
-public class AesNi
+/*public class AesNi
 {
     public const int KeySizeInBytes = 16;
 
@@ -125,4 +125,4 @@ public class AesNi
 
         keys[i] = Sse2.Xor(s, t);
     }
-}
+}*/

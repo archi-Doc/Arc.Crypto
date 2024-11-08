@@ -25,8 +25,6 @@ public class CipherBenchmark
     private readonly byte[] nonce24;
     private readonly byte[] nonce32;
     private readonly Aes aes;
-    private readonly AesNi aesNi;
-    private readonly byte[] iv;
     private readonly byte[] messageAesNi;
 
     public CipherBenchmark()
@@ -59,8 +57,6 @@ public class CipherBenchmark
         this.cipherAes = new byte[this.message.Length + 16];
         this.cipherAes2 = new byte[this.message.Length + 16];
         var result = this.aes.TryEncryptCbc(this.message, this.nonce24.AsSpan(0, 16), this.cipherAes, out var written, PaddingMode.PKCS7);
-        this.aesNi = new AesNi(this.key.AsSpan(0, 16));
-        this.iv = new byte[16];
 
         this.cipherXChacha20 = new byte[this.message.Length];
 
@@ -101,16 +97,6 @@ public class CipherBenchmark
     {
         this.aes.TryEncryptCbc(this.message, this.nonce24.AsSpan(0, 16), this.cipherAes2, out var written, PaddingMode.PKCS7);
         return this.cipherAes2;
-    }
-
-    [Benchmark]
-    public byte[] AesNiEncryptAndDecrypt()
-    {
-        this.nonce24.AsSpan(0, 16).CopyTo(this.iv);
-        this.aesNi.EncryptCbc(this.messageAesNi, this.iv);
-        this.nonce24.AsSpan(0, 16).CopyTo(this.iv);
-        this.aesNi.DecryptCbc(this.messageAesNi, this.iv);
-        return this.messageAesNi;
     }
 
     [Benchmark]
