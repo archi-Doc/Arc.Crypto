@@ -11,7 +11,7 @@ namespace Benchmark;
 [Config(typeof(BenchmarkConfig))]
 public class CipherBenchmark
 {
-    private const int Length = 1008;//1000;
+    private const int Length = 1000;
     private readonly byte[] message;
     private readonly byte[] message2;
     private readonly byte[] cipher;
@@ -26,6 +26,7 @@ public class CipherBenchmark
     private readonly byte[] nonce32;
     private readonly Aes aes;
     private readonly byte[] messageAesNi;
+    private readonly int aesSize;
 
     public CipherBenchmark()
     {
@@ -57,6 +58,7 @@ public class CipherBenchmark
         this.cipherAes = new byte[this.message.Length + 16];
         this.cipherAes2 = new byte[this.message.Length + 16];
         var result = this.aes.TryEncryptCbc(this.message, this.nonce24.AsSpan(0, 16), this.cipherAes, out var written, PaddingMode.PKCS7);
+        this.aesSize = written;
 
         this.cipherXChacha20 = new byte[this.message.Length];
 
@@ -145,7 +147,7 @@ public class CipherBenchmark
     [Benchmark]
     public byte[] AesDecrypt()
     {
-        this.aes.TryDecryptCbc(this.cipherAes, this.nonce24.AsSpan(0, 16), this.message2, out var written, PaddingMode.PKCS7);
+        this.aes.TryDecryptCbc(this.cipherAes.AsSpan(0, this.aesSize), this.nonce24.AsSpan(0, 16), this.message2, out var written, PaddingMode.PKCS7);
         return this.message2;
     }
 
