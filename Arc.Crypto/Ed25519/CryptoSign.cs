@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Helper class for calling crypto_sign function, which implements public-key signature algorithm in Libsodium.<br/>
+/// Helper class for calling crypto_sign function in Libsodium, which implements public-key signature algorithm.<br/>
 /// Single-part signature: Ed25519, Multi-part signature: Ed25519ph.
 /// </summary>
 public static class CryptoSign
@@ -80,6 +80,40 @@ public static class CryptoSign
         }
 
         secretKey.Slice(SeedSize, PublicKeySize).CopyTo(publicKey); // LibsodiumInterops.crypto_sign_ed25519_sk_to_pk(publicKey, secretKey);
+    }
+
+    public static void SecretKey_SignToBox(ReadOnlySpan<byte> signSecretKey, Span<byte> boxSecretKey)
+    {
+        if (signSecretKey.Length != SecretKeySize)
+        {
+            throw new ArgumentOutOfRangeException(nameof(signSecretKey));
+        }
+
+        if (boxSecretKey.Length != CryptoBox.SecretKeySize)
+        {
+            throw new ArgumentNullException(nameof(boxSecretKey));
+        }
+
+        // LibsodiumInterops.crypto_sign_ed25519_sk_to_curve25519(boxSecretKey, signSecretKey);
+
+        Span<byte> hash = stackalloc byte[64];
+        Sha2Helper.Get512_Span(signSecretKey.Slice(0, 32), hash);
+        hash.Slice(0, 32).CopyTo(boxSecretKey);
+    }
+
+    public static void PublicKey_SignToBox(ReadOnlySpan<byte> signPublicKey, Span<byte> boxPublicKey)
+    {
+        if (signPublicKey.Length != PublicKeySize)
+        {
+            throw new ArgumentOutOfRangeException(nameof(signPublicKey));
+        }
+
+        if (boxPublicKey.Length != CryptoBox.PublicKeySize)
+        {
+            throw new ArgumentNullException(nameof(boxPublicKey));
+        }
+
+        LibsodiumInterops.crypto_sign_ed25519_pk_to_curve25519(boxPublicKey, signPublicKey);
     }
 
     public static void Sign(ReadOnlySpan<byte> message, ReadOnlySpan<byte> secretKey, Span<byte> signature)

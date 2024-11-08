@@ -3,7 +3,7 @@
 namespace Arc.Crypto;
 
 /// <summary>
-/// Helper class for calling crypto_secretbox function, which implements secret-key authenticated encryption in Libsodium.<br/>
+/// Helper class for calling crypto_secretbox function in Libsodium, which implements secret-key authenticated encryption.<br/>
 /// Encryption: XSalsa20 stream cipher, Authentication: Poly1305 MAC.
 /// </summary>
 public static class CryptoSecretBox

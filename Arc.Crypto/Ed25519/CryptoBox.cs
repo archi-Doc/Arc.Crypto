@@ -3,7 +3,7 @@
 namespace Arc.Crypto;
 
 /// <summary>
-/// Helper class for calling crypto_box function, which implements public-key authenticated encryption in Libsodium.<br/>
+/// Helper class for calling crypto_box function in Libsodium, which implements public-key authenticated encryption.<br/>
 /// Key exchange: X25519, Encryption: XSalsa20, Authentication: Poly1305.
 /// </summary>
 public static class CryptoBox

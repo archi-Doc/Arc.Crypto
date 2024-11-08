@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using Arc.Crypto;
 using Xunit;
 
@@ -60,5 +61,27 @@ public class Ed25519Test
                 ed25519ph.FinalizeAndVerify(publicKey, signature2).IsTrue();
             }
         }
+    }
+
+    [Fact]
+    public void Test2()
+    {
+        var random = new Xoroshiro128StarStar(12);
+        Span<byte> seed = stackalloc byte[CryptoSign.SeedSize];
+        random.NextBytes(seed);
+        Span<byte> signSecretKey = stackalloc byte[CryptoSign.SecretKeySize];
+        Span<byte> signPublicKey = stackalloc byte[CryptoSign.PublicKeySize];
+        Span<byte> boxSecretKey = stackalloc byte[CryptoBox.SecretKeySize];
+        Span<byte> boxPublicKey = stackalloc byte[CryptoBox.PublicKeySize];
+        Span<byte> boxSecretKey2 = stackalloc byte[CryptoBox.SecretKeySize];
+        Span<byte> boxPublicKey2 = stackalloc byte[CryptoBox.PublicKeySize];
+
+        CryptoSign.CreateKey(seed, signSecretKey, signPublicKey);
+        CryptoBox.CreateKey(seed, boxSecretKey, boxPublicKey);
+
+        CryptoSign.SecretKey_SignToBox(signSecretKey, boxSecretKey2);
+        boxSecretKey.SequenceEqual(boxSecretKey2).IsTrue();
+        CryptoSign.PublicKey_SignToBox(signPublicKey, boxPublicKey2);
+        boxPublicKey.SequenceEqual(boxPublicKey2).IsTrue();
     }
 }
