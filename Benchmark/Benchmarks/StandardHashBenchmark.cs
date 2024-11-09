@@ -59,7 +59,7 @@ public class StandardHashBenchmark
     [Benchmark]
     public byte[] Sha2_512Libsodium()
     {
-        LibsodiumInterops.crypto_hash(this.hash64, this.data.AsSpan(0, this.Length), (ulong)this.Length);
+        Sha2Helper.Get512_Libsodium(this.data.AsSpan(0, this.Length), this.hash64);
         return this.hash64;
     }
 

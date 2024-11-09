@@ -166,6 +166,17 @@ public static class Sha2Helper
 
         return (state[0], state[1], state[2], state[3], state[4], state[5], state[6], state[7]);
     }
+
+    /// <summary>
+    /// Computes the SHA2-512 hash and assign the result to the output (<see cref="byte"/>[64]).<br/>
+    /// Thread-safe and it does not allocate heap memory.
+    /// </summary>
+    /// <param name="input">The input to compute the hash for.</param>
+    /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[64]).</param>
+    public static void Get512_Libsodium(ReadOnlySpan<byte> input, Span<byte> output)
+    {
+        LibsodiumInterops.crypto_hash(output, input, (ulong)input.Length);
+    }
 }
 
 /*

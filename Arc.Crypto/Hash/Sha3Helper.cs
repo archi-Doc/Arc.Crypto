@@ -16,7 +16,6 @@ namespace Arc.Crypto;
 /// </summary>
 public static class Sha3Helper
 {
-
     /// <summary>
     /// Computes the SHA3-256 hash and returns the byte array (32 bytes).<br/>
     /// Thread-safe and it does not allocate heap memory.
