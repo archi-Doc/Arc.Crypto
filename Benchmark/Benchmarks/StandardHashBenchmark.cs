@@ -27,8 +27,8 @@ public class StandardHashBenchmark
         this.hash64 = new byte[64];
     }
 
-    // [Params(100, 1_000)]
-    [Params(100)]
+    [Params(64, 200, 1_000)]
+    // [Params(100)]
     public int Length { get; set; }
 
     /*[Benchmark]
