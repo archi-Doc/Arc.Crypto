@@ -11,7 +11,7 @@ namespace Arc.Crypto;
 
 [StructLayout(LayoutKind.Explicit)]
 public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<SignaturePublicKey>, IStringConvertible<SignaturePublicKey>
-{
+{// (s:key)
     public const char Identifier = 's';
 
     #region FieldAndProperty
@@ -39,7 +39,7 @@ public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<Sig
     public static bool TryParse(ReadOnlySpan<char> source, [MaybeNullWhen(false)] out SignaturePublicKey publicKey)
     {
         Span<byte> key32 = stackalloc byte[SeedKeyHelper.PublicKeySize];
-        if (SeedKeyHelper.TryParsePublicKey(PublicKeyOrientation.Signature, source, key32))
+        if (SeedKeyHelper.TryParsePublicKey(KeyOrientation.Signature, source, key32))
         {
             publicKey = new(key32);
             return true;
@@ -57,8 +57,8 @@ public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<Sig
 
     [SkipLocalsInit]
     public bool TryFormat(Span<char> destination, out int written)
-    {
-        if (destination.Length < SeedKeyHelper.PublicKeyLengthInBase64)
+    {// key
+        if (destination.Length < SeedKeyHelper.RawPublicKeyLengthInBase64)
         {
             written = 0;
             return false;
@@ -68,6 +68,33 @@ public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<Sig
         this.AsSpan().CopyTo(span);
         SeedKeyHelper.SetChecksum(span);
         return Base64.Url.FromByteArrayToSpan(span, destination, out written);
+    }
+
+    [SkipLocalsInit]
+    public bool TryFormatWithBracket(Span<char> destination, out int written)
+    {// (s:key)
+        if (destination.Length < SeedKeyHelper.PublicKeyLengthInBase64)
+        {
+            written = 0;
+            return false;
+        }
+
+        var b = destination;
+        b[0] = SeedKeyHelper.PublicKeyOpenBracket;
+        b[1] = SeedKeyHelper.OrientationToIdentifier(KeyOrientation.Signature);
+        b[2] = SeedKeyHelper.PublicKeySeparator;
+        b = b.Slice(3);
+
+        Span<byte> span = stackalloc byte[SeedKeyHelper.PublicKeySize + SeedKeyHelper.ChecksumSize];
+        this.AsSpan().CopyTo(span);
+        SeedKeyHelper.SetChecksum(span);
+        Base64.Url.FromByteArrayToSpan(span, b, out written);
+        b = b.Slice(written);
+
+        b[0] = SeedKeyHelper.PublicKeyCloseBracket;
+        written += 4;
+
+        return true;
     }
 
     public bool VerifyData(ReadOnlySpan<byte> data, ReadOnlySpan<byte> signature)
@@ -118,17 +145,16 @@ public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<Sig
 
     public string ToBase64()
     {
-        Span<byte> span = stackalloc byte[SeedKeyHelper.PublicKeySize + SeedKeyHelper.ChecksumSize];
-        this.AsSpan().CopyTo(span);
-        SeedKeyHelper.SetChecksum(span);
-        return Base64.Url.FromByteArrayToString(span);
+        Span<char> s = stackalloc char[SeedKeyHelper.PublicKeyLengthInBase64];
+        this.TryFormatWithBracket(s, out _);
+        return s.ToString();
     }
 
     public override int GetHashCode()
         => (int)this.x0;
 
     public override string ToString()
-        => $"({Identifier}{SeedKeyHelper.PublicKeySeparator}{this.ToBase64()})";
+        => this.ToBase64();
 
     #endregion
 }

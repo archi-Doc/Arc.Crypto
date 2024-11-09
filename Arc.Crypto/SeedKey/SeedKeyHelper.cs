@@ -35,8 +35,8 @@ public static class SeedKeyHelper
         MaxPrivateKeyLengthInBase64 = SeedLengthInBase64 + PublicKeyLengthInBase64; // !!!seed!!!(s:key)
     }
 
-    public static bool TryParsePublicKey(PublicKeyOrientation orientation, ReadOnlySpan<char> source, Span<byte> key32)
-    {
+    public static bool TryParsePublicKey(KeyOrientation orientation, ReadOnlySpan<char> source, Span<byte> key32)
+    {// key, (s:key), (key)
         if (key32.Length != PublicKeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(key32));
@@ -88,11 +88,19 @@ public static class SeedKeyHelper
         }
     }
 
-    public static PublicKeyOrientation IdentifierToOrientation(char identifier)
+    public static KeyOrientation IdentifierToOrientation(char identifier)
         => identifier switch
         {
-            SignaturePublicKey.Identifier => PublicKeyOrientation.Signature,
-            _ => PublicKeyOrientation.NotSpecified,
+            SignaturePublicKey.Identifier => KeyOrientation.Signature,
+            _ => KeyOrientation.NotSpecified,
+        };
+
+    public static char OrientationToIdentifier(KeyOrientation keyOrientation)
+        => keyOrientation switch
+        {
+            // KeyOrientation.Encryption => SignaturePublicKey.Identifier,
+            KeyOrientation.Signature => SignaturePublicKey.Identifier,
+            _ => (char)0,
         };
 
     public static void SetChecksum(Span<byte> span)

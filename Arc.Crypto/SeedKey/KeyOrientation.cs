@@ -2,7 +2,7 @@
 
 namespace Arc.Crypto;
 
-public enum PublicKeyOrientation
+public enum KeyOrientation
 {
     NotSpecified,
     Encryption,

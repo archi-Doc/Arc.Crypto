@@ -12,7 +12,7 @@ internal class Program
     {
         Console.WriteLine("Sandbox");
 
-        var secretKey = SeedKey.New();
+        var secretKey = SeedKey.New(KeyOrientation.Signature);
         var st = secretKey.ToString();
         st = secretKey.UnsafeToString();
         SeedKey.TryParse(st, out var secretKey2);
