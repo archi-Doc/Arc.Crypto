@@ -17,6 +17,11 @@ public static class CryptoSign
     public const int PublicKeySize = 32;
     public const int SignatureSize = 64;
 
+    public static void RandomBytes(Span<byte> buffer)
+    {
+        LibsodiumInterops.randombytes_buf(buffer, (int)buffer.Length);
+    }
+
     public static void CreateKey(Span<byte> secretKey, Span<byte> publicKey)
     {
         if (secretKey.Length != SecretKeySize)

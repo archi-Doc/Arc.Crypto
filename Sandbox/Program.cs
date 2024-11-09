@@ -12,9 +12,9 @@ internal class Program
     {
         Console.WriteLine("Sandbox");
 
-        var secretKey = Ed25519SecretKey.New();
+        var secretKey = SeedKey.New();
         var st = secretKey.ToString();
         st = secretKey.UnsafeToString();
-        Ed25519SecretKey.TryParse(st, out var secretKey2);
+        SeedKey.TryParse(st, out var secretKey2);
     }
 }

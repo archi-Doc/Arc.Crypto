@@ -151,4 +151,8 @@ internal static partial class LibsodiumInterops
     internal static partial int crypto_hash(scoped Span<byte> @out, scoped ReadOnlySpan<byte> @in, ulong inlen);
 
     #endregion
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial void randombytes_buf(scoped Span<byte> buf, int size);
 }
