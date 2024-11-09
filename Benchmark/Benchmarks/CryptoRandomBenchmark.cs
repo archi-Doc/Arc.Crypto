@@ -46,30 +46,7 @@ public class CryptoRandomBenchmark
     [Benchmark]
     public byte[] RandomBytes()
     {
-        CryptoSign.RandomBytes(this.random);
-        return this.random;
-    }
-
-    [Benchmark]
-    public byte[] RandomUInt32_8()
-    {
-        var b = this.random.AsSpan();
-        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
-        b = b.Slice(4);
-        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
-        b = b.Slice(4);
-        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
-        b = b.Slice(4);
-        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
-        b = b.Slice(4);
-        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
-        b = b.Slice(4);
-        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
-        b = b.Slice(4);
-        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
-        b = b.Slice(4);
-        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
-
+        CryptoRandom.NextBytes(this.random);
         return this.random;
     }
 }

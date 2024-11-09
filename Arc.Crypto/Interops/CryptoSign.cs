@@ -1,9 +1,5 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-
 namespace Arc.Crypto;
 
 /// <summary>
@@ -16,16 +12,6 @@ public static class CryptoSign
     public const int SecretKeySize = 64;
     public const int PublicKeySize = 32;
     public const int SignatureSize = 64;
-
-    public static void RandomBytes(Span<byte> buffer)
-    {
-        LibsodiumInterops.randombytes_buf(buffer, (int)buffer.Length);
-    }
-
-    public static uint RandomUInt32()
-    {
-        return LibsodiumInterops.randombytes_random();
-    }
 
     public static void CreateKey(Span<byte> secretKey, Span<byte> publicKey)
     {

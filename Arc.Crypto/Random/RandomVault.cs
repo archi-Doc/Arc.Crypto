@@ -25,7 +25,8 @@ public class RandomVault : RandomUInt64
     {
         var xo = new Xoshiro256StarStar();
         Pseudo = new RandomVault(() => xo.NextUInt64(), x => xo.NextBytes(x), 1024);
-        Crypto = new RandomVault(null, x => RandomNumberGenerator.Fill(x), 1024);
+        // Crypto = new RandomVault(null, x => RandomNumberGenerator.Fill(x), 1024);
+        Crypto = new RandomVault(null, x => CryptoRandom.NextBytes(x), 1024);
     }
 
     /// <summary>
