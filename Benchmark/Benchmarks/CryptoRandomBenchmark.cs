@@ -2,6 +2,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
@@ -43,9 +44,32 @@ public class CryptoRandomBenchmark
     }
 
     [Benchmark]
-    public byte[] Rng_GetBytes2()
+    public byte[] RandomBytes()
     {
         CryptoSign.RandomBytes(this.random);
+        return this.random;
+    }
+
+    [Benchmark]
+    public byte[] RandomUInt32_8()
+    {
+        var b = this.random.AsSpan();
+        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
+        b = b.Slice(4);
+        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
+        b = b.Slice(4);
+        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
+        b = b.Slice(4);
+        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
+        b = b.Slice(4);
+        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
+        b = b.Slice(4);
+        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
+        b = b.Slice(4);
+        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
+        b = b.Slice(4);
+        MemoryMarshal.Write(b, CryptoSign.RandomUInt32());
+
         return this.random;
     }
 }

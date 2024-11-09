@@ -22,6 +22,11 @@ public static class CryptoSign
         LibsodiumInterops.randombytes_buf(buffer, (int)buffer.Length);
     }
 
+    public static uint RandomUInt32()
+    {
+        return LibsodiumInterops.randombytes_random();
+    }
+
     public static void CreateKey(Span<byte> secretKey, Span<byte> publicKey)
     {
         if (secretKey.Length != SecretKeySize)

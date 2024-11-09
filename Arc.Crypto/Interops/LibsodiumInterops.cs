@@ -155,4 +155,8 @@ internal static partial class LibsodiumInterops
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial void randombytes_buf(scoped Span<byte> buf, int size);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial uint randombytes_random();
 }
