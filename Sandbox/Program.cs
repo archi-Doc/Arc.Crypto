@@ -20,5 +20,6 @@ internal class Program
         var st = secretKey.ToString();
         st = secretKey.UnsafeToString();
         SeedKey.TryParse(st, out var secretKey2);
+        var result = secretKey.Equals(secretKey2);
     }
 }

@@ -41,6 +41,11 @@ public static class CryptoHelper
         throw new ArgumentOutOfRangeException($"The {nameof(argumentName)} length must be {size} bytes.");
     }
 
+    /// <summary>
+    /// Trims the utf8 string at the first occurrence of a null byte.
+    /// </summary>
+    /// <param name="utf8">The input byte span.</param>
+    /// <returns>A span of bytes trimmed at the first null byte.</returns>
     public static ReadOnlySpan<byte> TrimAtFirstNull(ReadOnlySpan<byte> utf8)
     {
         var firstNull = utf8.IndexOf((byte)0);
@@ -54,6 +59,11 @@ public static class CryptoHelper
         }
     }
 
+    /// <summary>
+    /// Trims the utf8 string at the first occurrence of a null byte.
+    /// </summary>
+    /// <param name="utf8">The input byte array.</param>
+    /// <returns>A byte array trimmed at the first null byte.</returns>
     public static byte[] TrimAtFirstNull(byte[] utf8)
     {
         var firstNull = Array.IndexOf(utf8, (byte)0);

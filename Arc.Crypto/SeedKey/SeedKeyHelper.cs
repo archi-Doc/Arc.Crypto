@@ -1,5 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
@@ -13,7 +14,7 @@ public static class SeedKeyHelper
     public const int SeedSize = 32;
     public const int PublicKeySize = 32;
     public const int PrivateKeySize = 32;
-    public const int SignatureSize = 64;
+    public const int SignatureSize = CryptoSign.SignatureSize;
     public const int ChecksumSize = 4;
 
     public const char PublicKeyOpenBracket = '(';
@@ -103,7 +104,7 @@ public static class SeedKeyHelper
             _ => (char)0,
         };
 
-    public static void SetChecksum(Span<byte> span)
+    internal static void SetChecksum(Span<byte> span)
     {
         if (span.Length < ChecksumSize)
         {
@@ -114,7 +115,7 @@ public static class SeedKeyHelper
         MemoryMarshal.Write(span.Slice(span.Length - ChecksumSize), checksum);
     }
 
-    public static bool ValidateChecksum(Span<byte> span)
+    internal static bool ValidateChecksum(Span<byte> span)
     {
         if (span.Length < ChecksumSize)
         {
@@ -123,5 +124,47 @@ public static class SeedKeyHelper
 
         var checksum = MemoryMarshal.Read<uint>(span.Slice(span.Length - ChecksumSize));
         return checksum == (uint)XxHash3.Hash64(span.Slice(0, span.Length - ChecksumSize));
+    }
+
+    [SkipLocalsInit]
+    internal static bool TryFormatPublicKey(ReadOnlySpan<byte> publicKey, Span<char> destination, out int written)
+    {// key
+        if (destination.Length < RawPublicKeyLengthInBase64)
+        {
+            written = 0;
+            return false;
+        }
+
+        Span<byte> span = stackalloc byte[PublicKeySize + ChecksumSize];
+        publicKey.CopyTo(span);
+        SetChecksum(span);
+        return Base64.Url.FromByteArrayToSpan(span, destination, out written);
+    }
+
+    [SkipLocalsInit]
+    internal static bool TryFormatPublicKeyWithBracket(ReadOnlySpan<byte> publicKey, Span<char> destination, out int written)
+    {// (s:key)
+        if (destination.Length < PublicKeyLengthInBase64)
+        {
+            written = 0;
+            return false;
+        }
+
+        var b = destination;
+        b[0] = PublicKeyOpenBracket;
+        b[1] = OrientationToIdentifier(KeyOrientation.Signature);
+        b[2] = PublicKeySeparator;
+        b = b.Slice(3);
+
+        Span<byte> span = stackalloc byte[SeedKeyHelper.PublicKeySize + SeedKeyHelper.ChecksumSize];
+        publicKey.CopyTo(span);
+        SeedKeyHelper.SetChecksum(span);
+        Base64.Url.FromByteArrayToSpan(span, b, out written);
+        b = b.Slice(written);
+
+        b[0] = SeedKeyHelper.PublicKeyCloseBracket;
+        written += 4;
+
+        return true;
     }
 }

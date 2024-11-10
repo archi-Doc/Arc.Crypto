@@ -31,6 +31,15 @@ public static class CryptoPasswordHash
         Sensitive = 1073741824, // 1024 MiB
     }
 
+    /// <summary>
+    /// Derives a key from a password and salt using the specified computational and memory limits.
+    /// </summary>
+    /// <param name="password">The password to derive the key from.</param>
+    /// <param name="salt16">The salt to use for key derivation. Must be <see cref="SaltSize"/>(16) bytes long.</param>
+    /// <param name="key">The buffer to store the derived key. Must be at least <see cref="MinimumKeySize"/>(16) bytes long.</param>
+    /// <param name="opsLimit">The computational cost parameter.</param>
+    /// <param name="memLimit">The memory cost parameter.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the key length is less than the minimum key size.</exception>
     public static void DeriveKey(ReadOnlySpan<char> password, ReadOnlySpan<byte> salt16, Span<byte> key, OpsLimit opsLimit = OpsLimit.Interactive, MemLimit memLimit = MemLimit.Interactive)
     {
         var utf8Password = new byte[Encoding.UTF8.GetByteCount(password)];
@@ -39,6 +48,15 @@ public static class CryptoPasswordHash
         DeriveKey(utf8Password, salt16, key, opsLimit, memLimit);
     }
 
+    /// <summary>
+    /// Derives a key from a utf8 password and salt using the specified computational and memory limits.
+    /// </summary>
+    /// <param name="utf8Password">The utf8 password to derive the key from.</param>
+    /// <param name="salt16">The salt to use for key derivation. Must be <see cref="SaltSize"/>(16) bytes long.</param>
+    /// <param name="key">The buffer to store the derived key. Must be at least <see cref="MinimumKeySize"/>(16) bytes long.</param>
+    /// <param name="opsLimit">The computational cost parameter.</param>
+    /// <param name="memLimit">The memory cost parameter.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the key length is less than the minimum key size.</exception>
     public static void DeriveKey(ReadOnlySpan<byte> utf8Password, ReadOnlySpan<byte> salt16, Span<byte> key, OpsLimit opsLimit = OpsLimit.Interactive, MemLimit memLimit = MemLimit.Interactive)
     {
         if (salt16.Length != SaltSize)
@@ -54,6 +72,14 @@ public static class CryptoPasswordHash
         var success = LibsodiumInterops.crypto_pwhash(key, (ulong)key.Length, utf8Password, (ulong)utf8Password.Length, salt16, (ulong)opsLimit, (UIntPtr)memLimit, DefaultAlgorithm) >= 0;
     }
 
+    /// <summary>
+    /// Computes a hash string from a password using the specified computational and memory limits.
+    /// </summary>
+    /// <param name="password">The password to hash.</param>
+    /// <param name="opsLimit">The computational cost parameter.</param>
+    /// <param name="memLimit">The memory cost parameter.</param>
+    /// <returns>The computed hash string.<br/>
+    /// The maximum length is <see cref="HashStringLength"/>(128).</returns>
     public static string GetHashString(string password, OpsLimit opsLimit = OpsLimit.Interactive, MemLimit memLimit = MemLimit.Interactive)
     {
         var utf8Password = new byte[Encoding.UTF8.GetByteCount(password)];
@@ -66,6 +92,14 @@ public static class CryptoPasswordHash
         return Encoding.UTF8.GetString(trimmed);
     }
 
+    /// <summary>
+    /// Computes a hash string from a utf8 password using the specified computational and memory limits.
+    /// </summary>
+    /// <param name="utf8Password">The utf8 password to hash.</param>
+    /// <param name="opsLimit">The computational cost parameter.</param>
+    /// <param name="memLimit">The memory cost parameter.</param>
+    /// <returns>The computed hash string.<br/>
+    /// The maximum length is <see cref="HashStringLength"/>(128).</returns>
     public static byte[] GetHashString(ReadOnlySpan<byte> utf8Password, OpsLimit opsLimit = OpsLimit.Interactive, MemLimit memLimit = MemLimit.Interactive)
     {// Span<byte> utf8 = stackalloc byte[HashStringLength];
         var utf8 = new byte[HashStringLength];
@@ -75,6 +109,15 @@ public static class CryptoPasswordHash
         return utf8;
     }
 
+    /// <summary>
+    /// Verifies a password against a hash string using the specified computational and memory limits.
+    /// </summary>
+    /// <param name="hashString">The hash string to verify against.<br/>
+    ///  The length must be less than or equal to <see cref="HashStringLength"/>(128).</param>
+    /// <param name="password">The password to verify.</param>
+    /// <param name="opsLimit">The computational cost parameter.</param>
+    /// <param name="memLimit">The memory cost parameter.</param>
+    /// <returns>True if the password matches the hash string; otherwise, false.</returns>
     public static bool VerifyHashString(string hashString, string password, OpsLimit opsLimit = OpsLimit.Interactive, MemLimit memLimit = MemLimit.Interactive)
     {
         var length = Encoding.UTF8.GetByteCount(hashString);
@@ -91,6 +134,15 @@ public static class CryptoPasswordHash
         return LibsodiumInterops.crypto_pwhash_str_verify(utf8hashString, utf8Password, (ulong)utf8Password.Length) == 0;
     }
 
+    /// <summary>
+    /// Verifies a utf8 password against a hash string using the specified computational and memory limits.
+    /// </summary>
+    /// <param name="utf8HashString">The utf8 hash string to verify against.<br/>
+    ///  The length must be less than or equal to <see cref="HashStringLength"/>(128).</param>
+    /// <param name="utf8Password">The utf8 password to verify.</param>
+    /// <param name="opsLimit">The computational cost parameter.</param>
+    /// <param name="memLimit">The memory cost parameter.</param>
+    /// <returns>True if the password matches the hash string; otherwise, false.</returns>
     public static bool VerifyHashString(ReadOnlySpan<byte> utf8HashString, ReadOnlySpan<byte> utf8Password, OpsLimit opsLimit = OpsLimit.Interactive, MemLimit memLimit = MemLimit.Interactive)
     {
         ReadOnlySpan<byte> b;

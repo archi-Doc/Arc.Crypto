@@ -49,57 +49,20 @@ public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<Sig
         return false;
     }
 
-    public static int MaxStringLength
-        => SeedKeyHelper.PublicKeyLengthInBase64;
+    public static int MaxStringLength => SeedKeyHelper.PublicKeyLengthInBase64;
 
     public int GetStringLength()
         => SeedKeyHelper.PublicKeyLengthInBase64;
 
-    [SkipLocalsInit]
     public bool TryFormat(Span<char> destination, out int written)
-    {// key
-        if (destination.Length < SeedKeyHelper.RawPublicKeyLengthInBase64)
-        {
-            written = 0;
-            return false;
-        }
+        => SeedKeyHelper.TryFormatPublicKey(this.AsSpan(), destination, out written);
 
-        Span<byte> span = stackalloc byte[SeedKeyHelper.PublicKeySize + SeedKeyHelper.ChecksumSize];
-        this.AsSpan().CopyTo(span);
-        SeedKeyHelper.SetChecksum(span);
-        return Base64.Url.FromByteArrayToSpan(span, destination, out written);
-    }
-
-    [SkipLocalsInit]
     public bool TryFormatWithBracket(Span<char> destination, out int written)
-    {// (s:key)
-        if (destination.Length < SeedKeyHelper.PublicKeyLengthInBase64)
-        {
-            written = 0;
-            return false;
-        }
+        => SeedKeyHelper.TryFormatPublicKeyWithBracket(this.AsSpan(), destination, out written);
 
-        var b = destination;
-        b[0] = SeedKeyHelper.PublicKeyOpenBracket;
-        b[1] = SeedKeyHelper.OrientationToIdentifier(KeyOrientation.Signature);
-        b[2] = SeedKeyHelper.PublicKeySeparator;
-        b = b.Slice(3);
-
-        Span<byte> span = stackalloc byte[SeedKeyHelper.PublicKeySize + SeedKeyHelper.ChecksumSize];
-        this.AsSpan().CopyTo(span);
-        SeedKeyHelper.SetChecksum(span);
-        Base64.Url.FromByteArrayToSpan(span, b, out written);
-        b = b.Slice(written);
-
-        b[0] = SeedKeyHelper.PublicKeyCloseBracket;
-        written += 4;
-
-        return true;
-    }
-
-    public bool VerifyData(ReadOnlySpan<byte> data, ReadOnlySpan<byte> signature)
+    public bool Verify(ReadOnlySpan<byte> data, ReadOnlySpan<byte> signature)
     {
-        if (signature.Length != SeedKeyHelper.PublicKeySize)
+        if (signature.Length != SeedKeyHelper.SignatureSize)
         {
             return false;
         }

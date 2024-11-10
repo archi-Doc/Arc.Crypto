@@ -104,8 +104,8 @@ public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IString
 
     public KeyOrientation KeyOrientation { get; } = KeyOrientation.NotSpecified;
 
-    private byte[]? signatureSecretKey;
-    private byte[]? signaturePublicKey;
+    private byte[]? signatureSecretKey; // Ed235519 64bytes
+    private byte[]? signaturePublicKey; // Ed235519 32bytes
 
     /*private byte[] SignaturePublicKey
     {

@@ -5,7 +5,9 @@ using System.Text;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Provides methods for encrypting and decrypting data using a password.
+/// Provides methods for encrypting and decrypting data using a password.<br/>
+/// The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).<br/>
+/// The algorithm uses Argon2id for key derivation and AEGIS-256 for encryption, providing a highly secure design.
 /// </summary>
 public static class PasswordEncryption
 {
