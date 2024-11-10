@@ -10,9 +10,9 @@ using System.Runtime.InteropServices;
 namespace Arc.Crypto;
 
 [StructLayout(LayoutKind.Explicit)]
-public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<SignaturePublicKey>, IStringConvertible<SignaturePublicKey>
+public readonly partial struct EncryptionPublicKey : IValidatable, IEquatable<EncryptionPublicKey>, IStringConvertible<EncryptionPublicKey>
 {// (s:key)
-    public const char Identifier = 's';
+    public const char Identifier = 'e';
 
     #region FieldAndProperty
 
@@ -36,10 +36,10 @@ public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<Sig
 
     #region TypeSpecific
 
-    public static bool TryParse(ReadOnlySpan<char> source, [MaybeNullWhen(false)] out SignaturePublicKey publicKey)
+    public static bool TryParse(ReadOnlySpan<char> source, [MaybeNullWhen(false)] out EncryptionPublicKey publicKey)
     {
         Span<byte> key32 = stackalloc byte[SeedKeyHelper.PublicKeySize];
-        if (SeedKeyHelper.TryParsePublicKey(KeyOrientation.Signature, source, key32))
+        if (SeedKeyHelper.TryParsePublicKey(KeyOrientation.Encryption, source, key32))
         {
             publicKey = new(key32);
             return true;
@@ -60,17 +60,7 @@ public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<Sig
     public bool TryFormatWithBracket(Span<char> destination, out int written)
         => SeedKeyHelper.TryFormatPublicKeyWithBracket(Identifier, this.AsSpan(), destination, out written);
 
-    public bool Verify(ReadOnlySpan<byte> data, ReadOnlySpan<byte> signature)
-    {
-        if (signature.Length != SeedKeyHelper.SignatureSize)
-        {
-            return false;
-        }
-
-        return CryptoSign.Verify(data, this.AsSpan(), signature);
-    }
-
-    public SignaturePublicKey(ReadOnlySpan<byte> b)
+    public EncryptionPublicKey(ReadOnlySpan<byte> b)
     {
         this.x0 = BitConverter.ToUInt64(b);
         b = b.Slice(sizeof(ulong));
@@ -81,7 +71,7 @@ public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<Sig
         this.x3 = BitConverter.ToUInt64(b);
     }
 
-    public SignaturePublicKey(ulong x0, ulong x1, ulong x2, ulong x3)
+    public EncryptionPublicKey(ulong x0, ulong x1, ulong x2, ulong x3)
     {
         this.x0 = x0;
         this.x1 = x1;
@@ -89,7 +79,7 @@ public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<Sig
         this.x3 = x3;
     }
 
-    public bool Equals(SignaturePublicKey other)
+    public bool Equals(EncryptionPublicKey other)
         => this.x0 == other.x0 && this.x1 == other.x1 && this.x2 == other.x2 && this.x3 == other.x3;
 
     #endregion

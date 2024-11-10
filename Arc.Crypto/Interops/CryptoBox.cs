@@ -16,6 +16,7 @@ public static class CryptoBox
     public const int NonceSize = 24; // crypto_box_curve25519xsalsa20poly1305_NONCEBYTES
     public const int MacSize = 16; // crypto_box_curve25519xsalsa20poly1305_MACBYTES
 
+    //comment
     public static void CreateKey(Span<byte> secretKey, Span<byte> publicKey)
     {
         if (secretKey.Length != SecretKeySize)

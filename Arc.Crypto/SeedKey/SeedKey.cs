@@ -74,6 +74,7 @@ public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IString
         {// !!!abc
             return false;
         }
+
         //
         span = span.Slice(SeedKeyHelper.PrivateKeyBracket.Length);
         var bracePosition = span.IndexOf(SeedKeyHelper.PrivateKeyBracket);
@@ -104,23 +105,22 @@ public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IString
 
     public KeyOrientation KeyOrientation { get; } = KeyOrientation.NotSpecified;
 
+    private byte[]? encryptionSecretKey; // X25519 32bytes
+    private byte[]? encryptionPublicKey; // X25519 32bytes
+
     private byte[]? signatureSecretKey; // Ed235519 64bytes
     private byte[]? signaturePublicKey; // Ed235519 32bytes
 
-    /*private byte[] SignaturePublicKey
+    [MemberNotNull(nameof(encryptionSecretKey), nameof(encryptionPublicKey))]
+    private void PrepareEncryptionKey()
     {
-        get
+        if (this.encryptionSecretKey is null || this.encryptionPublicKey is null)
         {
-            if (this.signaturePublicKey is null)
-            {
-                this.signatureSecretKey = new byte[CryptoSign.SecretKeySize];
-                this.signaturePublicKey = new byte[CryptoSign.PublicKeySize];
-                CryptoSign.CreateKey(this.seed, this.signatureSecretKey, this.signaturePublicKey);
-            }
-
-            return this.signaturePublicKey;
+            this.encryptionSecretKey = new byte[CryptoBox.SecretKeySize];
+            this.encryptionPublicKey = new byte[CryptoBox.PublicKeySize];
+            CryptoBox.CreateKey(this.seed, this.encryptionSecretKey, this.encryptionPublicKey);
         }
-    }*/
+    }
 
     [MemberNotNull(nameof(signatureSecretKey), nameof(signaturePublicKey))]
     private void PrepareSignatureKey()
@@ -135,10 +135,22 @@ public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IString
 
     #endregion
 
+    public EncryptionPublicKey GetEncryptionPublicKey()
+    {
+        this.PrepareEncryptionKey();
+        return new(this.encryptionPublicKey);
+    }
+
     public SignaturePublicKey GetSignaturePublicKey()
     {
         this.PrepareSignatureKey();
         return new(this.signaturePublicKey);
+    }
+
+    public void Encrypt(ReadOnlySpan<byte> message, Span<byte> cipherText, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> publicKey)
+    {//
+        this.PrepareEncryptionKey();
+        CryptoBox.Encrypt(message, cipherText, nonce, publicKey, this.encryptionSecretKey);
     }
 
     public void Sign(ReadOnlySpan<byte> message, Span<byte> signature)
@@ -153,7 +165,7 @@ public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IString
     }
 
     public bool TryWritePublicKey(Span<byte> publicKey, out int written)
-    {
+    {//
         if (publicKey.Length < CryptoSign.PublicKeySize)
         {
             written = 0;
@@ -216,7 +228,13 @@ public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IString
         written = SeedKeyHelper.SeedLengthInBase64;
         if (span.Length >= SeedKeyHelper.PublicKeyLengthInBase64)
         {
-            if (this.KeyOrientation == KeyOrientation.Signature)
+            if (this.KeyOrientation == KeyOrientation.Encryption)
+            {
+                var publicKey = this.GetEncryptionPublicKey();
+                publicKey.TryFormatWithBracket(span, out w);
+                written += w;
+            }
+            else if (this.KeyOrientation == KeyOrientation.Signature)
             {
                 var publicKey = this.GetSignaturePublicKey();
                 publicKey.TryFormatWithBracket(span, out w);

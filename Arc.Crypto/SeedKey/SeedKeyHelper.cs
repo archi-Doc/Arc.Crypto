@@ -92,6 +92,7 @@ public static class SeedKeyHelper
     public static KeyOrientation IdentifierToOrientation(char identifier)
         => identifier switch
         {
+            EncryptionPublicKey.Identifier => KeyOrientation.Encryption,
             SignaturePublicKey.Identifier => KeyOrientation.Signature,
             _ => KeyOrientation.NotSpecified,
         };
@@ -99,7 +100,7 @@ public static class SeedKeyHelper
     public static char OrientationToIdentifier(KeyOrientation keyOrientation)
         => keyOrientation switch
         {
-            // KeyOrientation.Encryption => SignaturePublicKey.Identifier,
+            KeyOrientation.Encryption => EncryptionPublicKey.Identifier,
             KeyOrientation.Signature => SignaturePublicKey.Identifier,
             _ => (char)0,
         };
@@ -142,7 +143,7 @@ public static class SeedKeyHelper
     }
 
     [SkipLocalsInit]
-    internal static bool TryFormatPublicKeyWithBracket(ReadOnlySpan<byte> publicKey, Span<char> destination, out int written)
+    internal static bool TryFormatPublicKeyWithBracket(char identifier, ReadOnlySpan<byte> publicKey, Span<char> destination, out int written)
     {// (s:key)
         if (destination.Length < PublicKeyLengthInBase64)
         {
@@ -152,7 +153,7 @@ public static class SeedKeyHelper
 
         var b = destination;
         b[0] = PublicKeyOpenBracket;
-        b[1] = OrientationToIdentifier(KeyOrientation.Signature);
+        b[1] = identifier;
         b[2] = PublicKeySeparator;
         b = b.Slice(3);
 
