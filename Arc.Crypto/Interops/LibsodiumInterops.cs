@@ -13,7 +13,7 @@ namespace Arc.Crypto;
 
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 
-internal static partial class LibsodiumInterops
+internal static unsafe partial class LibsodiumInterops
 {
     internal const string Name = "libsodium";
 
@@ -39,6 +39,26 @@ internal static partial class LibsodiumInterops
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int sodium_init();*/
+
+    #region crypto_pwhash
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_pwhash(Span<byte> @out, ulong outlen, ReadOnlySpan<byte> passwd, ulong passwdlen, ReadOnlySpan<byte> salt, ulong opslimit, UIntPtr memlimit, int alg);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_pwhash_str(ReadOnlySpan<byte> str128, ReadOnlySpan<byte> passwd, ulong passwdlen, ulong opslimit, UIntPtr memlimit);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_pwhash_str_verify(ReadOnlySpan<byte> str128, char* passwd, ulong passwdlen);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_pwhash_str_needs_rehash(ReadOnlySpan<byte> str128, ulong opslimit, UIntPtr memlimit);
+
+    #endregion
 
     #region crypto_secretbox
 

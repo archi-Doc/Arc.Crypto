@@ -1,5 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System.Drawing;
+
 namespace Arc.Crypto;
 
 /// <summary>
@@ -17,12 +19,12 @@ public static class CryptoSign
     {
         if (secretKey.Length != SecretKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(secretKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
         }
 
         if (publicKey.Length != PublicKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(publicKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), PublicKeySize);
         }
 
         LibsodiumInterops.crypto_sign_keypair(publicKey, secretKey);
@@ -32,17 +34,17 @@ public static class CryptoSign
     {
         if (seed.Length != SeedSize)
         {
-            throw new ArgumentNullException(nameof(seed));
+            CryptoHelper.ThrowSizeMismatchException(nameof(seed), SeedSize);
         }
 
         if (secretKey.Length != SecretKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(secretKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
         }
 
         if (publicKey.Length != PublicKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(publicKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), PublicKeySize);
         }
 
         LibsodiumInterops.crypto_sign_seed_keypair(publicKey, secretKey, seed);
@@ -52,12 +54,12 @@ public static class CryptoSign
     {
         if (secretKey.Length != SecretKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(secretKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
         }
 
         if (seed.Length < SeedSize)
         {
-            throw new ArgumentNullException(nameof(seed));
+            CryptoHelper.ThrowSizeMismatchException(nameof(seed), SeedSize);
         }
 
         secretKey.Slice(0, SeedSize).CopyTo(seed); // LibsodiumInterops.crypto_sign_ed25519_sk_to_seed(seed, secretKey);
@@ -67,12 +69,12 @@ public static class CryptoSign
     {
         if (secretKey.Length != SecretKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(secretKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
         }
 
         if (publicKey.Length < PublicKeySize)
         {
-            throw new ArgumentNullException(nameof(publicKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), PublicKeySize);
         }
 
         secretKey.Slice(SeedSize, PublicKeySize).CopyTo(publicKey); // LibsodiumInterops.crypto_sign_ed25519_sk_to_pk(publicKey, secretKey);
@@ -82,12 +84,12 @@ public static class CryptoSign
     {
         if (signSecretKey.Length != SecretKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(signSecretKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(signSecretKey), SecretKeySize);
         }
 
         if (boxSecretKey.Length != CryptoBox.SecretKeySize)
         {
-            throw new ArgumentNullException(nameof(boxSecretKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(boxSecretKey), SecretKeySize);
         }
 
         // LibsodiumInterops.crypto_sign_ed25519_sk_to_curve25519(boxSecretKey, signSecretKey);
@@ -100,12 +102,12 @@ public static class CryptoSign
     {
         if (signPublicKey.Length != PublicKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(signPublicKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(signPublicKey), PublicKeySize);
         }
 
         if (boxPublicKey.Length != CryptoBox.PublicKeySize)
         {
-            throw new ArgumentNullException(nameof(boxPublicKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey), CryptoBox.PublicKeySize);
         }
 
         LibsodiumInterops.crypto_sign_ed25519_pk_to_curve25519(boxPublicKey, signPublicKey);
@@ -115,12 +117,12 @@ public static class CryptoSign
     {
         if (secretKey.Length != SecretKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(secretKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
         }
 
         if (signature.Length != SignatureSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(signature));
+            CryptoHelper.ThrowSizeMismatchException(nameof(signature), SignatureSize);
         }
 
         LibsodiumInterops.crypto_sign_ed25519_detached(signature, out var signatureLength, message, (ulong)message.Length, secretKey);
@@ -130,12 +132,12 @@ public static class CryptoSign
     {
         if (publicKey.Length != PublicKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(publicKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), PublicKeySize);
         }
 
         if (signature.Length != SignatureSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(signature));
+            CryptoHelper.ThrowSizeMismatchException(nameof(signature), SignatureSize);
         }
 
         return LibsodiumInterops.crypto_sign_ed25519_verify_detached(signature, message, (ulong)message.Length, publicKey) == 0;

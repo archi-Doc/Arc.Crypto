@@ -1,5 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System.Drawing;
+
 namespace Arc.Crypto;
 
 /// <summary>
@@ -26,17 +28,17 @@ public static class CryptoSecretBox
     {
         if (nonce.Length != NonceSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(nonce));
+            CryptoHelper.ThrowSizeMismatchException(nameof(nonce), NonceSize);
         }
 
         if (key.Length != KeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(key));
+            CryptoHelper.ThrowSizeMismatchException(nameof(key), KeySize);
         }
 
         if (cipher.Length != message.Length + MacSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(cipher));
+            CryptoHelper.ThrowSizeMismatchException(nameof(cipher), message.Length + MacSize);
         }
 
         LibsodiumInterops.crypto_secretbox_easy(cipher, message, (ulong)message.Length, nonce, key);
@@ -46,22 +48,23 @@ public static class CryptoSecretBox
     {
         if (cipher.Length < MacSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(cipher));
+            throw new ArgumentOutOfRangeException($"The {nameof(cipher)} length must be at least {MacSize} bytes.");
         }
 
         if (nonce.Length != NonceSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(nonce));
+            CryptoHelper.ThrowSizeMismatchException(nameof(nonce), NonceSize);
         }
 
         if (key.Length != KeySize)
         {
+            CryptoHelper.ThrowSizeMismatchException(nameof(key), KeySize);
             throw new ArgumentOutOfRangeException(nameof(key));
         }
 
         if (message.Length != cipher.Length - MacSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(message));
+            CryptoHelper.ThrowSizeMismatchException(nameof(message), cipher.Length - MacSize);
         }
 
         LibsodiumInterops.crypto_secretbox_open_easy(message, cipher, (ulong)cipher.Length, nonce, key);

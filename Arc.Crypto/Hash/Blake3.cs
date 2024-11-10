@@ -64,7 +64,7 @@ public static class Blake3
     {
         if (output.Length != Size)
         {
-            throw new ArgumentException($"The {nameof(output)} length must be {Size} bytes.");
+            CryptoHelper.ThrowSizeMismatchException(nameof(output), Size);
         }
 
         fixed (void* ptrOut = output, ptr = input)

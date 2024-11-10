@@ -1,5 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System.Drawing;
+
 namespace Arc.Crypto;
 
 /// <summary>
@@ -18,12 +20,12 @@ public static class CryptoBox
     {
         if (secretKey.Length != SecretKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(secretKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
         }
 
         if (publicKey.Length != PublicKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(publicKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), PublicKeySize);
         }
 
         LibsodiumInterops.crypto_box_keypair(publicKey, secretKey);
@@ -33,17 +35,17 @@ public static class CryptoBox
     {
         if (seed.Length != SeedSize)
         {
-            throw new ArgumentNullException(nameof(seed));
+            CryptoHelper.ThrowSizeMismatchException(nameof(seed), SeedSize);
         }
 
         if (secretKey.Length != SecretKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(secretKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
         }
 
         if (publicKey.Length != PublicKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(publicKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), PublicKeySize);
         }
 
         LibsodiumInterops.crypto_box_seed_keypair(publicKey, secretKey, seed);
@@ -53,22 +55,22 @@ public static class CryptoBox
     {
         if (nonce.Length != NonceSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(nonce));
+            CryptoHelper.ThrowSizeMismatchException(nameof(nonce), NonceSize);
         }
 
         if (secretKey.Length != SecretKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(secretKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
         }
 
         if (publicKey.Length != PublicKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(publicKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), PublicKeySize);
         }
 
         if (cipher.Length != (message.Length + MacSize))
         {
-            throw new ArgumentOutOfRangeException(nameof(cipher));
+            CryptoHelper.ThrowSizeMismatchException(nameof(cipher), message.Length + MacSize);
         }
 
         LibsodiumInterops.crypto_box_easy(cipher, message, (ulong)message.Length, nonce, publicKey, secretKey);
@@ -78,27 +80,27 @@ public static class CryptoBox
     {
         if (cipher.Length < MacSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(cipher));
+            throw new ArgumentOutOfRangeException($"The {nameof(cipher)} length must be at least {MacSize} bytes.");
         }
 
         if (nonce.Length != NonceSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(nonce));
+            CryptoHelper.ThrowSizeMismatchException(nameof(nonce), NonceSize);
         }
 
         if (secretKey.Length != SecretKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(secretKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
         }
 
         if (publicKey.Length != PublicKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(publicKey));
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), PublicKeySize);
         }
 
         if (message.Length != (cipher.Length - MacSize))
         {
-            throw new ArgumentOutOfRangeException(nameof(message));
+            CryptoHelper.ThrowSizeMismatchException(nameof(message), cipher.Length - MacSize);
         }
 
         LibsodiumInterops.crypto_box_open_easy(message, cipher, (ulong)cipher.Length, nonce, publicKey, secretKey);

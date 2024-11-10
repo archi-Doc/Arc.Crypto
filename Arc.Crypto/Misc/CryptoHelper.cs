@@ -3,6 +3,7 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -32,6 +33,13 @@ public static class CryptoHelper
     private const long P16 = 10000000000000000;
     private const long P17 = 100000000000000000;
     private const long P18 = 1000000000000000000;
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ThrowSizeMismatchException(string argumentName, int size)
+    {
+        throw new ArgumentOutOfRangeException($"The {nameof(argumentName)} length must be {size} bytes.");
+    }
 
 #pragma warning disable SA1503 // Braces should not be omitted
 
