@@ -52,7 +52,7 @@ internal static unsafe partial class LibsodiumInterops
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int crypto_pwhash_str_verify(ReadOnlySpan<byte> str128, char* passwd, ulong passwdlen);
+    internal static partial int crypto_pwhash_str_verify(ReadOnlySpan<byte> str128, ReadOnlySpan<byte> passwd, ulong passwdlen);
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -174,5 +174,5 @@ internal static unsafe partial class LibsodiumInterops
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial void randombytes_buf(scoped Span<byte> buf, int size);
+    internal static partial void randombytes_buf(scoped Span<byte> buf, UIntPtr size);
 }

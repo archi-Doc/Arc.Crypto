@@ -41,13 +41,41 @@ public static class CryptoHelper
         throw new ArgumentOutOfRangeException($"The {nameof(argumentName)} length must be {size} bytes.");
     }
 
+    public static ReadOnlySpan<byte> TrimAtFirstNull(ReadOnlySpan<byte> utf8)
+    {
+        var firstNull = utf8.IndexOf((byte)0);
+        if (firstNull < 0)
+        {
+            return utf8;
+        }
+        else
+        {
+            return utf8.Slice(0, firstNull);
+        }
+    }
+
+    public static byte[] TrimAtFirstNull(byte[] utf8)
+    {
+        var firstNull = Array.IndexOf(utf8, (byte)0);
+        if (firstNull < 0)
+        {
+            return utf8;
+        }
+        else
+        {
+            var trimmed = new byte[firstNull];
+            Array.Copy(utf8, trimmed, firstNull);
+            return trimmed;
+        }
+    }
+
 #pragma warning disable SA1503 // Braces should not be omitted
 
-    /// <summary>
-    /// Gets the length of the string representation of the specified number.
-    /// </summary>
-    /// <param name="number">The number to get the string length for.</param>
-    /// <returns>The length of the string representation of the number.</returns>
+        /// <summary>
+        /// Gets the length of the string representation of the specified number.
+        /// </summary>
+        /// <param name="number">The number to get the string length for.</param>
+        /// <returns>The length of the string representation of the number.</returns>
     public static int GetStringLength(int number)
     {
         int add = 0;

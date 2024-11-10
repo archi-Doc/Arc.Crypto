@@ -10,6 +10,6 @@ public static class CryptoRandom
     /// <param name="buffer">The buffer to fill with random bytes.</param>
     public static void NextBytes(Span<byte> buffer)
     {
-        LibsodiumInterops.randombytes_buf(buffer, (int)buffer.Length);
+        LibsodiumInterops.randombytes_buf(buffer, (UIntPtr)buffer.Length);
     }
 }

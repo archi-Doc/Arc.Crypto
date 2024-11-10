@@ -12,6 +12,10 @@ internal class Program
     {
         Console.WriteLine("Sandbox");
 
+        Span<byte> plaintext = [0, 1, 10, 100];
+        var ciphertext = PasswordEncryption.Encrypt(plaintext, "pass");
+        PasswordEncryption.TryDecrypt(ciphertext, "pass", out var data);
+
         var secretKey = SeedKey.New(KeyOrientation.Signature);
         var st = secretKey.ToString();
         st = secretKey.UnsafeToString();

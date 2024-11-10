@@ -78,7 +78,7 @@ public class CipherBenchmark
     {
     }
 
-    /*[Benchmark]
+    [Benchmark]
     public byte[] crypto_secretbox_keygen()
     {
         var key = new byte[32];
@@ -112,7 +112,7 @@ public class CipherBenchmark
     {
         XChaCha20.Xor2(this.message, this.nonce24, this.key, this.cipherXChacha20);
         return this.cipherXChacha20;
-    }*/
+    }
 
     [Benchmark]
     public byte[] Aegis256Encrypt()
@@ -135,7 +135,7 @@ public class CipherBenchmark
         return this.cipherAegis2;
     }
 
-    /*[Benchmark]
+    [Benchmark]
     public byte[] crypto_secretbox_decrypt()
     {
         // var m = new byte[this.message.Length];
@@ -148,7 +148,7 @@ public class CipherBenchmark
     {
         this.aes.TryDecryptCbc(this.cipherAes.AsSpan(0, this.aesSize), this.nonce24.AsSpan(0, 16), this.message2, out var written, PaddingMode.PKCS7);
         return this.message2;
-    }*/
+    }
 
     [Benchmark]
     public byte[] Aegis256Decrypt()
