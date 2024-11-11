@@ -1,9 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -81,11 +79,11 @@ public static class CryptoHelper
 
 #pragma warning disable SA1503 // Braces should not be omitted
 
-        /// <summary>
-        /// Gets the length of the string representation of the specified number.
-        /// </summary>
-        /// <param name="number">The number to get the string length for.</param>
-        /// <returns>The length of the string representation of the number.</returns>
+    /// <summary>
+    /// Gets the length of the string representation of the specified number.
+    /// </summary>
+    /// <param name="number">The number to get the string length for.</param>
+    /// <returns>The length of the string representation of the number.</returns>
     public static int GetStringLength(int number)
     {
         int add = 0;

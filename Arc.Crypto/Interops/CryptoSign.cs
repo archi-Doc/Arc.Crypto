@@ -1,11 +1,10 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using System.Drawing;
-
 namespace Arc.Crypto;
 
 /// <summary>
 /// Helper class for calling crypto_sign function in Libsodium, which implements public-key signature algorithm.<br/>
+/// Seed 32 bytes, Secret key 64bytes, Public key 32bytes, Signature 64 bytes.<br/>
 /// Single-part signature: Ed25519, Multi-part signature: Ed25519ph.
 /// </summary>
 public static class CryptoSign
@@ -30,131 +29,175 @@ public static class CryptoSign
     /// </summary>
     public const int SignatureSize = 64;
 
-    public static void CreateKey(Span<byte> secretKey, Span<byte> publicKey)
+    /// <summary>
+    /// Creates a new key pair (secret and public key).
+    /// </summary>
+    /// <param name="secretKey64">A span to hold the secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
+    /// <param name="publicKey32">A span to hold the public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
+    public static void CreateKey(Span<byte> secretKey64, Span<byte> publicKey32)
     {
-        if (secretKey.Length != SecretKeySize)
+        if (secretKey64.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
         }
 
-        if (publicKey.Length != PublicKeySize)
+        if (publicKey32.Length != PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), PublicKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
-        LibsodiumInterops.crypto_sign_keypair(publicKey, secretKey);
+        LibsodiumInterops.crypto_sign_keypair(publicKey32, secretKey64);
     }
 
-    public static void CreateKey(ReadOnlySpan<byte> seed, Span<byte> secretKey, Span<byte> publicKey)
+    /// <summary>
+    /// Creates a new key pair (secret and public key) from a seed.
+    /// </summary>
+    /// <param name="seed32">The seed span. The size must be <see cref="SeedSize"/>(32 bytes).</param>
+    /// <param name="secretKey64">A span to hold the secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
+    /// <param name="publicKey32">A span to hold the public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
+    public static void CreateKey(ReadOnlySpan<byte> seed32, Span<byte> secretKey64, Span<byte> publicKey32)
     {
-        if (seed.Length != SeedSize)
+        if (seed32.Length != SeedSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(seed), SeedSize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(seed32), SeedSize);
         }
 
-        if (secretKey.Length != SecretKeySize)
+        if (secretKey64.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
         }
 
-        if (publicKey.Length != PublicKeySize)
+        if (publicKey32.Length != PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), PublicKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
-        LibsodiumInterops.crypto_sign_seed_keypair(publicKey, secretKey, seed);
+        LibsodiumInterops.crypto_sign_seed_keypair(publicKey32, secretKey64, seed32);
     }
 
-    public static void SecretKeyToSeed(ReadOnlySpan<byte> secretKey, Span<byte> seed)
+    /// <summary>
+    /// Extracts the seed from a secret key.
+    /// </summary>
+    /// <param name="secretKey64">The secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
+    /// <param name="seed32">A span to hold the seed. The size must be <see cref="SeedSize"/>(32 bytes).</param>
+    public static void SecretKeyToSeed(ReadOnlySpan<byte> secretKey64, Span<byte> seed32)
     {
-        if (secretKey.Length != SecretKeySize)
+        if (secretKey64.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
         }
 
-        if (seed.Length < SeedSize)
+        if (seed32.Length < SeedSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(seed), SeedSize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(seed32), SeedSize);
         }
 
-        secretKey.Slice(0, SeedSize).CopyTo(seed); // LibsodiumInterops.crypto_sign_ed25519_sk_to_seed(seed, secretKey);
+        secretKey64.Slice(0, SeedSize).CopyTo(seed32); // LibsodiumInterops.crypto_sign_ed25519_sk_to_seed(seed, secretKey);
     }
 
-    public static void SecretKeyToPublicKey(ReadOnlySpan<byte> secretKey, Span<byte> publicKey)
+    /// <summary>
+    /// Extracts the public key from a secret key.
+    /// </summary>
+    /// <param name="secretKey64">The secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
+    /// <param name="publicKey32">A span to hold the public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
+    public static void SecretKeyToPublicKey(ReadOnlySpan<byte> secretKey64, Span<byte> publicKey32)
     {
-        if (secretKey.Length != SecretKeySize)
+        if (secretKey64.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
         }
 
-        if (publicKey.Length < PublicKeySize)
+        if (publicKey32.Length < PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), PublicKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
-        secretKey.Slice(SeedSize, PublicKeySize).CopyTo(publicKey); // LibsodiumInterops.crypto_sign_ed25519_sk_to_pk(publicKey, secretKey);
+        secretKey64.Slice(SeedSize, PublicKeySize).CopyTo(publicKey32); // LibsodiumInterops.crypto_sign_ed25519_sk_to_pk(publicKey, secretKey);
     }
 
-    public static void SecretKey_SignToBox(ReadOnlySpan<byte> signSecretKey, Span<byte> boxSecretKey)
+    /// <summary>
+    /// Converts a signature secret key to a encryption secret key.
+    /// </summary>
+    /// <param name="signSecretKey64">The signature secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
+    /// <param name="boxSecretKey32">A span to hold the encryption secret key. The size must be <see cref="CryptoBox.SecretKeySize"/>(32 bytes).</param>
+    public static void SecretKey_SignToBox(ReadOnlySpan<byte> signSecretKey64, Span<byte> boxSecretKey32)
     {
-        if (signSecretKey.Length != SecretKeySize)
+        if (signSecretKey64.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signSecretKey), SecretKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(signSecretKey64), SecretKeySize);
         }
 
-        if (boxSecretKey.Length != CryptoBox.SecretKeySize)
+        if (boxSecretKey32.Length != CryptoBox.SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(boxSecretKey), SecretKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(boxSecretKey32), SecretKeySize);
         }
 
         // LibsodiumInterops.crypto_sign_ed25519_sk_to_curve25519(boxSecretKey, signSecretKey);
         Span<byte> hash = stackalloc byte[64];
-        LibsodiumInterops.crypto_hash(hash, signSecretKey.Slice(0, 32), 32); // Sha2Helper.Get512_Span(signSecretKey.Slice(0, 32), hash);
-        hash.Slice(0, 32).CopyTo(boxSecretKey);
+        LibsodiumInterops.crypto_hash(hash, signSecretKey64.Slice(0, 32), 32); // Sha2Helper.Get512_Span(signSecretKey.Slice(0, 32), hash);
+        hash.Slice(0, 32).CopyTo(boxSecretKey32);
     }
 
-    public static void PublicKey_SignToBox(ReadOnlySpan<byte> signPublicKey, Span<byte> boxPublicKey)
+    /// <summary>
+    /// Converts a signature public key to a encryption public key.
+    /// </summary>
+    /// <param name="signPublicKey32">The signature public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
+    /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/>(32 bytes).</param>
+    public static void PublicKey_SignToBox(ReadOnlySpan<byte> signPublicKey32, Span<byte> boxPublicKey32)
     {
-        if (signPublicKey.Length != PublicKeySize)
+        if (signPublicKey32.Length != PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signPublicKey), PublicKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(signPublicKey32), PublicKeySize);
         }
 
-        if (boxPublicKey.Length != CryptoBox.PublicKeySize)
+        if (boxPublicKey32.Length != CryptoBox.PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey), CryptoBox.PublicKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
         }
 
-        LibsodiumInterops.crypto_sign_ed25519_pk_to_curve25519(boxPublicKey, signPublicKey);
+        LibsodiumInterops.crypto_sign_ed25519_pk_to_curve25519(boxPublicKey32, signPublicKey32);
     }
 
-    public static void Sign(ReadOnlySpan<byte> message, ReadOnlySpan<byte> secretKey, Span<byte> signature)
+    /// <summary>
+    /// Signs a message using a secret key.
+    /// </summary>
+    /// <param name="message">The message to be signed.</param>
+    /// <param name="secretKey64">The secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
+    /// <param name="signature64">A span to hold the signature. The size must be <see cref="SignatureSize"/>(64 bytes).</param>
+    public static void Sign(ReadOnlySpan<byte> message, ReadOnlySpan<byte> secretKey64, Span<byte> signature64)
     {
-        if (secretKey.Length != SecretKeySize)
+        if (secretKey64.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), SecretKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
         }
 
-        if (signature.Length != SignatureSize)
+        if (signature64.Length != SignatureSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signature), SignatureSize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(signature64), SignatureSize);
         }
 
-        LibsodiumInterops.crypto_sign_ed25519_detached(signature, out var signatureLength, message, (ulong)message.Length, secretKey);
+        LibsodiumInterops.crypto_sign_ed25519_detached(signature64, out var signatureLength, message, (ulong)message.Length, secretKey64);
     }
 
-    public static bool Verify(ReadOnlySpan<byte> message, ReadOnlySpan<byte> publicKey, ReadOnlySpan<byte> signature)
+    /// <summary>
+    /// Verifies a message signature using a public key.
+    /// </summary>
+    /// <param name="message">The message span to be verified.</param>
+    /// <param name="publicKey32">The public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
+    /// <param name="signature64">The signature. The size must be <see cref="SignatureSize"/>(64 bytes).</param>
+    /// <returns>True if the signature is valid; otherwise, false.</returns>
+    public static bool Verify(ReadOnlySpan<byte> message, ReadOnlySpan<byte> publicKey32, ReadOnlySpan<byte> signature64)
     {
-        if (publicKey.Length != PublicKeySize)
+        if (publicKey32.Length != PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), PublicKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
-        if (signature.Length != SignatureSize)
+        if (signature64.Length != SignatureSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signature), SignatureSize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(signature64), SignatureSize);
         }
 
-        return LibsodiumInterops.crypto_sign_ed25519_verify_detached(signature, message, (ulong)message.Length, publicKey) == 0;
+        return LibsodiumInterops.crypto_sign_ed25519_verify_detached(signature64, message, (ulong)message.Length, publicKey32) == 0;
     }
 }
