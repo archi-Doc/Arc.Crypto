@@ -27,5 +27,10 @@ internal class Program
         st = seedKey.UnsafeToString();
         SeedKey.TryParse(st, out seedKey2);
         result = seedKey.Equals(seedKey2);
+
+        result = SeedKey.TryParse("!!!FoZqwj1Bvy5dRNMLbtgLQDzdc3wOd2Sw75qm7ifev8vsY4JL!!!(s:cDlMibfEAW29DgjeRzxx7eqOw5KayiVVQEXlcryiTrI28xnW)", out seedKey);
+        result = SeedKey.TryParse("!!!FoZqwj1Bvy5dRNMLbtgLQDzdc3wOd2Sw75qm7ifev8vsY4JL!!!(cDlMibfEAW29DgjeRzxx7eqOw5KayiVVQEXlcryiTrI28xnW)", out seedKey);
+        result = SeedKey.TryParse("!!!FoZqwj1Bvy5dRNMLbtgLQDzdc3wOd2Sw75qm7ifev8vsY4JL!!!(e:cDlMibfEAW29DgjeRzxx7eqOw5KayiVVQEXlcryiTrI28xnW)", out seedKey);
+        result = SeedKey.TryParse("!!!FoZqwj1Bvy5dRNMLbtgLQDzdc3wOd2Sw75qm7ifev8vsY4JL!!!", out seedKey);
     }
 }
