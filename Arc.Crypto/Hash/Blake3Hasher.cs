@@ -250,28 +250,28 @@ public unsafe struct Blake3Hasher : IDisposable
     /// <summary>
     /// Finalize the hash state to the output span, which can supply any number of output bytes.
     /// </summary>
-    /// <param name="hash">The output hash, which can supply any number of output bytes.</param>
+    /// <param name="hash32">The output hash, which can supply any number of output bytes.</param>
     /// <remarks>
     /// This method is idempotent. Calling it twice will give the same result. You can also add more input and finalize again.
     /// </remarks>
-    public void Finalize(scoped Span<byte> hash)
+    public void Finalize(scoped Span<byte> hash32)
     {
         if (this.hasher == null)
         {
             ThrowNullReferenceException();
         }
 
-        ref var pData = ref MemoryMarshal.GetReference(hash);
+        ref var pData = ref MemoryMarshal.GetReference(hash32);
         fixed (void* ptr = &pData)
         {
-            var size = hash.Length;
+            var size = hash32.Length;
             if (size == Blake3.Size)
             {
                 Blake3Interops.blake3_finalize(this.hasher, ptr);
             }
             else
             {
-                Blake3Interops.blake3_finalize_xof(this.hasher, ptr, (void*)(IntPtr)hash.Length);
+                Blake3Interops.blake3_finalize_xof(this.hasher, ptr, (void*)(IntPtr)hash32.Length);
             }
         }
     }

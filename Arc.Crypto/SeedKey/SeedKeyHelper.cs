@@ -40,7 +40,7 @@ public static class SeedKeyHelper
     {// key, (s:key), (key)
         if (key32.Length != PublicKeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(key32));
+            CryptoHelper.ThrowSizeMismatchException(nameof(key32), PublicKeySize);
         }
 
         source = source.Trim();
@@ -159,7 +159,7 @@ public static class SeedKeyHelper
 
         Span<byte> span = stackalloc byte[SeedKeyHelper.PublicKeySize + SeedKeyHelper.ChecksumSize];
         publicKey.CopyTo(span);
-        SeedKeyHelper.SetChecksum(span);
+        SetChecksum(span);
         Base64.Url.FromByteArrayToSpan(span, b, out written);
         b = b.Slice(written);
 

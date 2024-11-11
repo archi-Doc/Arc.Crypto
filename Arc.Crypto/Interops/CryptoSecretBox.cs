@@ -33,7 +33,7 @@ public static class CryptoSecretBox
     {
         if (key.Length != KeySize)
         {
-            throw new ArgumentOutOfRangeException(nameof(key));
+            CryptoHelper.ThrowSizeMismatchException(nameof(key), KeySize);
         }
 
         LibsodiumInterops.crypto_secretbox_keygen(key);
@@ -90,7 +90,6 @@ public static class CryptoSecretBox
         if (key32.Length != KeySize)
         {
             CryptoHelper.ThrowSizeMismatchException(nameof(key32), KeySize);
-            throw new ArgumentOutOfRangeException(nameof(key32));
         }
 
         if (message.Length != cipher.Length - MacSize)

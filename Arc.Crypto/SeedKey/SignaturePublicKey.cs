@@ -60,16 +60,6 @@ public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<Sig
     public bool TryFormatWithBracket(Span<char> destination, out int written)
         => SeedKeyHelper.TryFormatPublicKeyWithBracket(Identifier, this.AsSpan(), destination, out written);
 
-    public bool Verify(ReadOnlySpan<byte> data, ReadOnlySpan<byte> signature)
-    {
-        if (signature.Length != SeedKeyHelper.SignatureSize)
-        {
-            return false;
-        }
-
-        return CryptoSign.Verify(data, this.AsSpan(), signature);
-    }
-
     public SignaturePublicKey(ReadOnlySpan<byte> b)
     {
         this.x0 = BitConverter.ToUInt64(b);
@@ -92,6 +82,16 @@ public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<Sig
     public bool Equals(SignaturePublicKey other)
         => this.x0 == other.x0 && this.x1 == other.x1 && this.x2 == other.x2 && this.x3 == other.x3;
 
+    public bool Verify(ReadOnlySpan<byte> data, ReadOnlySpan<byte> signature)
+    {
+        if (signature.Length != SeedKeyHelper.SignatureSize)
+        {
+            return false;
+        }
+
+        return CryptoSign.Verify(data, this.AsSpan(), signature);
+    }
+
     #endregion
 
     #region Common
@@ -106,18 +106,15 @@ public readonly partial struct SignaturePublicKey : IValidatable, IEquatable<Sig
     public ReadOnlySpan<byte> AsSpan()
         => MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in this), 1));
 
-    public string ToBase64()
+    public override int GetHashCode()
+        => (int)this.x0;
+
+    public override string ToString()
     {
         Span<char> s = stackalloc char[SeedKeyHelper.PublicKeyLengthInBase64];
         this.TryFormatWithBracket(s, out _);
         return s.ToString();
     }
-
-    public override int GetHashCode()
-        => (int)this.x0;
-
-    public override string ToString()
-        => this.ToBase64();
 
     #endregion
 }

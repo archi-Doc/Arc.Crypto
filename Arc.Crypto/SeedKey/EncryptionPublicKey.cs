@@ -82,6 +82,48 @@ public readonly partial struct EncryptionPublicKey : IValidatable, IEquatable<En
     public bool Equals(EncryptionPublicKey other)
         => this.x0 == other.x0 && this.x1 == other.x1 && this.x2 == other.x2 && this.x3 == other.x3;
 
+    public bool TryEncrypt(ReadOnlySpan<byte> data, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> secretKey32, Span<byte> cipher)
+    {
+        if (nonce24.Length != CryptoBox.NonceSize)
+        {
+            return false;
+        }
+
+        if (secretKey32.Length != CryptoBox.SecretKeySize)
+        {
+            return false;
+        }
+
+        if (cipher.Length != data.Length + CryptoBox.MacSize)
+        {
+            return false;
+        }
+
+        CryptoBox.Encrypt(data, nonce24, secretKey32, this.AsSpan(), cipher);
+        return true;
+    }
+
+    public bool TryDecrypt(ReadOnlySpan<byte> cipher, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> secretKey32, Span<byte> data)
+    {
+        if (nonce24.Length != CryptoBox.NonceSize)
+        {
+            return false;
+        }
+
+        if (secretKey32.Length != CryptoBox.SecretKeySize)
+        {
+            return false;
+        }
+
+        if (data.Length != cipher.Length - CryptoBox.MacSize)
+        {
+            return false;
+        }
+
+        CryptoBox.Decrypt(cipher, nonce24, secretKey32, this.AsSpan(), data);
+        return true;
+    }
+
     #endregion
 
     #region Common
@@ -96,18 +138,15 @@ public readonly partial struct EncryptionPublicKey : IValidatable, IEquatable<En
     public ReadOnlySpan<byte> AsSpan()
         => MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in this), 1));
 
-    public string ToBase64()
+    public override int GetHashCode()
+        => (int)this.x0;
+
+    public override string ToString()
     {
         Span<char> s = stackalloc char[SeedKeyHelper.PublicKeyLengthInBase64];
         this.TryFormatWithBracket(s, out _);
         return s.ToString();
     }
-
-    public override int GetHashCode()
-        => (int)this.x0;
-
-    public override string ToString()
-        => this.ToBase64();
 
     #endregion
 }

@@ -1,8 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using System;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Arc.Crypto;
 
@@ -10,7 +9,7 @@ namespace Arc.Crypto;
 #pragma warning disable SA1204
 #pragma warning disable SA1401
 
-public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IStringConvertible<SeedKey>
+public sealed partial class SeedKey : IEquatable<SeedKey>, IStringConvertible<SeedKey>
 {// !!!Base64Url(Seed+Checksum)!!!(s:Base64Url(PublicKey+Checksum))
     public static int MaxStringLength => SeedKeyHelper.MaxPrivateKeyLengthInBase64;
 
@@ -27,7 +26,7 @@ public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IString
     public static bool TryParse(ReadOnlySpan<char> base64url, [MaybeNullWhen(false)] out SeedKey secretKey)
     {// !!!seed!!!, !!!seed!!!(key), !!!seed!!!(s:key)
         Span<byte> seed = stackalloc byte[SeedKeyHelper.SeedSize];
-        if (TryParseKey(base64url, seed, out var keyOrientation))
+        if (TryParseString(base64url, seed, out var keyOrientation))
         {
             secretKey = new(seed, keyOrientation);
             return true;
@@ -50,10 +49,21 @@ public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IString
     {
         if (seed.Length != SeedKeyHelper.SeedSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(seed));
+            CryptoHelper.ThrowSizeMismatchException(nameof(seed), SeedKeyHelper.SeedSize);
         }
 
         return new(seed, keyOrientation);
+    }
+
+    public static SeedKey New(SeedKey baseSeedKey, ReadOnlySpan<byte> additional)
+    {
+        Span<byte> hash = stackalloc byte[SeedKeyHelper.SeedSize];
+        using var hasher = Blake3Hasher.New();
+        hasher.Update(baseSeedKey.seed);
+        hasher.Update(additional);
+        hasher.Finalize(hash);
+
+        return new(hash, baseSeedKey.KeyOrientation);
     }
 
     private SeedKey()
@@ -66,7 +76,7 @@ public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IString
         this.KeyOrientation = keyOrientation;
     }
 
-    private static bool TryParseKey(ReadOnlySpan<char> base64url, Span<byte> seed, out KeyOrientation keyOrientation)
+    private static bool TryParseString(ReadOnlySpan<char> base64url, Span<byte> seed, out KeyOrientation keyOrientation)
     {// !!!seed!!!, !!!seed!!!(key), !!!seed!!!(s:key)
         keyOrientation = KeyOrientation.NotSpecified;
         ReadOnlySpan<char> span = base64url.Trim();
@@ -103,6 +113,7 @@ public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IString
     // [Key(0)]
     private readonly byte[] seed = Array.Empty<byte>();
 
+    // [Key(1)]
     public KeyOrientation KeyOrientation { get; } = KeyOrientation.NotSpecified;
 
     private byte[]? encryptionSecretKey; // X25519 32bytes
@@ -147,37 +158,40 @@ public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IString
         return new(this.signaturePublicKey);
     }
 
-    public void Encrypt(ReadOnlySpan<byte> message, Span<byte> cipherText, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> publicKey)
-    {//
+    public bool TryEncrypt(ReadOnlySpan<byte> message, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> publicKey32, Span<byte> cipher)
+    {
+        if (nonce24.Length != CryptoBox.NonceSize)
+        {
+            return false;
+        }
+
+        if (publicKey32.Length != CryptoBox.PublicKeySize)
+        {
+            return false;
+        }
+
+        if (cipher.Length != message.Length + CryptoBox.MacSize)
+        {
+            return false;
+        }
+
         this.PrepareEncryptionKey();
-        CryptoBox.Encrypt(message, cipherText, nonce, publicKey, this.encryptionSecretKey);
+        CryptoBox.Encrypt(message, nonce24, this.encryptionSecretKey, publicKey32, cipher);
+        return true;
     }
 
     public void Sign(ReadOnlySpan<byte> message, Span<byte> signature)
     {
         if (signature.Length != CryptoSign.SignatureSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(signature));
+            CryptoHelper.ThrowSizeMismatchException(nameof(signature), CryptoSign.SignatureSize);
         }
 
         this.PrepareSignatureKey();
         CryptoSign.Sign(message, this.signatureSecretKey, signature);
     }
 
-    public bool TryWritePublicKey(Span<byte> publicKey, out int written)
-    {//
-        if (publicKey.Length < CryptoSign.PublicKeySize)
-        {
-            written = 0;
-            return false;
-        }
-
-        CryptoSign.SecretKeyToPublicKey(this.seed, publicKey);
-        written = CryptoSign.PublicKeySize;
-        return true;
-    }
-
-    public bool Validate()
+    /*public bool Validate()
     {
         if (this.seed.Length != CryptoSign.SecretKeySize)
         {
@@ -185,16 +199,16 @@ public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IString
         }
 
         return true;
-    }
+    }*/
+
+    /*public override string ToString()
+        => this.ToPublicKey().ToString();*/
 
     public bool Equals(SeedKey? other)
         => other is not null && this.seed.AsSpan().SequenceEqual(other.seed.AsSpan());
 
     public override int GetHashCode()
         => (int)XxHash3.Hash64(this.seed);
-
-    /*public override string ToString()
-        => this.ToPublicKey().ToString();*/
 
     public string UnsafeToString()
     {
@@ -231,14 +245,18 @@ public sealed partial class SeedKey : IValidatable, IEquatable<SeedKey>, IString
             if (this.KeyOrientation == KeyOrientation.Encryption)
             {
                 var publicKey = this.GetEncryptionPublicKey();
-                publicKey.TryFormatWithBracket(span, out w);
-                written += w;
+                if (publicKey.TryFormatWithBracket(span, out w))
+                {
+                    written += w;
+                }
             }
             else if (this.KeyOrientation == KeyOrientation.Signature)
             {
                 var publicKey = this.GetSignaturePublicKey();
-                publicKey.TryFormatWithBracket(span, out w);
-                written += w;
+                if (publicKey.TryFormatWithBracket(span, out w))
+                {
+                    written += w;
+                }
             }
         }
 
