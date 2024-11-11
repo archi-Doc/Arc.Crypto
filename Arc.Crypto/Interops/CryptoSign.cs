@@ -10,9 +10,24 @@ namespace Arc.Crypto;
 /// </summary>
 public static class CryptoSign
 {
+    /// <summary>
+    /// The size of the seed in bytes.
+    /// </summary>
     public const int SeedSize = 32;
+
+    /// <summary>
+    /// The size of the secret key in bytes.
+    /// </summary>
     public const int SecretKeySize = 64;
+
+    /// <summary>
+    /// The size of the public key in bytes.
+    /// </summary>
     public const int PublicKeySize = 32;
+
+    /// <summary>
+    /// The size of the signature in bytes.
+    /// </summary>
     public const int SignatureSize = 64;
 
     public static void CreateKey(Span<byte> secretKey, Span<byte> publicKey)

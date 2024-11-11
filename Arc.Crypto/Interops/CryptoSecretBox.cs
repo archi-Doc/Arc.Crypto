@@ -10,8 +10,19 @@ namespace Arc.Crypto;
 /// </summary>
 public static class CryptoSecretBox
 {
+    /// <summary>
+    /// The size of the key in bytes.
+    /// </summary>
     public const int KeySize = 32;
+
+    /// <summary>
+    /// The size of the nonce in bytes.
+    /// </summary>
     public const int NonceSize = 24; // crypto_secretbox_xsalsa20poly1305_NONCEBYTES
+
+    /// <summary>
+    /// The size of the message authentication code in bytes.
+    /// </summary>
     public const int MacSize = 16; // crypto_secretbox_MACBYTES = crypto_secretbox_xsalsa20poly1305_MACBYTES
 
     public static void CreateKey(Span<byte> key)
