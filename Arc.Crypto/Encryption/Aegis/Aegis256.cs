@@ -92,7 +92,7 @@ public static class Aegis256
     /// Thrown when <paramref name="tagSize"/> is not equal to <see cref="MinTagSize"/> or <see cref="MaxTagSize"/>,
     /// or when the lengths of <paramref name="ciphertext"/>, <paramref name="plaintext"/>, <paramref name="nonce32"/>, or <paramref name="key32"/> are invalid.
     /// </exception>
-    public static bool Decrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce32, ReadOnlySpan<byte> key32, ReadOnlySpan<byte> associatedData = default, int tagSize = MinTagSize)
+    public static bool TryDecrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce32, ReadOnlySpan<byte> key32, ReadOnlySpan<byte> associatedData = default, int tagSize = MinTagSize)
     {
         if (tagSize != MinTagSize && tagSize != MaxTagSize)
         {

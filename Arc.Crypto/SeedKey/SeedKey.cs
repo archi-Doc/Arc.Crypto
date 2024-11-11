@@ -1,6 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography.X509Certificates;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Arc.Crypto;
@@ -24,11 +25,12 @@ public sealed partial class SeedKey : IEquatable<SeedKey>, IStringConvertible<Se
         => this.UnsafeTryFormat(destination, out written);
 
     public static bool TryParse(ReadOnlySpan<char> base64url, [MaybeNullWhen(false)] out SeedKey secretKey)
-    {// !!!seed!!!, !!!seed!!!(key), !!!seed!!!(s:key)
+    {// !!!seed!!!, !!!seed!!!(s:key)
         Span<byte> seed = stackalloc byte[SeedKeyHelper.SeedSize];
-        if (TryParseString(base64url, seed, out var keyOrientation))
+        if (TryParseSeed(base64url, seed, out var keyOrientation))
         {
             secretKey = new(seed, keyOrientation);
+            seed.Clear();
             return true;
         }
         else
@@ -76,36 +78,88 @@ public sealed partial class SeedKey : IEquatable<SeedKey>, IStringConvertible<Se
         this.KeyOrientation = keyOrientation;
     }
 
-    private static bool TryParseString(ReadOnlySpan<char> base64url, Span<byte> seed, out KeyOrientation keyOrientation)
-    {// !!!seed!!!, !!!seed!!!(key), !!!seed!!!(s:key)
+    private static bool TryParseSeed(ReadOnlySpan<char> base64url, Span<byte> seed, out KeyOrientation keyOrientation)
+    {// !!!seed!!!, !!!seed!!!(s:key)
         keyOrientation = KeyOrientation.NotSpecified;
-        ReadOnlySpan<char> span = base64url.Trim();
+        var span = base64url.Trim();
         if (!span.StartsWith(SeedKeyHelper.PrivateKeyBracket))
-        {// !!!abc
+        {// Invalid
             return false;
         }
 
-        //
         span = span.Slice(SeedKeyHelper.PrivateKeyBracket.Length);
-        var bracePosition = span.IndexOf(SeedKeyHelper.PrivateKeyBracket);
-        if (bracePosition <= 0)
-        {// abc!!!
+        var bracketPosition = span.IndexOf(SeedKeyHelper.PrivateKeyBracket);
+        if (bracketPosition <= 0)
+        {// Invalid
             return false;
         }
 
-        var privateBytes = Base64.Url.FromStringToByteArray(span.Slice(0, bracePosition));
-        if (privateBytes == null || privateBytes.Length != (SeedKeyHelper.PrivateKeySize + SeedKeyHelper.ChecksumSize))
+        var seedSpan = Base64.Url.FromStringToByteArray(span.Slice(0, bracketPosition)).AsSpan();
+        if (seedSpan.Length != (SeedKeyHelper.SeedSize + SeedKeyHelper.ChecksumSize))
         {
+            seedSpan.Clear();
             return false;
         }
 
-        if (!SeedKeyHelper.ValidateChecksum(privateBytes))
+        if (!SeedKeyHelper.ValidateChecksum(seedSpan))
         {
+            seedSpan.Clear();
             return false;
         }
 
-        privateBytes.AsSpan().Slice(0, privateBytes.Length - SeedKeyHelper.ChecksumSize).CopyTo(seed);
-        return true;
+        seedSpan.Slice(0, SeedKeyHelper.SeedSize).CopyTo(seed);
+        seedSpan.Clear();
+        span = span.Slice(bracketPosition + SeedKeyHelper.PrivateKeyBracket.Length);
+        if (span.Length == 0 || span[0] != SeedKeyHelper.PublicKeyOpenBracket)
+        {
+            return true;
+        }
+
+        // (i:key)
+        if (span.Length < 4)
+        {
+            seed.Clear();
+            return false;
+        }
+
+        keyOrientation = SeedKeyHelper.IdentifierToOrientation(span[1]);
+        if (keyOrientation == KeyOrientation.NotSpecified)
+        {// (key)
+            seed.Clear();
+            return false;
+        }
+
+        Span<byte> keyAndChecksum = stackalloc byte[SeedKeyHelper.PublicKeyAndChecksumSize];
+        if (!SeedKeyHelper.TryParsePublicKey(keyOrientation, span, keyAndChecksum))
+        {
+            seed.Clear();
+            return false;
+        }
+
+        var key = keyAndChecksum.Slice(0, SeedKeyHelper.PublicKeySize);
+        if (keyOrientation == KeyOrientation.Encryption)
+        {
+            Span<byte> encryptionSecretKey = stackalloc byte[CryptoBox.SecretKeySize];
+            Span<byte> encryptionPublicKey = stackalloc byte[CryptoBox.PublicKeySize];
+            CryptoBox.CreateKey(seed, encryptionSecretKey, encryptionPublicKey);
+            if (key.SequenceEqual(encryptionPublicKey))
+            {
+                return true;
+            }
+        }
+        else if (keyOrientation == KeyOrientation.Signature)
+        {
+            Span<byte> signatureSecretKey = stackalloc byte[CryptoSign.SecretKeySize];
+            Span<byte> signaturePublicKey = stackalloc byte[CryptoSign.PublicKeySize];
+            CryptoSign.CreateKey(seed, signatureSecretKey, signaturePublicKey);
+            if (key.SequenceEqual(signaturePublicKey))
+            {
+                return true;
+            }
+        }
+
+        seed.Clear();
+        return false;
     }
 
     #region FieldAndProperty
@@ -178,6 +232,26 @@ public sealed partial class SeedKey : IEquatable<SeedKey>, IStringConvertible<Se
         this.PrepareEncryptionKey();
         CryptoBox.Encrypt(message, nonce24, this.encryptionSecretKey, publicKey32, cipher);
         return true;
+    }
+
+    public bool TryDecrypt(ReadOnlySpan<byte> cipher, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> publicKey32, Span<byte> data)
+    {
+        if (nonce24.Length != CryptoBox.NonceSize)
+        {
+            return false;
+        }
+
+        if (publicKey32.Length != CryptoBox.PublicKeySize)
+        {
+            return false;
+        }
+
+        if (data.Length != cipher.Length - CryptoBox.MacSize)
+        {
+            return false;
+        }
+
+        return CryptoBox.TryDecrypt(cipher, nonce24, this.encryptionSecretKey, publicKey32, data);
     }
 
     public void Sign(ReadOnlySpan<byte> message, Span<byte> signature)

@@ -121,7 +121,8 @@ public static class CryptoBox
     /// <param name="secretKey32">The secret key used for encryption. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
     /// <param name="publicKey32">The public key used for encryption. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
     /// <param name="message">The buffer to hold the decrypted message. The size must be cipher length - <see cref="MacSize"/>(16 bytes).</param>
-    public static void Decrypt(ReadOnlySpan<byte> cipher, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> message)
+    /// <returns><c>true</c> if decryption is successful; otherwise, <c>false</c>.</returns>
+    public static bool TryDecrypt(ReadOnlySpan<byte> cipher, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> message)
     {
         if (cipher.Length < MacSize)
         {
@@ -148,6 +149,6 @@ public static class CryptoBox
             CryptoHelper.ThrowSizeMismatchException(nameof(message), cipher.Length - MacSize);
         }
 
-        LibsodiumInterops.crypto_box_open_easy(message, cipher, (ulong)cipher.Length, nonce24, publicKey32, secretKey32);
+        return LibsodiumInterops.crypto_box_open_easy(message, cipher, (ulong)cipher.Length, nonce24, publicKey32, secretKey32) == 0;
     }
 }

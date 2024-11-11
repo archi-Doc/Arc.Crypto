@@ -28,7 +28,7 @@ public class AegisTest
             var cipher2 = new byte[message.Length + Aegis256.MaxTagSize];
 
             Aegis256.Encrypt(cipher, message, nonce, key, default, 32);
-            Aegis256.Decrypt(message2, cipher, nonce, key, default, 32);
+            Aegis256.TryDecrypt(message2, cipher, nonce, key, default, 32);
             message.SequenceEqual(message2).IsTrue();
 
             Aegis256Helper.Encrypt(message, nonce, key, cipher2, out _);
@@ -52,7 +52,7 @@ public class AegisTest
             var cipher2 = new byte[message.Length + Aegis128L.MaxTagSize];
 
             Aegis128L.Encrypt(cipher, message, nonce, key, default, 32);
-            Aegis128L.Decrypt(message2, cipher, nonce, key, default, 32);
+            Aegis128L.TryDecrypt(message2, cipher, nonce, key, default, 32);
             message.SequenceEqual(message2).IsTrue();
         }
     }

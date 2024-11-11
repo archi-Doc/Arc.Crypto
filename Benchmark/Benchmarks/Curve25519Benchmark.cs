@@ -99,7 +99,7 @@ public class Curve25519Benchmark
     public byte[] CryptoBox_EncryptoDecrypt()
     {
         CryptoBox.Encrypt(this.message, this.nonce24, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey2, this.cipher);
-        CryptoBox.Decrypt(this.cipher, this.nonce24, this.cryptoBoxSecretKey2, this.cryptoBoxPublicKey, this.message2);
+        var result = CryptoBox.TryDecrypt(this.cipher, this.nonce24, this.cryptoBoxSecretKey2, this.cryptoBoxPublicKey, this.message2);
         return this.message2;
     }
 

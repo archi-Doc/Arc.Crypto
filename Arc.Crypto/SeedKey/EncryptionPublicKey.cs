@@ -38,10 +38,10 @@ public readonly partial struct EncryptionPublicKey : IValidatable, IEquatable<En
 
     public static bool TryParse(ReadOnlySpan<char> source, [MaybeNullWhen(false)] out EncryptionPublicKey publicKey)
     {
-        Span<byte> key32 = stackalloc byte[SeedKeyHelper.PublicKeySize];
-        if (SeedKeyHelper.TryParsePublicKey(KeyOrientation.Encryption, source, key32))
+        Span<byte> keyAndChecksum = stackalloc byte[SeedKeyHelper.PublicKeyAndChecksumSize];
+        if (SeedKeyHelper.TryParsePublicKey(KeyOrientation.Encryption, source, keyAndChecksum))
         {
-            publicKey = new(key32);
+            publicKey = new(keyAndChecksum);
             return true;
         }
 
@@ -120,8 +120,7 @@ public readonly partial struct EncryptionPublicKey : IValidatable, IEquatable<En
             return false;
         }
 
-        CryptoBox.Decrypt(cipher, nonce24, secretKey32, this.AsSpan(), data);
-        return true;
+        return CryptoBox.TryDecrypt(cipher, nonce24, secretKey32, this.AsSpan(), data);
     }
 
     #endregion

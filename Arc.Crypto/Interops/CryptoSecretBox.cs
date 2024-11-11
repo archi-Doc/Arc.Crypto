@@ -75,7 +75,8 @@ public static class CryptoSecretBox
     /// <param name="key32">The key to use for decryption. The size must be <see cref="KeySize"/>(32 bytes).</param>
     /// <param name="message">A span to hold the decrypted message. Must be cipher length - <see cref="MacSize"/>(16 bytes).</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown if the cipher, nonce, key, or message span lengths are incorrect.</exception>
-    public static void Decrypt(ReadOnlySpan<byte> cipher, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> key32, Span<byte> message)
+    /// <returns><c>true</c> if decryption is successful; otherwise, <c>false</c>.</returns>
+    public static bool TryDecrypt(ReadOnlySpan<byte> cipher, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> key32, Span<byte> message)
     {
         if (cipher.Length < MacSize)
         {
@@ -97,6 +98,6 @@ public static class CryptoSecretBox
             CryptoHelper.ThrowSizeMismatchException(nameof(message), cipher.Length - MacSize);
         }
 
-        LibsodiumInterops.crypto_secretbox_open_easy(message, cipher, (ulong)cipher.Length, nonce24, key32);
+        return LibsodiumInterops.crypto_secretbox_open_easy(message, cipher, (ulong)cipher.Length, nonce24, key32) == 0;
     }
 }

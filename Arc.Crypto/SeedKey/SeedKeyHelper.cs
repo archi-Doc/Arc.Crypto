@@ -2,7 +2,6 @@
 
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 
 namespace Arc.Crypto;
 
@@ -13,9 +12,10 @@ public static class SeedKeyHelper
 {
     public const int SeedSize = 32;
     public const int PublicKeySize = 32;
-    public const int PrivateKeySize = 32;
     public const int SignatureSize = CryptoSign.SignatureSize;
     public const int ChecksumSize = 4;
+    public const int SeedAndChecksumSize = SeedSize + ChecksumSize;
+    public const int PublicKeyAndChecksumSize = PublicKeySize + ChecksumSize;
 
     public const char PublicKeyOpenBracket = '(';
     public const char PublicKeySeparator = ':';
@@ -23,10 +23,10 @@ public static class SeedKeyHelper
 
     public static ReadOnlySpan<char> PrivateKeyBracket => "!!!";
 
-    public static readonly int SeedLengthInBase64; // !!!seed!!!
-    public static readonly int RawPublicKeyLengthInBase64; // key
-    public static readonly int PublicKeyLengthInBase64; // (s:key)
-    public static readonly int MaxPrivateKeyLengthInBase64; // !!!seed!!!(s:key)
+    public static readonly int SeedLengthInBase64; // !!!seed and checksum!!!
+    public static readonly int RawPublicKeyLengthInBase64; // key and checksum
+    public static readonly int PublicKeyLengthInBase64; // (s:key and checksum)
+    public static readonly int MaxPrivateKeyLengthInBase64; // !!!seed and checksum!!!(s:key and checksum)
 
     static SeedKeyHelper()
     {
@@ -36,11 +36,11 @@ public static class SeedKeyHelper
         MaxPrivateKeyLengthInBase64 = SeedLengthInBase64 + PublicKeyLengthInBase64; // !!!seed!!!(s:key)
     }
 
-    public static bool TryParsePublicKey(KeyOrientation orientation, ReadOnlySpan<char> source, Span<byte> key32)
+    public static bool TryParsePublicKey(KeyOrientation orientation, ReadOnlySpan<char> source, Span<byte> keyAndChecksum)
     {// key, (s:key), (key)
-        if (key32.Length != PublicKeySize)
+        if (keyAndChecksum.Length != PublicKeyAndChecksumSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(key32), PublicKeySize);
+            CryptoHelper.ThrowSizeMismatchException(nameof(keyAndChecksum), PublicKeySize);
         }
 
         source = source.Trim();
@@ -56,7 +56,8 @@ public static class SeedKeyHelper
                 return false;
             }
 
-            return Base64.Url.FromStringToSpan(source, key32, out _);
+            return Base64.Url.FromStringToSpan(source, keyAndChecksum, out _) &&
+                ValidateChecksum(keyAndChecksum);
         }
 
         if (source[^1] != PublicKeyCloseBracket)
@@ -76,7 +77,8 @@ public static class SeedKeyHelper
                 return false;
             }
 
-            return Base64.Url.FromStringToSpan(source.Slice(3, RawPublicKeyLengthInBase64), key32, out _);
+            return Base64.Url.FromStringToSpan(source.Slice(3, RawPublicKeyLengthInBase64), keyAndChecksum, out _) &&
+                ValidateChecksum(keyAndChecksum);
         }
         else
         {// (key)
@@ -85,7 +87,8 @@ public static class SeedKeyHelper
                 return false;
             }
 
-            return Base64.Url.FromStringToSpan(source.Slice(1, RawPublicKeyLengthInBase64), key32, out _);
+            return Base64.Url.FromStringToSpan(source.Slice(1, RawPublicKeyLengthInBase64), keyAndChecksum, out _) &&
+                ValidateChecksum(keyAndChecksum);
         }
     }
 

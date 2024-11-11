@@ -16,10 +16,16 @@ internal class Program
         var ciphertext = PasswordEncryption.Encrypt(plaintext, "pass");
         PasswordEncryption.TryDecrypt(ciphertext, "pass", out var data);
 
-        var secretKey = SeedKey.New(KeyOrientation.Signature);
-        var st = secretKey.ToString();
-        st = secretKey.UnsafeToString();
-        SeedKey.TryParse(st, out var secretKey2);
-        var result = secretKey.Equals(secretKey2);
+        var seedKey = SeedKey.New(KeyOrientation.Signature);
+        var st = seedKey.ToString();
+        st = seedKey.UnsafeToString();
+        SeedKey.TryParse(st, out var seedKey2);
+        var result = seedKey.Equals(seedKey2);
+
+        seedKey = SeedKey.New(KeyOrientation.Encryption);
+        st = seedKey.ToString();
+        st = seedKey.UnsafeToString();
+        SeedKey.TryParse(st, out seedKey2);
+        result = seedKey.Equals(seedKey2);
     }
 }

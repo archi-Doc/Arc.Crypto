@@ -79,7 +79,7 @@ public static class PasswordEncryption
         CryptoPasswordHash.DeriveKey(password, encrypted.Slice(0, CryptoPasswordHash.SaltSize), key);
 
         var plaintext = new byte[encrypted.Length - SaltSize - TagSize];
-        if (Aegis256.Decrypt(plaintext, encrypted.Slice(SaltSize), encrypted.Slice(0, Aegis256.NonceSize), key))
+        if (Aegis256.TryDecrypt(plaintext, encrypted.Slice(SaltSize), encrypted.Slice(0, Aegis256.NonceSize), key))
         {
             data = plaintext;
             return true;

@@ -139,7 +139,7 @@ public class CipherBenchmark
     public byte[] crypto_secretbox_decrypt()
     {
         // var m = new byte[this.message.Length];
-        CryptoSecretBox.Decrypt(this.cipher, this.nonce24, this.key, this.message2);
+        var result = CryptoSecretBox.TryDecrypt(this.cipher, this.nonce24, this.key, this.message2);
         return this.message2;
     }
 
@@ -153,7 +153,7 @@ public class CipherBenchmark
     [Benchmark]
     public byte[] Aegis256Decrypt()
     {
-        Aegis256.Decrypt(this.message2, this.cipherAegis, this.nonce32, this.key, default, 32);
+        Aegis256.TryDecrypt(this.message2, this.cipherAegis, this.nonce32, this.key, default, 32);
         return this.message2;
     }
 
