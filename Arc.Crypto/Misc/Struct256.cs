@@ -26,6 +26,11 @@ public readonly partial struct Struct256 : IEquatable<Struct256>, IComparable<St
     #region FieldAndProperty
 
     [FieldOffset(0)]
+    public readonly UInt128 UInt128Lower;
+    [FieldOffset(16)]
+    public readonly UInt128 UInt128Upper;
+
+    [FieldOffset(0)]
     public readonly long Long0;
     [FieldOffset(8)]
     public readonly long Long1;

@@ -1,6 +1,5 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -32,6 +31,51 @@ public static class CryptoHelper
     private const long P16 = 10000000000000000;
     private const long P17 = 100000000000000000;
     private const long P18 = 1000000000000000000;
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ThrowSizeMismatchException(string argumentName, int size)
+    {
+        throw new ArgumentOutOfRangeException($"The {nameof(argumentName)} length must be {size} bytes.");
+    }
+
+    /// <summary>
+    /// Trims the utf8 string at the first occurrence of a null byte.
+    /// </summary>
+    /// <param name="utf8">The input byte span.</param>
+    /// <returns>A span of bytes trimmed at the first null byte.</returns>
+    public static ReadOnlySpan<byte> TrimAtFirstNull(ReadOnlySpan<byte> utf8)
+    {
+        var firstNull = utf8.IndexOf((byte)0);
+        if (firstNull < 0)
+        {
+            return utf8;
+        }
+        else
+        {
+            return utf8.Slice(0, firstNull);
+        }
+    }
+
+    /// <summary>
+    /// Trims the utf8 string at the first occurrence of a null byte.
+    /// </summary>
+    /// <param name="utf8">The input byte array.</param>
+    /// <returns>A byte array trimmed at the first null byte.</returns>
+    public static byte[] TrimAtFirstNull(byte[] utf8)
+    {
+        var firstNull = Array.IndexOf(utf8, (byte)0);
+        if (firstNull < 0)
+        {
+            return utf8;
+        }
+        else
+        {
+            var trimmed = new byte[firstNull];
+            Array.Copy(utf8, trimmed, firstNull);
+            return trimmed;
+        }
+    }
 
 #pragma warning disable SA1503 // Braces should not be omitted
 

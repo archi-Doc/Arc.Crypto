@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using Arc.Crypto;
-using Benchmark.Benchmarks;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 
@@ -23,28 +22,32 @@ public class Program
         Console.WriteLine("Arc.Crypto Benchmark.");
 
         // RandomVaultBenchmark.Test1();
-        DebugRun<StandardHashBenchmark>();
+        DebugRun<CipherBenchmark>();
 
         // var summary = BenchmarkRunner.Run<SpeedBenchmark>();
         var switcher = new BenchmarkSwitcher(new[]
         {
+            typeof(PasswordHashBenchmark),
+            typeof(CipherBenchmark),
+            typeof(Curve25519Benchmark),
+            typeof(SerializeHashBenchmark),
             typeof(Avx2Benchmark),
             typeof(DsaBenchmark),
             typeof(GetStringLengthBanchmark),
             typeof(StringHashBenchmark),
             typeof(HashtableBenchmark),
             typeof(AesBenchmark),
-            typeof(Benchmarks.StandardHashBenchmark),
+            typeof(StandardHashBenchmark),
             typeof(Base32ImplBenchmark),
             typeof(Base64Benchmark),
             typeof(HexStringBenchmark),
             typeof(RandomVaultBenchmark),
             typeof(CryptoRandomBenchmark),
             typeof(PseudoRandomBenchmark),
-            typeof(Benchmarks.HashBenchmark),
-            typeof(Benchmarks.StringBenchmark),
-            typeof(Benchmarks.Sha256Benchmark),
-            typeof(Benchmarks.SpeedBenchmark),
+            typeof(HashBenchmark),
+            typeof(StringBenchmark),
+            typeof(Sha256Benchmark),
+            typeof(SpeedBenchmark),
         });
         switcher.Run(args);
     }

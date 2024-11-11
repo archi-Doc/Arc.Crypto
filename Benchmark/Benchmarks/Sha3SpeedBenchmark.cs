@@ -6,7 +6,7 @@ using BenchmarkDotNet.Attributes;
 
 #pragma warning disable SA1310 // Field names should not contain underscore
 
-namespace Benchmark.Benchmarks;
+namespace Benchmark;
 
 [Config(typeof(BenchmarkConfig))]
 public class Sha3SpeedBenchmark

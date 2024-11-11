@@ -7,7 +7,7 @@ using BenchmarkDotNet.Attributes;
 
 #pragma warning disable SA1310 // Field names should not contain underscore
 
-namespace Benchmark.Benchmarks;
+namespace Benchmark;
 
 [Config(typeof(BenchmarkConfig))]
 public class StandardHashBenchmark
@@ -18,14 +18,17 @@ public class StandardHashBenchmark
     private readonly Sha3_256 sha3_256 = new();
     private readonly Sha3_384 sha3_384 = new();
     private readonly Sha3_512 sha3_512 = new();
+    private readonly byte[] hash64;
 
     public StandardHashBenchmark()
     {
         this.data = new byte[N];
         new Random(42).NextBytes(this.data);
+        this.hash64 = new byte[64];
     }
 
-    [Params(100, 1_000)]
+    [Params(64, 200, 1_000)]
+    // [Params(100)]
     public int Length { get; set; }
 
     /*[Benchmark]
@@ -44,31 +47,33 @@ public class StandardHashBenchmark
     public byte[] Sha256() => this.sha256.ComputeHash(this.data, 0, this.Length);*/
 
     [Benchmark]
-    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Sha256Helper() => Sha2Helper.Get256_UInt64(this.data.AsSpan(0, this.Length));
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Sha2_256Helper() => Sha2Helper.Get256_UInt64(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
-    public byte[] Sha3_256() => this.sha3_256.GetHash(this.data.AsSpan(0, this.Length));
+    public byte[] Sha2_512Helper()
+    {
+        Sha2Helper.Get512_Span(this.data.AsSpan(0, this.Length), this.hash64);
+        return this.hash64;
+    }
+
+    [Benchmark]
+    public byte[] Sha2_512Libsodium()
+    {
+        Sha2Helper.Get512_Libsodium(this.data.AsSpan(0, this.Length), this.hash64);
+        return this.hash64;
+    }
 
     [Benchmark]
     public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Sha3Helper_256() => Sha3Helper.Get256_UInt64(this.data.AsSpan(0, this.Length));
 
-    // [Benchmark]
-    public byte[] Sha3_384() => this.sha3_384.GetHash(this.data.AsSpan(0, this.Length));
-
-    // [Benchmark]
-    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) Sha3Helper_384() => Sha3Helper.Get384_UInt64(this.data.AsSpan(0, this.Length));
-
     [Benchmark]
-    public byte[] Sha3_512() => this.sha3_512.GetHash(this.data.AsSpan(0, this.Length));
-
-    [Benchmark]
-    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Sha3Helper_5126() => Sha3Helper.Get512_UInt64(this.data.AsSpan(0, this.Length));
+    public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Sha3Helper_512() => Sha3Helper.Get512_UInt64(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
     public byte Blake2B_256()
     {
         Span<byte> hash = stackalloc byte[32];
-        Blake2BHelper.Get256_Span(this.data.AsSpan(0, this.Length), hash);
+        Blake2B.Get256_Span(this.data.AsSpan(0, this.Length), hash);
         return hash[0];
     }
 
@@ -76,22 +81,27 @@ public class StandardHashBenchmark
     public byte Blake2B_512()
     {
         Span<byte> hash = stackalloc byte[64];
-        Blake2BHelper.Get512_Span(this.data.AsSpan(0, this.Length), hash);
+        Blake2B.Get512_Span(this.data.AsSpan(0, this.Length), hash);
         return hash[0];
     }
 
-    /*[Benchmark]
-    public Blake3.Hash Blake3_256()
-    {
-        var hash = Blake3.Hasher.Hash(this.data.AsSpan(0, this.Length));
-        return hash;
-    }*/
-
     [Benchmark]
-    public byte Blake3B_256()
+    public byte Blake3_256()
     {
         Span<byte> hash = stackalloc byte[32];
-        Blake3Helper.Get256_Span(this.data.AsSpan(0, this.Length), hash);
+        Blake3.Get256_Span(this.data.AsSpan(0, this.Length), hash);
+        return hash[0];
+    }
+
+    [Benchmark]
+    public byte Blake3Hasher_256()
+    {
+        using var hasher = Blake3Hasher.New();
+        var half = this.Length / 2;
+        hasher.Update(this.data.AsSpan(0, half));
+        hasher.Update(this.data.AsSpan(half, this.Length - half));
+        Span<byte> hash = stackalloc byte[32];
+        hasher.Finalize(hash);
         return hash[0];
     }
 }

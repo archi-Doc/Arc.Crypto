@@ -6,7 +6,7 @@ using BenchmarkDotNet.Attributes;
 
 #pragma warning disable SA1310 // Field names should not contain underscore
 
-namespace Benchmark.Benchmarks;
+namespace Benchmark;
 
 [Config(typeof(BenchmarkConfig))]
 public class SpeedBenchmark
@@ -78,7 +78,7 @@ public class SpeedBenchmark
     [Benchmark]
     public byte[] Blake2B_256()
     {
-        return Blake2BHelper.Get256_ByteArray(this.data.AsSpan(0, this.data.Length));
+        return Blake2B.Get256_ByteArray(this.data.AsSpan(0, this.data.Length));
     }
 
     /*[Benchmark]
