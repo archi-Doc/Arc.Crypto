@@ -186,11 +186,6 @@ public unsafe struct Blake3Hasher : IDisposable
     /// </remarks>
     public void UpdateWithJoin(scoped ReadOnlySpan<byte> data)
     {
-        if (data == null)
-        {
-            throw new ArgumentNullException(nameof(data));
-        }
-
         if (this.hasher == null)
         {
             ThrowNullReferenceException();
