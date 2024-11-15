@@ -31,7 +31,7 @@ public class UInt32Hashtable<TValue>
         }
     }
 
-    private readonly object cs = new object();
+    private readonly Lock lockObject = new();
     private Item?[] table;
     private int count;
 
@@ -49,7 +49,7 @@ public class UInt32Hashtable<TValue>
     /// <returns>An array of values.</returns>
     public TValue[] ToArray()
     {
-        lock (this.cs)
+        using (this.lockObject.EnterScope())
         {
             var t = this.table;
             var values = new TValue[this.count];
@@ -137,7 +137,7 @@ public class UInt32Hashtable<TValue>
     /// </summary>
     public void Clear()
     {
-        lock (this.cs)
+        using (this.lockObject.EnterScope())
         {
             for (var n = 0; n < this.table.Length; n++)
             {
@@ -148,7 +148,7 @@ public class UInt32Hashtable<TValue>
 
     private bool AddInternal(uint key, bool updateValue, Func<uint, TValue> valueFactory, out TValue resultingValue)
     {
-        lock (this.cs)
+        using (this.lockObject.EnterScope())
         {
             if ((this.count * 2) > this.table.Length)
             {// Rebuild table

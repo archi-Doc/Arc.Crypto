@@ -185,7 +185,7 @@ public class RandomVault : RandomUInt64
         }
 
 LockAndGet:
-        lock (this.syncObject)
+        using (this.lockObject.EnterScope())
         {
             return this.nextUInt64Func();
         }
@@ -212,7 +212,7 @@ LockAndGet:
             {
                 while (true)
                 {
-                    lock (this.syncObject)
+                    using (this.lockObject.EnterScope())
                     {
                         // Fixed:  this.lowerBound, this.upperBound
                         // Not fixed: this.position
@@ -266,7 +266,7 @@ LockAndGet:
 
     private NextUInt64Delegate nextUInt64Func;
     private NextBytesDelegate nextBytesFunc;
-    private object syncObject = new();
+    private Lock lockObject = new();
     private ulong positionMask;
     private ulong halfMask;
     private uint halfSize;
