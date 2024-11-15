@@ -67,7 +67,7 @@ public class Sha256Benchmark
     [Benchmark]
     public byte[] Sha256Incremental3()
     {
-        var incrementalHash = Sha2Helper.IncrementalSha256Pool.Get();
+        var incrementalHash = Sha2Helper.IncrementalSha256Pool.Rent();
         try
         {
             incrementalHash.AppendData(this.data.AsSpan(0, this.Length));
