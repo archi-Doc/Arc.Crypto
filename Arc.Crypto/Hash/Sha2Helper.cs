@@ -36,7 +36,7 @@ public static class Sha2Helper
     public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[32];
-        var hashAlgorithm = Sha256.Get();
+        var hashAlgorithm = Sha256.Rent();
         hashAlgorithm.TryComputeHash(input, output, out _);
         Sha256.Return(hashAlgorithm);
 
@@ -51,7 +51,7 @@ public static class Sha2Helper
     /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[32]).</param>
     public static void Get256_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
-        var hashAlgorithm = Sha256.Get();
+        var hashAlgorithm = Sha256.Rent();
         hashAlgorithm.TryComputeHash(input, output, out _);
         Sha256.Return(hashAlgorithm);
     }
@@ -66,7 +66,7 @@ public static class Sha2Helper
     {
         Span<ulong> state = stackalloc ulong[4];
 
-        var hashAlgorithm = Sha256.Get();
+        var hashAlgorithm = Sha256.Rent();
         hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _);
         Sha256.Return(hashAlgorithm);
         // hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _); // NOT thread-safe
@@ -84,7 +84,7 @@ public static class Sha2Helper
     public static byte[] Get384_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[48];
-        var hashAlgorithm = Sha384.Get();
+        var hashAlgorithm = Sha384.Rent();
         hashAlgorithm.TryComputeHash(input, output, out _);
         Sha384.Return(hashAlgorithm);
 
@@ -99,7 +99,7 @@ public static class Sha2Helper
     /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[48]).</param>
     public static void Get384_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
-        var hashAlgorithm = Sha384.Get();
+        var hashAlgorithm = Sha384.Rent();
         hashAlgorithm.TryComputeHash(input, output, out _);
         Sha384.Return(hashAlgorithm);
     }
@@ -114,7 +114,7 @@ public static class Sha2Helper
     {
         Span<ulong> state = stackalloc ulong[6];
 
-        var hashAlgorithm = Sha384.Get();
+        var hashAlgorithm = Sha384.Rent();
         hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _);
         Sha384.Return(hashAlgorithm);
 
@@ -130,7 +130,7 @@ public static class Sha2Helper
     public static byte[] Get512_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[64];
-        var hashAlgorithm = Sha512.Get();
+        var hashAlgorithm = Sha512.Rent();
         hashAlgorithm.TryComputeHash(input, output, out _);
         Sha512.Return(hashAlgorithm);
 
@@ -145,7 +145,7 @@ public static class Sha2Helper
     /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[64]).</param>
     public static void Get512_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
-        var hashAlgorithm = Sha512.Get();
+        var hashAlgorithm = Sha512.Rent();
         hashAlgorithm.TryComputeHash(input, output, out _);
         Sha512.Return(hashAlgorithm);
     }
@@ -160,7 +160,7 @@ public static class Sha2Helper
     {
         Span<ulong> state = stackalloc ulong[8];
 
-        var hashAlgorithm = Sha512.Get();
+        var hashAlgorithm = Sha512.Rent();
         hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _);
         Sha512.Return(hashAlgorithm);
 

@@ -37,7 +37,7 @@ internal static class Ed25519Operations
         Span<byte> hram = stackalloc byte[64];
         GroupElementP3 R;
 
-        var incrementalHash = Sha2Helper.IncrementalSha512Pool.Get();
+        var incrementalHash = Sha2Helper.IncrementalSha512Pool.Rent();
         try
         {
             incrementalHash.AppendData(expandedPrivateKey.Slice(0, 32));
@@ -88,7 +88,7 @@ internal static class Ed25519Operations
             return false;
         }
 
-        var incrementalHash = Sha2Helper.IncrementalSha512Pool.Get();
+        var incrementalHash = Sha2Helper.IncrementalSha512Pool.Rent();
         try
         {
             incrementalHash.AppendData(signature.Slice(0, 32));
