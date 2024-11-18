@@ -1,5 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace Arc.Crypto;
@@ -28,16 +29,6 @@ public static class PasswordEncryption
     }
 
     /// <summary>
-    /// Encrypts the specified data using the provided password.
-    /// </summary>
-    /// <param name="plaintext">The plaintext to encrypt.</param>
-    /// <param name="password">The password to use for encryption.</param>
-    /// <param name="ciphertext">The encrypted data.<br/>
-    ///  The size will be the plaintext size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
-    public static void Encrypt(ReadOnlySpan<byte> plaintext, string password, Span<byte> ciphertext)
-        => Encrypt(plaintext, Encoding.UTF8.GetBytes(password), ciphertext);
-
-    /// <summary>
     /// Encrypts the specified data using the provided utf8 password.
     /// </summary>
     /// <param name="plaintext">The plaintext to encrypt.</param>
@@ -49,6 +40,16 @@ public static class PasswordEncryption
         ciphertext = new byte[SaltSize + plaintext.Length + TagSize];
         Encrypt(plaintext, password, ciphertext);
     }
+
+    /// <summary>
+    /// Encrypts the specified data using the provided password.
+    /// </summary>
+    /// <param name="plaintext">The plaintext to encrypt.</param>
+    /// <param name="password">The password to use for encryption.</param>
+    /// <param name="ciphertext">The encrypted data.<br/>
+    ///  The size will be the plaintext size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
+    public static void Encrypt(ReadOnlySpan<byte> plaintext, string password, Span<byte> ciphertext)
+        => Encrypt(plaintext, Encoding.UTF8.GetBytes(password), ciphertext);
 
     /// <summary>
     /// Encrypts the specified data using the provided utf8 password.
@@ -77,38 +78,84 @@ public static class PasswordEncryption
     /// <summary>
     /// Tries to decrypt the specified encrypted data using the provided password.
     /// </summary>
-    /// <param name="encrypted">The encrypted data.<br/>
+    /// <param name="ciphertext">The encrypted data.<br/>
     /// The size must be at least <see cref="SaltSize"/>+<see cref="TagSize"/> (48 in the current implementation).</param>
     /// <param name="password">The password to use for decryption.</param>
-    /// <param name="data">The decrypted data.<br/>
+    /// <param name="plaintext">The decrypted data.<br/>
     /// The size will be the encrypted data size minus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
     /// <returns><c>true</c> if decryption was successful; otherwise, <c>false</c>.</returns>
-    public static bool TryDecrypt(ReadOnlySpan<byte> encrypted, string password, out Memory<byte> data) => TryDecrypt(encrypted, Encoding.UTF8.GetBytes(password), out data);
+    public static bool TryDecrypt(ReadOnlySpan<byte> ciphertext, string password, [MaybeNullWhen(false)] out byte[] plaintext)
+    {
+        if (ciphertext.Length < SaltSize + TagSize)
+        {// Invalid size.
+            plaintext = default;
+            return false;
+        }
+
+        plaintext = new byte[ciphertext.Length - SaltSize - TagSize];
+        return TryDecrypt(ciphertext, Encoding.UTF8.GetBytes(password), plaintext);
+    }
 
     /// <summary>
     /// Tries to decrypt the specified encrypted data using the provided utf8 password.
     /// </summary>
-    /// <param name="encrypted">The encrypted data.<br/>
+    /// <param name="ciphertext">The encrypted data.<br/>
     /// The size must be at least <see cref="SaltSize"/>+<see cref="TagSize"/> (48 in the current implementation).</param>
-    /// <param name="utf8Password">The utf8 password to use for decryption.</param>
-    /// <param name="data">The decrypted data.<br/>
+    /// <param name="utf8Password">The utf 8password to use for decryption.</param>
+    /// <param name="plaintext">The decrypted data.<br/>
     /// The size will be the encrypted data size minus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
     /// <returns><c>true</c> if decryption was successful; otherwise, <c>false</c>.</returns>
-    public static bool TryDecrypt(ReadOnlySpan<byte> encrypted, ReadOnlySpan<byte> utf8Password, out Memory<byte> data)
+    public static bool TryDecrypt(ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> utf8Password, [MaybeNullWhen(false)] out byte[] plaintext)
     {
-        data = default;
-        if (encrypted.Length < SaltSize + TagSize)
+        if (ciphertext.Length < SaltSize + TagSize)
+        {// Invalid size.
+            plaintext = default;
+            return false;
+        }
+
+        plaintext = new byte[ciphertext.Length - SaltSize - TagSize];
+        return TryDecrypt(ciphertext, utf8Password, plaintext);
+    }
+
+    /// <summary>
+    /// Tries to decrypt the specified encrypted data using the provided password.
+    /// </summary>
+    /// <param name="ciphertext">The encrypted data.<br/>
+    /// The size must be at least <see cref="SaltSize"/>+<see cref="TagSize"/> (48 in the current implementation).</param>
+    /// <param name="password">The password to use for decryption.</param>
+    /// <param name="plaintext">The decrypted data.<br/>
+    /// The size will be the encrypted data size minus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
+    /// <returns><c>true</c> if decryption was successful; otherwise, <c>false</c>.</returns>
+    public static bool TryDecrypt(ReadOnlySpan<byte> ciphertext, string password, Span<byte> plaintext)
+        => TryDecrypt(ciphertext, Encoding.UTF8.GetBytes(password), plaintext);
+
+    /// <summary>
+    /// Tries to decrypt the specified encrypted data using the provided utf8 password.
+    /// </summary>
+    /// <param name="ciphertext">The encrypted data.<br/>
+    /// The size must be at least <see cref="SaltSize"/>+<see cref="TagSize"/> (48 in the current implementation).</param>
+    /// <param name="utf8Password">The utf8 password to use for decryption.</param>
+    /// <param name="plaintext">The decrypted data.<br/>
+    /// The size will be the encrypted data size minus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
+    /// <returns><c>true</c> if decryption was successful; otherwise, <c>false</c>.</returns>
+    public static bool TryDecrypt(ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> utf8Password, Span<byte> plaintext)
+    {
+        if (ciphertext.Length < SaltSize + TagSize)
         {
             return false;
         }
 
-        Span<byte> key32 = stackalloc byte[Aegis256.KeySize];
-        DeriveKey(utf8Password, encrypted, key32);
-
-        var plaintext = new byte[encrypted.Length - SaltSize - TagSize];
-        if (Aegis256.TryDecrypt(plaintext, encrypted.Slice(SaltSize), encrypted.Slice(0, Aegis256.NonceSize), key32))
+        var plainLength = ciphertext.Length - SaltSize - TagSize;
+        if (plaintext.Length != plainLength)
         {
-            data = plaintext;
+            CryptoHelper.ThrowSizeMismatchException(nameof(plaintext), plainLength);
+        }
+
+        Span<byte> key32 = stackalloc byte[Aegis256.KeySize];
+        DeriveKey(utf8Password, ciphertext, key32);
+
+        if (Aegis256.TryDecrypt(plaintext, ciphertext.Slice(SaltSize), ciphertext.Slice(0, Aegis256.NonceSize), key32))
+        {
             return true;
         }
         else

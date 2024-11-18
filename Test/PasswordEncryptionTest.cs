@@ -19,13 +19,13 @@ public class PasswordEncryptionTest
 
         PasswordEncryption.Encrypt(data, password, out var ciphertext);
         PasswordEncryption.TryDecrypt(ciphertext, password, out var plaintext).IsTrue();
-        plaintext.Span.SequenceEqual(data).IsTrue();
+        plaintext.AsSpan().SequenceEqual(data).IsTrue();
         PasswordEncryption.TryDecrypt(ciphertext, string.Empty, out _).IsFalse();
         PasswordEncryption.TryDecrypt(ciphertext, wrongPassword, out _).IsFalse();
 
         PasswordEncryption.Encrypt(data, string.Empty, out ciphertext);
         PasswordEncryption.TryDecrypt(ciphertext, string.Empty, out plaintext).IsTrue();
-        plaintext.Span.SequenceEqual(data).IsTrue();
+        plaintext.AsSpan().SequenceEqual(data).IsTrue();
         PasswordEncryption.TryDecrypt(ciphertext, wrongPassword, out _).IsFalse();
     }
 }
