@@ -17,15 +17,15 @@ public class PasswordEncryptionTest
         var wrongPassword = "password2";
         var data = Encoding.UTF8.GetBytes("data");
 
-        var ciphertext = PasswordEncryption.Encrypt(data, password);
+        PasswordEncryption.Encrypt(data, password, out var ciphertext);
         PasswordEncryption.TryDecrypt(ciphertext, password, out var plaintext).IsTrue();
-        plaintext.Span.SequenceEqual(data).IsTrue();
+        plaintext.AsSpan().SequenceEqual(data).IsTrue();
         PasswordEncryption.TryDecrypt(ciphertext, string.Empty, out _).IsFalse();
         PasswordEncryption.TryDecrypt(ciphertext, wrongPassword, out _).IsFalse();
 
-        ciphertext = PasswordEncryption.Encrypt(data, string.Empty);
+        PasswordEncryption.Encrypt(data, string.Empty, out ciphertext);
         PasswordEncryption.TryDecrypt(ciphertext, string.Empty, out plaintext).IsTrue();
-        plaintext.Span.SequenceEqual(data).IsTrue();
+        plaintext.AsSpan().SequenceEqual(data).IsTrue();
         PasswordEncryption.TryDecrypt(ciphertext, wrongPassword, out _).IsFalse();
     }
 }
