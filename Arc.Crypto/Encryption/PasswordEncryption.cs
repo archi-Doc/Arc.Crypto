@@ -17,34 +17,61 @@ public static class PasswordEncryption
     /// <summary>
     /// Encrypts the specified data using the provided password.
     /// </summary>
-    /// <param name="data">The data to encrypt.</param>
+    /// <param name="plaintext">The plaintext to encrypt.</param>
     /// <param name="password">The password to use for encryption.</param>
-    /// <returns>The encrypted data.<br/>
-    ///  The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</returns>
-    public static byte[] Encrypt(ReadOnlySpan<byte> data, string password)
-        => Encrypt(data, Encoding.UTF8.GetBytes(password));
+    /// <param name="ciphertext">The encrypted data.<br/>
+    ///  The size will be the plaintext size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
+    public static void Encrypt(ReadOnlySpan<byte> plaintext, string password, out byte[] ciphertext)
+    {
+        ciphertext = new byte[SaltSize + plaintext.Length + TagSize];
+        Encrypt(plaintext, Encoding.UTF8.GetBytes(password), ciphertext);
+    }
+
+    /// <summary>
+    /// Encrypts the specified data using the provided password.
+    /// </summary>
+    /// <param name="plaintext">The plaintext to encrypt.</param>
+    /// <param name="password">The password to use for encryption.</param>
+    /// <param name="ciphertext">The encrypted data.<br/>
+    ///  The size will be the plaintext size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
+    public static void Encrypt(ReadOnlySpan<byte> plaintext, string password, Span<byte> ciphertext)
+        => Encrypt(plaintext, Encoding.UTF8.GetBytes(password), ciphertext);
 
     /// <summary>
     /// Encrypts the specified data using the provided utf8 password.
     /// </summary>
-    /// <param name="data">The data to encrypt.</param>
-    /// <param name="utf8Password">The utf8 password to use for encryption.</param>
-    /// <returns>The encrypted data.<br/>
-    ///  The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</returns>
-    public static byte[] Encrypt(ReadOnlySpan<byte> data, ReadOnlySpan<byte> utf8Password)
-    {// Encrypted: Salt[32] + EncryptedData + Tag[16]
-        var buffer = new byte[SaltSize + data.Length + TagSize];
+    /// <param name="plaintext">The plaintext to encrypt.</param>
+    /// <param name="password">The password to use for encryption.</param>
+    /// <param name="ciphertext">The encrypted data.<br/>
+    ///  The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
+    public static void Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> password, out byte[] ciphertext)
+    {
+        ciphertext = new byte[SaltSize + plaintext.Length + TagSize];
+        Encrypt(plaintext, password, ciphertext);
+    }
 
-        var salt = buffer.AsSpan(0, SaltSize);
+    /// <summary>
+    /// Encrypts the specified data using the provided utf8 password.
+    /// </summary>
+    /// <param name="plaintext">The plaintext to encrypt.</param>
+    /// <param name="utf8Password">The utf8 password to use for encryption.</param>
+    /// <param name="ciphertext">The encrypted data.<br/>
+    ///  The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
+    public static void Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> utf8Password, Span<byte> ciphertext)
+    {// Encrypted: Salt[32] + EncryptedData + Tag[16]
+        var cipherLength = SaltSize + plaintext.Length + TagSize;
+        if (ciphertext.Length != cipherLength)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(ciphertext), cipherLength);
+        }
+
+        var salt = ciphertext.Slice(0, SaltSize);
         CryptoRandom.NextBytes(salt);
 
         Span<byte> key32 = stackalloc byte[Aegis256.KeySize];
         DeriveKey(utf8Password, salt, key32);
 
-        var span = buffer.AsSpan();
-        Aegis256.Encrypt(span.Slice(SaltSize, data.Length + TagSize), data, salt, key32);
-
-        return buffer;
+        Aegis256.Encrypt(ciphertext.Slice(SaltSize, plaintext.Length + TagSize), plaintext, salt, key32);
     }
 
     /// <summary>
