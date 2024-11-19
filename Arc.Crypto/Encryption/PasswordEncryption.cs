@@ -93,7 +93,15 @@ public static class PasswordEncryption
         }
 
         plaintext = new byte[ciphertext.Length - SaltSize - TagSize];
-        return TryDecrypt(ciphertext, Encoding.UTF8.GetBytes(password), plaintext);
+        if (TryDecrypt(ciphertext, Encoding.UTF8.GetBytes(password), plaintext))
+        {
+            return true;
+        }
+        else
+        {
+            plaintext = default;
+            return false;
+        }
     }
 
     /// <summary>
@@ -114,7 +122,15 @@ public static class PasswordEncryption
         }
 
         plaintext = new byte[ciphertext.Length - SaltSize - TagSize];
-        return TryDecrypt(ciphertext, utf8Password, plaintext);
+        if (TryDecrypt(ciphertext, utf8Password, plaintext))
+        {
+            return true;
+        }
+        else
+        {
+            plaintext = default;
+            return false;
+        }
     }
 
     /// <summary>
