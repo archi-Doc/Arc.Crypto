@@ -7,6 +7,7 @@ using System.Text;
 
 namespace Arc.Crypto;
 
+/*
 /// <summary>
 /// Represents a class which encrypts data with the specified password.<br/>
 /// Since <see cref="PasswordEncrypt"/> uses SHA3, it's inappropriate for password authentication.<br/>
@@ -202,4 +203,4 @@ public static class PasswordEncrypt
     private const int RandomLength = 8;
     private const int ChecksumLength = 8;
     private const PaddingMode DefaultPaddingMode = PaddingMode.PKCS7;
-}
+}*/
