@@ -20,23 +20,23 @@ public partial class SerializeHashClass
 
     public void PrepareHash()
     {
-        (this.Hash0, this.Hash1, this.Hash2, this.Hash3) = Blake3.Get256_Long(this.Data);
+        (this.Hash0, this.Hash1, this.Hash2, this.Hash3) = Blake3.Get256_UInt64(this.Data);
     }
 
     [Key(0)]
     public byte[] Data { get; set; } = default!;
 
     [Key(1)]
-    public long Hash0 { get; set; }
+    public ulong Hash0 { get; set; }
 
     [Key(2)]
-    public long Hash1 { get; set; }
+    public ulong Hash1 { get; set; }
 
     [Key(3)]
-    public long Hash2 { get; set; }
+    public ulong Hash2 { get; set; }
 
     [Key(4)]
-    public long Hash3 { get; set; }
+    public ulong Hash3 { get; set; }
 }
 
 [TinyhandObject]
