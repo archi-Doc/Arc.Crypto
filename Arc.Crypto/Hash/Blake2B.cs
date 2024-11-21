@@ -29,14 +29,26 @@ public static class Blake2B
         return output;
     }
 
-    /// <summary>
+    /*/// <summary>
     /// Computes a 256-bit BLAKE2B hash of the input data and returns it as a tuple of longs.
     /// </summary>
     /// <param name="input">The input data to hash.</param>
     /// <returns>A tuple containing the 256-bit hash as four longs.</returns>
-    public static (long Hash0, long Hash1, long Hash2, long Hash3) Get256_Long(ReadOnlySpan<byte> input)
+    public static (long Hash0, long Hash1, long Hash2, long Hash3) Get256_Int64(ReadOnlySpan<byte> input)
     {
         Span<long> hash = stackalloc long[4];
+        Get256_Span(input, MemoryMarshal.AsBytes(hash));
+        return (hash[0], hash[1], hash[2], hash[3]);
+    }*/
+
+    /// <summary>
+    /// Computes a 256-bit BLAKE2B hash of the input data and returns it as a tuple of ulongs.
+    /// </summary>
+    /// <param name="input">The input data to hash.</param>
+    /// <returns>A tuple containing the 256-bit hash as four longs.</returns>
+    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256_UInt64(ReadOnlySpan<byte> input)
+    {
+        Span<ulong> hash = stackalloc ulong[4];
         Get256_Span(input, MemoryMarshal.AsBytes(hash));
         return (hash[0], hash[1], hash[2], hash[3]);
     }

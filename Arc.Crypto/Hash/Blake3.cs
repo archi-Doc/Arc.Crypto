@@ -29,14 +29,27 @@ public static class Blake3
         return output;
     }
 
+    /*
     /// <summary>
     /// Computes the BLAKE3 hash of the input data and returns the hash as a tuple of four long values.
     /// </summary>
     /// <param name="input">The input data to hash.</param>
     /// <returns>A tuple containing four long values representing the BLAKE3 hash.</returns>
-    public static (long Hash0, long Hash1, long Hash2, long Hash3) Get256_Long(ReadOnlySpan<byte> input)
+    public static (long Hash0, long Hash1, long Hash2, long Hash3) Get256_Int64(ReadOnlySpan<byte> input)
     {
         Span<long> hash = stackalloc long[4];
+        Get256_Span(input, MemoryMarshal.AsBytes(hash));
+        return (hash[0], hash[1], hash[2], hash[3]);
+    }*/
+
+    /// <summary>
+    /// Computes the BLAKE3 hash of the input data and returns the hash as a tuple of four ulong values.
+    /// </summary>
+    /// <param name="input">The input data to hash.</param>
+    /// <returns>A tuple containing four long values representing the BLAKE3 hash.</returns>
+    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256_UInt64(ReadOnlySpan<byte> input)
+    {
+        Span<ulong> hash = stackalloc ulong[4];
         Get256_Span(input, MemoryMarshal.AsBytes(hash));
         return (hash[0], hash[1], hash[2], hash[3]);
     }
