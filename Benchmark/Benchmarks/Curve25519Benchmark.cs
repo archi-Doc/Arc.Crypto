@@ -53,21 +53,6 @@ public class Curve25519Benchmark
         }
 
         this.cipher = new byte[this.message.Length + CryptoBox.MacSize];
-
-        var one = new fe25519(1);
-        fe.Sub(out var xMinusOne, ref x, ref one);
-        fe.Add(out var xPlusOne, ref x, ref one);
-        fe.Invert(out var inv, ref xMinusOne);
-        fe.fe25519_mul(out var res, ref xPlusOne, ref inv);
-
-        /*Arc.Crypto.Ed25519.FieldOperations.fe_frombytes(out var x, this.cryptoSignPublicKey);
-        Arc.Crypto.Ed25519.FieldOperations.fe_1(out var one);
-        Arc.Crypto.Ed25519.FieldOperations.fe_sub(out var xMinusOne, ref x, ref one);
-        Arc.Crypto.Ed25519.FieldOperations.fe_add(out var xPlusOne, ref x, ref one);
-        Arc.Crypto.Ed25519.FieldOperations.fe_invert(out var inv, ref xMinusOne);
-        Arc.Crypto.Ed25519.FieldOperations.fe_mul(out var res, ref xPlusOne, ref inv);
-        Span<byte> span = stackalloc byte[32];
-        Arc.Crypto.Ed25519.FieldOperations.fe_tobytes(span, ref res);*/
     }
 
     [Benchmark]
@@ -130,6 +115,13 @@ public class Curve25519Benchmark
     public byte[] PublicKey_SignToBox()
     {
         CryptoSign.PublicKey_SignToBox(this.cryptoSignPublicKey, this.cryptoBoxPublicKey);
+        return this.cryptoBoxPublicKey;
+    }
+
+    [Benchmark]
+    public byte[] PublicKey_SignToBox2()
+    {
+        CryptoSign.PublicKey_SignToBox2(this.cryptoSignPublicKey, this.cryptoBoxPublicKey);
         return this.cryptoBoxPublicKey;
     }
 }

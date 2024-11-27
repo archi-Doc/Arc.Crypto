@@ -1,5 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using Benchmark.Obsolete.Ed25519;
+
 namespace Arc.Crypto;
 
 /// <summary>
@@ -139,10 +141,11 @@ public static class CryptoSign
     }
 
     /// <summary>
-    /// Converts a signature public key to a encryption public key.
+    /// Converts a signature public key to an encryption public key.
     /// </summary>
     /// <param name="signPublicKey32">The signature public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
     /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/>(32 bytes).</param>
+    /// <returns>True if the conversion is successful; otherwise, false.</returns>
     public static bool PublicKey_SignToBox(ReadOnlySpan<byte> signPublicKey32, Span<byte> boxPublicKey32)
     {
         if (signPublicKey32.Length != PublicKeySize)
@@ -156,6 +159,42 @@ public static class CryptoSign
         }
 
         return LibsodiumInterops.crypto_sign_ed25519_pk_to_curve25519(boxPublicKey32, signPublicKey32) == 0;
+    }
+
+    /// <summary>
+    /// Converts a signature public key to an encryption public key.
+    /// </summary>
+    /// <param name="signPublicKey32">The signature public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
+    /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/>(32 bytes).</param>
+    /// <returns>True if the conversion is successful; otherwise, false.</returns>
+    public static bool PublicKey_SignToBox2(ReadOnlySpan<byte> signPublicKey32, Span<byte> boxPublicKey32)
+    {
+        if (signPublicKey32.Length != PublicKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(signPublicKey32), PublicKeySize);
+        }
+
+        if (boxPublicKey32.Length != CryptoBox.PublicKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
+        }
+
+        ge25519_p3 a;
+        if (Ed25519Helper.ge25519_frombytes_negate_vartime(out a, signPublicKey32) != 0 ||
+            Ed25519Helper.ge25519_has_small_order(ref a) != 0 ||
+            Ed25519Helper.ge25519_is_on_main_subgroup(ref a) == 0)
+        {
+            return false;
+        }
+
+        var one = new fe25519(1);
+        Ed25519Helper.fe25519_sub(out var xMinusOne, ref one, ref a.Y);
+        Ed25519Helper.fe25519_add(out var xPlusOne, ref one, ref a.Y);
+        Ed25519Helper.fe25519_invert(out var inv, ref xMinusOne);
+        Ed25519Helper.fe25519_mul(out var res, ref xPlusOne, ref inv);
+        Ed25519Helper.fe25519_tobytes(boxPublicKey32, ref res);
+
+        return true;
     }
 
     /// <summary>

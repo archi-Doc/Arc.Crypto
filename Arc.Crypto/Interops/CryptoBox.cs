@@ -1,5 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using Benchmark.Obsolete.Ed25519;
+
 namespace Arc.Crypto;
 
 /// <summary>
@@ -150,5 +152,28 @@ public static class CryptoBox
         }
 
         return LibsodiumInterops.crypto_box_open_easy(message, cipher, (ulong)cipher.Length, nonce24, publicKey32, secretKey32) == 0;
+    }
+
+    public static bool PublicKey_BoxToSign(ReadOnlySpan<byte> boxPublicKey32, Span<byte> signPublicKey32)
+    {
+        if (boxPublicKey32.Length != PublicKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), PublicKeySize);
+        }
+
+        if (signPublicKey32.Length != CryptoSign.PublicKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(signPublicKey32), CryptoSign.PublicKeySize);
+        }
+
+        Ed25519Helper.fe25519_frombytes(out var x, boxPublicKey32);
+        var one = new fe25519(1);
+        Ed25519Helper.fe25519_sub(out var xMinusOne, ref x, ref one);
+        Ed25519Helper.fe25519_add(out var xPlusOne, ref x, ref one);
+        Ed25519Helper.fe25519_invert(out var inv, ref xPlusOne);
+        Ed25519Helper.fe25519_mul(out var res, ref xMinusOne, ref inv);
+        Ed25519Helper.fe25519_tobytes(signPublicKey32, ref res);
+
+        return true;
     }
 }
