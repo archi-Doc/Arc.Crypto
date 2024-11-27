@@ -143,7 +143,7 @@ public static class CryptoSign
     /// </summary>
     /// <param name="signPublicKey32">The signature public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
     /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/>(32 bytes).</param>
-    public static void PublicKey_SignToBox(ReadOnlySpan<byte> signPublicKey32, Span<byte> boxPublicKey32)
+    public static bool PublicKey_SignToBox(ReadOnlySpan<byte> signPublicKey32, Span<byte> boxPublicKey32)
     {
         if (signPublicKey32.Length != PublicKeySize)
         {
@@ -155,7 +155,7 @@ public static class CryptoSign
             CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
         }
 
-        LibsodiumInterops.crypto_sign_ed25519_pk_to_curve25519(boxPublicKey32, signPublicKey32);
+        return LibsodiumInterops.crypto_sign_ed25519_pk_to_curve25519(boxPublicKey32, signPublicKey32) == 0;
     }
 
     /// <summary>

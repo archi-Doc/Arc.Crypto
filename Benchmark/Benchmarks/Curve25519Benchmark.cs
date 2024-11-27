@@ -52,6 +52,15 @@ public class Curve25519Benchmark
         }
 
         this.cipher = new byte[this.message.Length + CryptoBox.MacSize];
+
+        /*Arc.Crypto.Ed25519.FieldOperations.fe_frombytes(out var x, this.cryptoSignPublicKey);
+        Arc.Crypto.Ed25519.FieldOperations.fe_1(out var one);
+        Arc.Crypto.Ed25519.FieldOperations.fe_sub(out var xMinusOne, ref x, ref one);
+        Arc.Crypto.Ed25519.FieldOperations.fe_add(out var xPlusOne, ref x, ref one);
+        Arc.Crypto.Ed25519.FieldOperations.fe_invert(out var inv, ref xMinusOne);
+        Arc.Crypto.Ed25519.FieldOperations.fe_mul(out var res, ref xPlusOne, ref inv);
+        Span<byte> span = stackalloc byte[32];
+        Arc.Crypto.Ed25519.FieldOperations.fe_tobytes(span, ref res);*/
     }
 
     [Benchmark]
