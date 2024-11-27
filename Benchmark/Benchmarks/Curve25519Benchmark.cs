@@ -1,6 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using Arc.Crypto;
+using Benchmark.Obsolete.Ed25519;
 using BenchmarkDotNet.Attributes;
 
 namespace Benchmark;
@@ -52,6 +53,12 @@ public class Curve25519Benchmark
         }
 
         this.cipher = new byte[this.message.Length + CryptoBox.MacSize];
+
+        var one = new fe25519(1);
+        fe.Sub(out var xMinusOne, ref x, ref one);
+        fe.Add(out var xPlusOne, ref x, ref one);
+        fe.Invert(out var inv, ref xMinusOne);
+        fe.fe25519_mul(out var res, ref xPlusOne, ref inv);
 
         /*Arc.Crypto.Ed25519.FieldOperations.fe_frombytes(out var x, this.cryptoSignPublicKey);
         Arc.Crypto.Ed25519.FieldOperations.fe_1(out var one);
