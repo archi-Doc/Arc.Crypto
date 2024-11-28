@@ -27,6 +27,11 @@ public class CipherBenchmark
     private readonly Aes aes;
     private readonly byte[] messageAesNi;
     private readonly int aesSize;
+    private readonly byte[] boxSecretKey;
+    private readonly byte[] boxPublicKey;
+    private readonly byte[] boxSecretKey2;
+    private readonly byte[] boxPublicKey2;
+    private readonly byte[] cipherBox;
 
     public CipherBenchmark()
     {
@@ -66,6 +71,14 @@ public class CipherBenchmark
         this.cipherAegis2 = new byte[this.message.Length + Aegis256Helper.ASizeInBytes];
         Aegis256Helper.Encrypt(this.message, this.nonce32, this.key, this.cipherAegis, out var cipherLength);
         Aegis256Helper.Decrypt(this.cipherAegis, this.nonce32, this.key, this.message2, out var messageLength);
+
+        this.boxSecretKey = new byte[CryptoBox.SecretKeySize];
+        this.boxPublicKey = new byte[CryptoBox.PublicKeySize];
+        CryptoBox.CreateKey(this.boxSecretKey, this.boxPublicKey);
+        this.boxSecretKey2 = new byte[CryptoBox.SecretKeySize];
+        this.boxPublicKey2 = new byte[CryptoBox.PublicKeySize];
+        CryptoBox.CreateKey(this.boxSecretKey2, this.boxPublicKey2);
+        this.cipherBox = new byte[this.message.Length + CryptoBox.MacSize];
     }
 
     [GlobalSetup]
@@ -91,6 +104,20 @@ public class CipherBenchmark
     {
         CryptoSecretBox.Encrypt(this.message, this.nonce24, this.key, this.cipher2);
         return this.cipher2;
+    }
+
+    [Benchmark]
+    public byte[] crypto_box_encrypt_32()
+    {
+        CryptoBox.Encrypt(this.message.AsSpan(0, 32), this.nonce24, this.boxSecretKey, this.boxPublicKey2, this.cipherBox.AsSpan(0, 32 + CryptoBox.MacSize));
+        return this.cipherBox;
+    }
+
+    [Benchmark]
+    public byte[] crypto_box_encrypt()
+    {
+        CryptoBox.Encrypt(this.message, this.nonce24, this.boxSecretKey, this.boxPublicKey2, this.cipherBox);
+        return this.cipherBox;
     }
 
     [Benchmark]
