@@ -1,6 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using Benchmark.Obsolete.Ed25519;
+using Arc.Crypto.Ed25519;
 
 namespace Arc.Crypto;
 

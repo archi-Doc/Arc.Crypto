@@ -1,6 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using Benchmark.Obsolete.Ed25519;
+using Arc.Crypto.Ed25519;
 
 namespace Arc.Crypto;
 
@@ -75,6 +75,36 @@ public static class CryptoSign
         }
 
         LibsodiumInterops.crypto_sign_seed_keypair(publicKey32, secretKey64, seed32);
+    }
+
+    public static void CreateKey2(ReadOnlySpan<byte> seed32, Span<byte> secretKey64, Span<byte> publicKey32)
+    {
+        if (seed32.Length != SeedSize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(seed32), SeedSize);
+        }
+
+        if (secretKey64.Length != SecretKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
+        }
+
+        if (publicKey32.Length != PublicKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
+        }
+
+        Sha2Helper.Get512_Span(seed32, secretKey64);
+        secretKey64[0] &= 248; // 1111_1000
+        secretKey64[31] &= 127; // 0111_1111
+        secretKey64[31] |= 64; // 0100_0000
+
+        ge25519_p3 A;
+        Ed25519Helper.ge25519_scalarmult_base(out A, secretKey64);
+        Ed25519Helper.ge25519_p3_tobytes(publicKey32, ref A);
+
+        seed32.CopyTo(secretKey64);
+        publicKey32.CopyTo(secretKey64.Slice(SeedSize));
     }
 
     /// <summary>

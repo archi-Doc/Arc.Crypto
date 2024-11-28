@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 #pragma warning disable SA1310 // Field names should not contain underscore
 #pragma warning disable SA1307 // Accessible fields should begin with upper-case letter
 
-namespace Benchmark.Obsolete.Ed25519;
+namespace Arc.Crypto.Ed25519;
 
 internal static class Ed25519Helper
 {
@@ -189,6 +189,131 @@ internal static class Ed25519Helper
         fe25519_sq(out t0, ref t0);
         fe25519_sq(out t0, ref t0);
         fe25519_mul(out h, ref t0, ref z);
+    }
+
+    public static void ge25519_p3_tobytes(Span<byte> s, ref ge25519_p3 h)
+    {
+        fe25519 recip;
+        fe25519 x;
+        fe25519 y;
+
+        fe25519_invert(out recip, ref h.Z);
+        fe25519_mul(out x, ref h.X, ref recip);
+        fe25519_mul(out y, ref h.Y, ref recip);
+        fe25519_tobytes(s, ref y);
+        s[31] ^= (byte)(fe25519_isnegative(ref x) << 7);
+    }
+
+    public static void ge25519_scalarmult_base(out ge25519_p3 h, ReadOnlySpan<byte> a)
+    {
+
+        Span<sbyte> e = stackalloc sbyte[64];
+        sbyte carry;
+        ge25519_p1p1 r;
+        ge25519_p2 s;
+        ge25519_precomp t;
+        int i;
+
+        for (i = 0; i < 32; ++i)
+        {
+            e[2 * i + 0] = (sbyte)((a[i] >> 0) & 15);
+            e[2 * i + 1] = (sbyte)((a[i] >> 4) & 15);
+        }
+
+        carry = 0;
+        for (i = 0; i < 63; ++i)
+        {
+            e[i] += carry;
+            carry = (sbyte)(e[i] + 8);
+            carry >>= 4;
+            e[i] -= (sbyte)(carry * ((sbyte)1 << 4));
+        }
+
+        e[63] += carry;
+
+        ge25519_p3_0(out h);
+
+        t = default;//
+        for (i = 1; i < 64; i += 2)
+        {
+            //ge25519_cmov8_base(out t, i / 2, e[i]);
+            ge25519_add_precomp(out r, ref h, ref t);
+            ge25519_p1p1_to_p3(out h, ref r);
+        }
+
+        ge25519_p3_dbl(out r, ref h);
+        ge25519_p1p1_to_p2(out s, ref r);
+        ge25519_p2_dbl(out r, ref s);
+        ge25519_p1p1_to_p2(out s, ref r);
+        ge25519_p2_dbl(out r, ref s);
+        ge25519_p1p1_to_p2(out s, ref r);
+        ge25519_p2_dbl(out r, ref s);
+        ge25519_p1p1_to_p3(out h, ref r);
+
+        for (i = 0; i < 64; i += 2)
+        {
+            //ge25519_cmov8_base(out t, i / 2, e[i]);
+            ge25519_add_precomp(out r, ref h, ref t);
+            ge25519_p1p1_to_p3(out h, ref r);
+        }
+    }
+
+    public static void ge25519_add_precomp(out ge25519_p1p1 r, ref ge25519_p3 p, ref ge25519_precomp q)
+    {
+        fe25519 t0;
+        fe25519_add(out r.X, ref p.Y, ref p.X);
+        fe25519_sub(out r.Y, ref p.Y, ref p.X);
+        fe25519_mul(out r.Z, ref r.X, ref q.yplusx);
+        fe25519_mul(out r.Y, ref r.Y, ref q.yminusx);
+        fe25519_mul(out r.T, ref q.xy2d, ref p.T);
+        fe25519_add(out t0, ref p.Z, ref p.Z);
+        fe25519_sub(out r.X, ref r.Z, ref r.Y);
+        fe25519_add(out r.Y, ref r.Z, ref r.Y);
+        fe25519_add(out r.Z, ref t0, ref r.T);
+        fe25519_sub(out r.T, ref t0, ref r.T);
+    }
+
+    /*public static void ge25519_cmov8_base(out ge25519_precomp t, int pos, sbyte b)
+    {
+        static const ge25519_precomp @base[32][8] = { 
+        };
+        ge25519_cmov8(out t, @base[pos], b);
+    }
+
+    public static void ge25519_cmov8(out ge25519_precomp t, ge25519_precomp precomp[8], sbyte b)
+    {
+        ge25519_precomp minust;
+        byte bnegative = negative(b);
+        byte babs = b - (((-bnegative) & b) * ((sbyte)1 << 1));
+
+        ge25519_precomp_0(out t);
+        ge25519_cmov(t, &precomp[0], equal(babs, 1));
+        ge25519_cmov(t, &precomp[1], equal(babs, 2));
+        ge25519_cmov(t, &precomp[2], equal(babs, 3));
+        ge25519_cmov(t, &precomp[3], equal(babs, 4));
+        ge25519_cmov(t, &precomp[4], equal(babs, 5));
+        ge25519_cmov(t, &precomp[5], equal(babs, 6));
+        ge25519_cmov(t, &precomp[6], equal(babs, 7));
+        ge25519_cmov(t, &precomp[7], equal(babs, 8));
+        fe25519_copy(minust.yplusx, t->yminusx);
+        fe25519_copy(minust.yminusx, t->yplusx);
+        fe25519_neg(out minust.xy2d, ref t.xy2d);
+        ge25519_cmov(out t, ref minust, bnegative);
+    }*/
+
+    public static void ge25519_precomp_0(out ge25519_precomp h)
+    {
+        h.yplusx = new(1);
+        h.yminusx = new(1);
+        h.xy2d = new(0);
+    }
+
+    public static void ge25519_p3_0(out ge25519_p3 h)
+    {
+        h.X = new(0);
+        h.Y = new(1);
+        h.Z = new(1);
+        h.T = new(0);
     }
 
     public static int ge25519_frombytes_negate_vartime(out ge25519_p3 h, ReadOnlySpan<byte> s)
@@ -770,6 +895,13 @@ internal struct ge25519_cached
     public fe25519 YminusX;
     public fe25519 Z;
     public fe25519 T2d;
+}
+
+internal struct ge25519_precomp
+{
+    public fe25519 yplusx;
+    public fe25519 yminusx;
+    public fe25519 xy2d;
 }
 
 internal struct fe25519

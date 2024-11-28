@@ -1,7 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using Arc.Crypto;
-using Benchmark.Obsolete.Ed25519;
+using Arc.Crypto.Ed25519;
 using BenchmarkDotNet.Attributes;
 
 namespace Benchmark;
@@ -40,6 +40,12 @@ public class Curve25519Benchmark
         this.cryptoSignPublicKey2 = new byte[CryptoSign.PublicKeySize];
         CryptoSign.CreateKey(this.seed, this.cryptoSignSecretKey, this.cryptoSignPublicKey);
 
+        var ed25519SecretKey = new byte[CryptoSign.SecretKeySize];
+        var ed25519PublicKey2 = new byte[CryptoSign.PublicKeySize];
+        Ed25519Operations.CreateKeyFromSeed(this.seed, ed25519PublicKey2, ed25519SecretKey);
+        var result = ed25519SecretKey.AsSpan().SequenceEqual(this.cryptoSignSecretKey);
+        result = ed25519PublicKey2.AsSpan().SequenceEqual(this.cryptoSignPublicKey);
+
         this.cryptoBoxPublicKey = new byte[CryptoBox.SecretKeySize];
         this.cryptoBoxSecretKey = new byte[CryptoBox.PublicKeySize];
         CryptoBox.CreateKey(this.seed, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey);
@@ -67,7 +73,7 @@ public class Curve25519Benchmark
         var publicKey = new byte[CryptoSign.PublicKeySize];
         CryptoSign.CreateKey(secretKey, publicKey);
         return secretKey;
-    }
+    }*/
 
     [Benchmark]
     public byte[] CryptoSign_CreateKeyFromSeed()
@@ -79,6 +85,15 @@ public class Curve25519Benchmark
     }
 
     [Benchmark]
+    public byte[] CryptoSign_CreateKeyFromSeed2()
+    {
+        var secretKey = new byte[CryptoSign.SecretKeySize];
+        var publicKey = new byte[CryptoSign.PublicKeySize];
+        Ed25519Operations.CreateKeyFromSeed(this.seed, publicKey, secretKey);
+        return secretKey;
+    }
+
+    /*[Benchmark]
     public byte[] CryptoSign_SecretKeyToSeed()
     {
         CryptoSign.SecretKeyToSeed(this.cryptoSignSecretKey, this.seed2);
@@ -116,7 +131,7 @@ public class Curve25519Benchmark
         return this.cryptoBoxSecretKey;
     }*/
 
-    [Benchmark]
+    /*[Benchmark]
     public byte[] PublicKey_SignToBox()
     {
         CryptoSign.PublicKey_SignToBox(this.cryptoSignPublicKey, this.cryptoBoxConvertedPublicKey);
@@ -135,5 +150,5 @@ public class Curve25519Benchmark
     {
         CryptoBox.PublicKey_BoxToSign(this.cryptoBoxPublicKey, this.cryptoSignConvertedPublicKey);
         return this.cryptoSignConvertedPublicKey;
-    }
+    }*/
 }
