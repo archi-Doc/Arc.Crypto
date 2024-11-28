@@ -99,9 +99,8 @@ public static class CryptoSign
         secretKey64[31] &= 127; // 0111_1111
         secretKey64[31] |= 64; // 0100_0000
 
-        ge25519_p3 A;
-        Ed25519Helper.ge25519_scalarmult_base(out A, secretKey64);
-        Ed25519Helper.ge25519_p3_tobytes(publicKey32, ref A);
+        Ed25519Helper.ge25519_scalarmult_base(out var a, secretKey64);
+        Ed25519Helper.ge25519_p3_tobytes(publicKey32, ref a);
 
         seed32.CopyTo(secretKey64);
         publicKey32.CopyTo(secretKey64.Slice(SeedSize));

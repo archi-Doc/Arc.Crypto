@@ -176,4 +176,24 @@ public static class CryptoBox
 
         return true;
     }
+
+    public static bool PublicKey_Equals(ReadOnlySpan<byte> publicKey, ReadOnlySpan<byte> publicKey2)
+    {
+        if (publicKey.Length != PublicKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), PublicKeySize);
+        }
+
+        if (publicKey2.Length != PublicKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey2), PublicKeySize);
+        }
+
+        if (!publicKey.Slice(0, PublicKeySize - 1).SequenceEqual(publicKey2.Slice(0, PublicKeySize - 1)))
+        {
+            return false;
+        }
+
+        return (publicKey[PublicKeySize - 1] & 0x7F) == (publicKey2[PublicKeySize - 1] & 0x7F);
+    }
 }

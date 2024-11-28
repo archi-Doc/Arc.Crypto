@@ -147,4 +147,38 @@ public class Ed25519Test
         boxSecretKey2[1]++;
         result = CryptoBox.TryDecrypt(cipher, nonce, boxSecretKey2, boxPublicKey2, message);
     }
+
+    [Fact]
+    public void CryptoDualTest()
+    {
+        var random = new Xoroshiro128StarStar(12);
+        Span<byte> seed = stackalloc byte[CryptoBox.SeedSize];
+        Span<byte> signSecretKey = stackalloc byte[CryptoSign.SecretKeySize];
+        Span<byte> signPublicKey = stackalloc byte[CryptoSign.PublicKeySize];
+        Span<byte> boxSecretKey = stackalloc byte[CryptoBox.SecretKeySize];
+        Span<byte> boxPublicKey = stackalloc byte[CryptoBox.PublicKeySize];
+        Span<byte> dualSignSecretKey = stackalloc byte[CryptoSign.SecretKeySize];
+        Span<byte> dualSignPublicKey = stackalloc byte[CryptoSign.PublicKeySize];
+        Span<byte> dualBoxSecretKey = stackalloc byte[CryptoBox.SecretKeySize];
+        Span<byte> dualBoxPublicKey = stackalloc byte[CryptoBox.PublicKeySize];
+
+        for (var i = 0; i < 1_000; i++)
+        {
+            random.NextBytes(seed);
+
+            CryptoSign.CreateKey(seed, signSecretKey, signPublicKey);
+            CryptoBox.CreateKey(seed, boxSecretKey, boxPublicKey);
+            CryptoDual.CreateKey(seed, dualSignSecretKey, dualSignPublicKey, dualBoxSecretKey, dualBoxPublicKey);
+
+            dualSignSecretKey.SequenceEqual(signSecretKey).IsTrue();
+            dualSignPublicKey.SequenceEqual(signPublicKey).IsTrue();
+            dualBoxSecretKey.SequenceEqual(boxSecretKey).IsTrue();
+            CryptoBox.PublicKey_Equals(dualBoxPublicKey, boxPublicKey).IsTrue();
+
+            CryptoDual.PublicKey_SignToBox(dualSignPublicKey, dualBoxPublicKey);
+            CryptoBox.PublicKey_Equals(dualBoxPublicKey, boxPublicKey).IsTrue();
+            CryptoDual.PublicKey_BoxToSign(dualBoxPublicKey, dualSignPublicKey);
+            dualSignPublicKey.SequenceEqual(signPublicKey).IsTrue();
+        }
+    }
 }

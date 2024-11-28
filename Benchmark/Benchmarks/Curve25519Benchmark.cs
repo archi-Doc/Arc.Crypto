@@ -95,11 +95,13 @@ public class Curve25519Benchmark
     }
 
     [Benchmark]
-    public byte[] CryptoSign_CreateKeyFromSeed3()
+    public byte[] CryptoDual_CreateKeyFromSeed()
     {
         var secretKey = new byte[CryptoSign.SecretKeySize];
         var publicKey = new byte[CryptoSign.PublicKeySize];
-        CryptoSign.CreateKey2(this.seed, secretKey, publicKey);
+        var secretKey2 = new byte[CryptoBox.SecretKeySize];
+        var publicKey2 = new byte[CryptoBox.PublicKeySize];
+        CryptoDual.CreateKey(this.seed, secretKey, publicKey, secretKey2, publicKey2);
         return secretKey;
     }
 
