@@ -143,7 +143,6 @@ public class Ed25519Test
 
         CryptoBox.Encrypt(message, nonce, boxSecretKey, boxPublicKey2, cipher);
         result = CryptoBox.TryDecrypt(cipher, nonce, boxSecretKey, boxPublicKey2, message);
-        // boxPublicKey2[31] |= 128;
         boxSecretKey2[1]++;
         result = CryptoBox.TryDecrypt(cipher, nonce, boxSecretKey2, boxPublicKey2, message);
     }
@@ -185,10 +184,10 @@ public class Ed25519Test
             dualSignSecretKey.SequenceEqual(signSecretKey).IsTrue();
             dualSignPublicKey.SequenceEqual(signPublicKey).IsTrue();
             dualBoxSecretKey.SequenceEqual(boxSecretKey).IsTrue();
-            CryptoBox.PublicKey_Equals(dualBoxPublicKey, boxPublicKey).IsTrue();
+            CryptoDual.BoxPublicKey_Equals(dualBoxPublicKey, boxPublicKey).IsTrue();
 
             CryptoDual.PublicKey_SignToBox(dualSignPublicKey, dualBoxPublicKey);
-            CryptoBox.PublicKey_Equals(dualBoxPublicKey, boxPublicKey).IsTrue();
+            CryptoDual.BoxPublicKey_Equals(dualBoxPublicKey, boxPublicKey).IsTrue();
             CryptoDual.PublicKey_BoxToSign(dualBoxPublicKey, dualSignPublicKey);
             dualSignPublicKey.SequenceEqual(signPublicKey).IsTrue();
 

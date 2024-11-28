@@ -4,6 +4,12 @@ using Arc.Crypto.Ed25519;
 
 namespace Arc.Crypto;
 
+/// <summary>
+/// A support class for making Ed25519 and Curve25519 public keys interchangeable.<br/>
+/// Traditionally, it was possible to convert an Ed25519 public key to a Curve25519 public key, but the reverse was challenging.<br/>
+/// By adding a sign bit to the Curve25519 key, reverse conversion is now possible.<br/>
+/// As a result, it does not strictly adhere to the standard Curve25519 format.
+/// </summary>
 public static class CryptoDual
 {
     public static void CreateKey(Span<byte> signSecretKey32, Span<byte> signPublicKey32, Span<byte> boxSecretKey32, Span<byte> boxPublicKey32)
@@ -95,5 +101,25 @@ public static class CryptoDual
         Ed25519Helper.fe25519_tobytes(signPublicKey32, ref res);
 
         signPublicKey32[31] |= (byte)(0x80 & boxPublicKey32[31]);
+    }
+
+    public static bool BoxPublicKey_Equals(ReadOnlySpan<byte> publicKey, ReadOnlySpan<byte> publicKey2)
+    {
+        if (publicKey.Length != CryptoBox.PublicKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), CryptoBox.PublicKeySize);
+        }
+
+        if (publicKey2.Length != CryptoBox.PublicKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey2), CryptoBox.PublicKeySize);
+        }
+
+        if (!publicKey.Slice(0, CryptoBox.PublicKeySize - 1).SequenceEqual(publicKey2.Slice(0, CryptoBox.PublicKeySize - 1)))
+        {
+            return false;
+        }
+
+        return (publicKey[CryptoBox.PublicKeySize - 1] & 0x7F) == (publicKey2[CryptoBox.PublicKeySize - 1] & 0x7F);
     }
 }
