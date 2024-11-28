@@ -42,7 +42,8 @@ public class Curve25519Benchmark
 
         var ed25519SecretKey = new byte[CryptoSign.SecretKeySize];
         var ed25519PublicKey2 = new byte[CryptoSign.PublicKeySize];
-        Ed25519Operations.CreateKeyFromSeed(this.seed, ed25519PublicKey2, ed25519SecretKey);
+        // Ed25519Operations.CreateKeyFromSeed(this.seed, ed25519PublicKey2, ed25519SecretKey);
+        CryptoSign.CreateKey2(this.seed, ed25519SecretKey, ed25519PublicKey2);
         var result = ed25519SecretKey.AsSpan().SequenceEqual(this.cryptoSignSecretKey);
         result = ed25519PublicKey2.AsSpan().SequenceEqual(this.cryptoSignPublicKey);
 
@@ -90,6 +91,15 @@ public class Curve25519Benchmark
         var secretKey = new byte[CryptoSign.SecretKeySize];
         var publicKey = new byte[CryptoSign.PublicKeySize];
         Ed25519Operations.CreateKeyFromSeed(this.seed, publicKey, secretKey);
+        return secretKey;
+    }
+
+    [Benchmark]
+    public byte[] CryptoSign_CreateKeyFromSeed3()
+    {
+        var secretKey = new byte[CryptoSign.SecretKeySize];
+        var publicKey = new byte[CryptoSign.PublicKeySize];
+        CryptoSign.CreateKey2(this.seed, secretKey, publicKey);
         return secretKey;
     }
 
