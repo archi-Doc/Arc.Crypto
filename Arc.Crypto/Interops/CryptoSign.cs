@@ -180,9 +180,9 @@ public static class CryptoSign
         }
 
         ge25519_p3 a;
-        if (Ed25519Helper.ge25519_frombytes_negate_vartime(out a, signPublicKey32) != 0 ||
+        if (Ed25519Helper.ge25519_frombytes_negate_vartime(out a, signPublicKey32) != 0/* ||
             Ed25519Helper.ge25519_has_small_order(ref a) != 0 ||
-            Ed25519Helper.ge25519_is_on_main_subgroup(ref a) == 0)
+            Ed25519Helper.ge25519_is_on_main_subgroup(ref a) == 0*/)
         {
             return false;
         }

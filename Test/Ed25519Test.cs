@@ -122,4 +122,29 @@ public class Ed25519Test
             boxPublicKey.SequenceEqual(boxPublicKey2).IsTrue();
         }
     }
+
+    [Fact]
+    public void CryptoBoxTest()
+    {
+        var random = new Xoroshiro128StarStar(12);
+        Span<byte> seed = stackalloc byte[CryptoBox.SeedSize];
+        Span<byte> nonce = stackalloc byte[CryptoBox.NonceSize];
+        Span<byte> boxSecretKey = stackalloc byte[CryptoBox.SecretKeySize];
+        Span<byte> boxPublicKey = stackalloc byte[CryptoBox.PublicKeySize];
+        Span<byte> boxSecretKey2 = stackalloc byte[CryptoBox.SecretKeySize];
+        Span<byte> boxPublicKey2 = stackalloc byte[CryptoBox.PublicKeySize];
+        Span<byte> message = [0, 1, 2, 4,];
+        Span<byte> cipher = stackalloc byte[4 + CryptoBox.MacSize];
+        bool result;
+
+        random.NextBytes(seed);
+        CryptoBox.CreateKey(seed, boxSecretKey, boxPublicKey);
+        CryptoBox.CreateKey(seed, boxSecretKey2, boxPublicKey2);
+
+        CryptoBox.Encrypt(message, nonce, boxSecretKey, boxPublicKey2, cipher);
+        result = CryptoBox.TryDecrypt(cipher, nonce, boxSecretKey, boxPublicKey2, message);
+        // boxPublicKey2[31] |= 128;
+        boxSecretKey2[1]++;
+        result = CryptoBox.TryDecrypt(cipher, nonce, boxSecretKey2, boxPublicKey2, message);
+    }
 }
