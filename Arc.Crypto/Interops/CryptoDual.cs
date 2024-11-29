@@ -6,12 +6,19 @@ namespace Arc.Crypto;
 
 /// <summary>
 /// A support class for making Ed25519 and Curve25519 public keys interchangeable.<br/>
-/// Traditionally, it was possible to convert an Ed25519 public key to a Curve25519 public key, but the reverse was challenging.<br/>
+/// It was possible to convert an Ed25519 public key to a Curve25519 public key, but the reverse was challenging.<br/>
 /// By adding a sign bit to the Curve25519 key, reverse conversion is now possible.<br/>
 /// As a result, it does not strictly adhere to the standard Curve25519 format.
 /// </summary>
 public static class CryptoDual
 {
+    /// <summary>
+    /// Generates a new key pair for both signature and encryption using a random seed.
+    /// </summary>
+    /// <param name="signSecretKey32">A span to hold the signature secret key. The size must be <see cref="CryptoSign.SecretKeySize"/> (64 bytes).</param>
+    /// <param name="signPublicKey32">A span to hold the signature public key. The size must be <see cref="CryptoSign.PublicKeySize"/> (32 bytes).</param>
+    /// <param name="boxSecretKey32">A span to hold the encryption secret key. The size must be <see cref="CryptoBox.SecretKeySize"/> (32 bytes).</param>
+    /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/> (32 bytes).</param>
     public static void CreateKey(Span<byte> signSecretKey32, Span<byte> signPublicKey32, Span<byte> boxSecretKey32, Span<byte> boxPublicKey32)
     {
         Span<byte> seed = stackalloc byte[CryptoSign.SeedSize];
@@ -19,6 +26,15 @@ public static class CryptoDual
         CreateKey(seed, signSecretKey32, signPublicKey32, boxSecretKey32, boxPublicKey32);
     }
 
+    /// <summary>
+    /// Generates a new key pair for both signature and encryption using the provided seed.
+    /// </summary>
+    /// <param name="seed32">The seed used to generate the key pair. The size must be <see cref="CryptoSign.SeedSize"/> (32 bytes).</param>
+    /// <param name="signSecretKey64">A span to hold the signature secret key. The size must be <see cref="CryptoSign.SecretKeySize"/> (64 bytes).</param>
+    /// <param name="signPublicKey32">A span to hold the signature public key. The size must be <see cref="CryptoSign.PublicKeySize"/> (32 bytes).</param>
+    /// <param name="boxSecretKey32">A span to hold the encryption secret key. The size must be <see cref="CryptoBox.SecretKeySize"/> (32 bytes).</param>
+    /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/> (32 bytes).</param>
+    /// <exception cref="ArgumentException">Thrown when the size of any of the provided spans does not match the expected size.</exception>
     public static void CreateKey(ReadOnlySpan<byte> seed32, Span<byte> signSecretKey64, Span<byte> signPublicKey32, Span<byte> boxSecretKey32, Span<byte> boxPublicKey32)
     {
         if (seed32.Length != CryptoSign.SeedSize)
@@ -53,7 +69,7 @@ public static class CryptoDual
     }
 
     /// <summary>
-    /// Converts a signature secret key to a encryption secret key.
+    /// Converts a signature secret key(64) to a encryption secret key(32).
     /// </summary>
     /// <param name="signSecretKey64">The signature secret key. The size must be <see cref="CryptoSign.SecretKeySize"/>(64 bytes).</param>
     /// <param name="boxSecretKey32">A span to hold the encryption secret key. The size must be <see cref="CryptoBox.SecretKeySize"/>(32 bytes).</param>
@@ -76,7 +92,7 @@ public static class CryptoDual
     }
 
     /// <summary>
-    /// Converts a signature public key to an encryption public key.
+    /// Converts a signature public key(32) to an encryption public key(32).
     /// </summary>
     /// <param name="signPublicKey32">The signature public key. The size must be <see cref="CryptoSign.PublicKeySize"/>(32 bytes).</param>
     /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/>(32 bytes).</param>
@@ -105,6 +121,12 @@ public static class CryptoDual
         boxPublicKey32[31] |= (byte)(0x80 & signPublicKey32[31]);
     }
 
+    /// <summary>
+    /// Converts a encryption public key(32) to an signature public key(32).<br/>
+    /// Please note that only the encryption public keys created by CryptoDual.CreateKey() can be converted to signature public keys.
+    /// </summary>
+    /// <param name="boxPublicKey32">The encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/>(32 bytes).</param>
+    /// <param name="signPublicKey32">A span to hold the signature public key. The size must be <see cref="CryptoSign.PublicKeySize"/>(32 bytes).</param>
     public static void PublicKey_BoxToSign(ReadOnlySpan<byte> boxPublicKey32, Span<byte> signPublicKey32)
     {
         if (boxPublicKey32.Length != CryptoBox.PublicKeySize)
@@ -128,6 +150,17 @@ public static class CryptoDual
         signPublicKey32[31] |= (byte)(0x80 & boxPublicKey32[31]);
     }
 
+    /// <summary>
+    /// Compares two encryption public keys for equality.
+    /// </summary>
+    /// <param name="publicKey">The first encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/> (32 bytes).</param>
+    /// <param name="publicKey2">The second encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/> (32 bytes).</param>
+    /// <returns>
+    /// <c>true</c> if the public keys are equal; otherwise, <c>false</c>.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the size of <paramref name="publicKey"/> or <paramref name="publicKey2"/> does not match <see cref="CryptoBox.PublicKeySize"/>.
+    /// </exception>
     public static bool BoxPublicKey_Equals(ReadOnlySpan<byte> publicKey, ReadOnlySpan<byte> publicKey2)
     {
         if (publicKey.Length != CryptoBox.PublicKeySize)
