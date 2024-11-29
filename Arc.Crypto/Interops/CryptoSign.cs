@@ -1,7 +1,5 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using Arc.Crypto.Ed25519;
-
 namespace Arc.Crypto;
 
 /// <summary>
@@ -52,7 +50,7 @@ public static class CryptoSign
     }
 
     /// <summary>
-    /// Creates a new key pair (secret and public key) from a seed.
+    /// Creates a new key pair (secret(64) and public(32) key) from a seed(32).
     /// </summary>
     /// <param name="seed32">The seed span. The size must be <see cref="SeedSize"/>(32 bytes).</param>
     /// <param name="secretKey64">A span to hold the secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
@@ -78,7 +76,7 @@ public static class CryptoSign
     }
 
     /// <summary>
-    /// Extracts the seed from a secret key.
+    /// Extracts the seed(32) from a secret key(64).
     /// </summary>
     /// <param name="secretKey64">The secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
     /// <param name="seed32">A span to hold the seed. The size must be <see cref="SeedSize"/>(32 bytes).</param>
@@ -98,7 +96,7 @@ public static class CryptoSign
     }
 
     /// <summary>
-    /// Extracts the public key from a secret key.
+    /// Extracts the public key(32) from a secret key(64).
     /// </summary>
     /// <param name="secretKey64">The secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
     /// <param name="publicKey32">A span to hold the public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
@@ -118,87 +116,7 @@ public static class CryptoSign
     }
 
     /// <summary>
-    /// Converts a signature secret key to a encryption secret key.
-    /// </summary>
-    /// <param name="signSecretKey64">The signature secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
-    /// <param name="boxSecretKey32">A span to hold the encryption secret key. The size must be <see cref="CryptoBox.SecretKeySize"/>(32 bytes).</param>
-    public static void SecretKey_SignToBox(ReadOnlySpan<byte> signSecretKey64, Span<byte> boxSecretKey32)
-    {
-        if (signSecretKey64.Length != SecretKeySize)
-        {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signSecretKey64), SecretKeySize);
-        }
-
-        if (boxSecretKey32.Length != CryptoBox.SecretKeySize)
-        {
-            CryptoHelper.ThrowSizeMismatchException(nameof(boxSecretKey32), SecretKeySize);
-        }
-
-        // LibsodiumInterops.crypto_sign_ed25519_sk_to_curve25519(boxSecretKey, signSecretKey);
-        Span<byte> hash = stackalloc byte[64];
-        LibsodiumInterops.crypto_hash(hash, signSecretKey64.Slice(0, 32), 32); // Sha2Helper.Get512_Span(signSecretKey.Slice(0, 32), hash);
-        hash.Slice(0, 32).CopyTo(boxSecretKey32);
-    }
-
-    /// <summary>
-    /// Converts a signature public key to an encryption public key.
-    /// </summary>
-    /// <param name="signPublicKey32">The signature public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
-    /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/>(32 bytes).</param>
-    /// <returns>True if the conversion is successful; otherwise, false.</returns>
-    public static bool PublicKey_SignToBox(ReadOnlySpan<byte> signPublicKey32, Span<byte> boxPublicKey32)
-    {
-        if (signPublicKey32.Length != PublicKeySize)
-        {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signPublicKey32), PublicKeySize);
-        }
-
-        if (boxPublicKey32.Length != CryptoBox.PublicKeySize)
-        {
-            CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
-        }
-
-        return LibsodiumInterops.crypto_sign_ed25519_pk_to_curve25519(boxPublicKey32, signPublicKey32) == 0;
-    }
-
-    /// <summary>
-    /// Converts a signature public key to an encryption public key.
-    /// </summary>
-    /// <param name="signPublicKey32">The signature public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
-    /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/>(32 bytes).</param>
-    /// <returns>True if the conversion is successful; otherwise, false.</returns>
-    public static bool PublicKey_SignToBox2(ReadOnlySpan<byte> signPublicKey32, Span<byte> boxPublicKey32)
-    {
-        if (signPublicKey32.Length != PublicKeySize)
-        {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signPublicKey32), PublicKeySize);
-        }
-
-        if (boxPublicKey32.Length != CryptoBox.PublicKeySize)
-        {
-            CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
-        }
-
-        ge25519_p3 a;
-        if (Ed25519Internal.ge25519_frombytes_negate_vartime(out a, signPublicKey32) != 0/* ||
-            Ed25519Helper.ge25519_has_small_order(ref a) != 0 ||
-            Ed25519Helper.ge25519_is_on_main_subgroup(ref a) == 0*/)
-        {
-            return false;
-        }
-
-        var one = new fe25519(1);
-        Ed25519Internal.fe25519_sub(out var xMinusOne, ref one, ref a.Y);
-        Ed25519Internal.fe25519_add(out var xPlusOne, ref one, ref a.Y);
-        Ed25519Internal.fe25519_invert(out var inv, ref xMinusOne);
-        Ed25519Internal.fe25519_mul(out var res, ref xPlusOne, ref inv);
-        Ed25519Internal.fe25519_tobytes(boxPublicKey32, ref res);
-
-        return true;
-    }
-
-    /// <summary>
-    /// Signs a message using a secret key.
+    /// Signs a message using a secret key(64).
     /// </summary>
     /// <param name="message">The message to be signed.</param>
     /// <param name="secretKey64">The secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
@@ -219,7 +137,7 @@ public static class CryptoSign
     }
 
     /// <summary>
-    /// Verifies a message signature using a public key.
+    /// Verifies a message signature using a public key(32).
     /// </summary>
     /// <param name="message">The message span to be verified.</param>
     /// <param name="publicKey32">The public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>

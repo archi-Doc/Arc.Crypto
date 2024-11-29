@@ -53,6 +53,29 @@ public static class CryptoDual
     }
 
     /// <summary>
+    /// Converts a signature secret key to a encryption secret key.
+    /// </summary>
+    /// <param name="signSecretKey64">The signature secret key. The size must be <see cref="CryptoSign.SecretKeySize"/>(64 bytes).</param>
+    /// <param name="boxSecretKey32">A span to hold the encryption secret key. The size must be <see cref="CryptoBox.SecretKeySize"/>(32 bytes).</param>
+    public static void SecretKey_SignToBox(ReadOnlySpan<byte> signSecretKey64, Span<byte> boxSecretKey32)
+    {
+        if (signSecretKey64.Length != CryptoSign.SecretKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(signSecretKey64), CryptoSign.SecretKeySize);
+        }
+
+        if (boxSecretKey32.Length != CryptoBox.SecretKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(boxSecretKey32), CryptoBox.SecretKeySize);
+        }
+
+        // LibsodiumInterops.crypto_sign_ed25519_sk_to_curve25519(boxSecretKey, signSecretKey);
+        Span<byte> hash = stackalloc byte[64];
+        LibsodiumInterops.crypto_hash(hash, signSecretKey64.Slice(0, 32), 32); // Sha2Helper.Get512_Span(signSecretKey.Slice(0, 32), hash);
+        hash.Slice(0, 32).CopyTo(boxSecretKey32);
+    }
+
+    /// <summary>
     /// Converts a signature public key to an encryption public key.
     /// </summary>
     /// <param name="signPublicKey32">The signature public key. The size must be <see cref="CryptoSign.PublicKeySize"/>(32 bytes).</param>
@@ -68,6 +91,8 @@ public static class CryptoDual
         {
             CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
         }
+
+        // return LibsodiumInterops.crypto_sign_ed25519_pk_to_curve25519(boxPublicKey32, signPublicKey32) == 0;
 
         Ed25519Internal.ge25519_frombytes_negate_vartime(out var a, signPublicKey32);
         var one = new fe25519(1);

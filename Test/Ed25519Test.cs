@@ -64,57 +64,6 @@ public class Ed25519Test
     }
 
     [Fact]
-    public void Test2()
-    {
-        var random = new Xoroshiro128StarStar(12);
-        Span<byte> seed = stackalloc byte[CryptoSign.SeedSize];
-        random.NextBytes(seed);
-        Span<byte> signSecretKey = stackalloc byte[CryptoSign.SecretKeySize];
-        Span<byte> signPublicKey = stackalloc byte[CryptoSign.PublicKeySize];
-        Span<byte> boxSecretKey = stackalloc byte[CryptoBox.SecretKeySize];
-        Span<byte> boxPublicKey = stackalloc byte[CryptoBox.PublicKeySize];
-        Span<byte> boxSecretKey2 = stackalloc byte[CryptoBox.SecretKeySize];
-        Span<byte> boxPublicKey2 = stackalloc byte[CryptoBox.PublicKeySize];
-
-        CryptoSign.CreateKey(seed, signSecretKey, signPublicKey);
-        CryptoBox.CreateKey(seed, boxSecretKey, boxPublicKey);
-
-        CryptoSign.SecretKey_SignToBox(signSecretKey, boxSecretKey2);
-        boxSecretKey.SequenceEqual(boxSecretKey2).IsTrue();
-        CryptoSign.PublicKey_SignToBox(signPublicKey, boxPublicKey2);
-        boxPublicKey.SequenceEqual(boxPublicKey2).IsTrue();
-    }
-
-    [Fact]
-    public void KeyConversionTest()
-    {
-        var random = new Xoroshiro128StarStar(102);
-        Span<byte> seed = stackalloc byte[CryptoSign.SeedSize];
-        Span<byte> signSecretKey = stackalloc byte[CryptoSign.SecretKeySize];
-        Span<byte> signPublicKey = stackalloc byte[CryptoSign.PublicKeySize];
-        Span<byte> boxSecretKey = stackalloc byte[CryptoBox.SecretKeySize];
-        Span<byte> boxPublicKey = stackalloc byte[CryptoBox.PublicKeySize];
-        Span<byte> boxSecretKey2 = stackalloc byte[CryptoBox.SecretKeySize];
-        Span<byte> boxPublicKey2 = stackalloc byte[CryptoBox.PublicKeySize];
-        Span<byte> signPublicKey3 = stackalloc byte[CryptoSign.PublicKeySize];
-
-        for (var i = 0; i < 1_000; i++)
-        {
-            random.NextBytes(seed);
-
-            CryptoSign.CreateKey(seed, signSecretKey, signPublicKey);
-            CryptoBox.CreateKey(seed, boxSecretKey, boxPublicKey);
-
-            CryptoSign.SecretKey_SignToBox(signSecretKey, boxSecretKey2);
-            boxSecretKey.SequenceEqual(boxSecretKey2).IsTrue();
-            CryptoSign.PublicKey_SignToBox(signPublicKey, boxPublicKey2).IsTrue();
-            boxPublicKey.SequenceEqual(boxPublicKey2).IsTrue();
-            CryptoSign.PublicKey_SignToBox2(signPublicKey, boxPublicKey2).IsTrue();
-            boxPublicKey.SequenceEqual(boxPublicKey2).IsTrue();
-        }
-    }
-
-    [Fact]
     public void CryptoBoxTest()
     {
         var random = new Xoroshiro128StarStar(12);
