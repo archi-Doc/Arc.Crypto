@@ -64,24 +64,90 @@ public class Ed25519Test
     }
 
     [Fact]
-    public void Test2()
+    public void CryptoBoxTest()
     {
         var random = new Xoroshiro128StarStar(12);
-        Span<byte> seed = stackalloc byte[CryptoSign.SeedSize];
-        random.NextBytes(seed);
-        Span<byte> signSecretKey = stackalloc byte[CryptoSign.SecretKeySize];
-        Span<byte> signPublicKey = stackalloc byte[CryptoSign.PublicKeySize];
+        Span<byte> seed = stackalloc byte[CryptoBox.SeedSize];
+        Span<byte> nonce = stackalloc byte[CryptoBox.NonceSize];
         Span<byte> boxSecretKey = stackalloc byte[CryptoBox.SecretKeySize];
         Span<byte> boxPublicKey = stackalloc byte[CryptoBox.PublicKeySize];
         Span<byte> boxSecretKey2 = stackalloc byte[CryptoBox.SecretKeySize];
         Span<byte> boxPublicKey2 = stackalloc byte[CryptoBox.PublicKeySize];
+        Span<byte> message = [0, 1, 2, 4,];
+        Span<byte> cipher = stackalloc byte[4 + CryptoBox.MacSize];
+        bool result;
 
-        CryptoSign.CreateKey(seed, signSecretKey, signPublicKey);
+        random.NextBytes(seed);
         CryptoBox.CreateKey(seed, boxSecretKey, boxPublicKey);
+        CryptoBox.CreateKey(seed, boxSecretKey2, boxPublicKey2);
 
-        CryptoSign.SecretKey_SignToBox(signSecretKey, boxSecretKey2);
-        boxSecretKey.SequenceEqual(boxSecretKey2).IsTrue();
-        CryptoSign.PublicKey_SignToBox(signPublicKey, boxPublicKey2);
-        boxPublicKey.SequenceEqual(boxPublicKey2).IsTrue();
+        CryptoBox.Encrypt(message, nonce, boxSecretKey, boxPublicKey2, cipher);
+        result = CryptoBox.TryDecrypt(cipher, nonce, boxSecretKey, boxPublicKey2, message);
+        boxSecretKey2[1]++;
+        result = CryptoBox.TryDecrypt(cipher, nonce, boxSecretKey2, boxPublicKey2, message);
+    }
+
+    [Fact]
+    public void CryptoDualTest()
+    {
+        const int MessageSize = 100;
+
+        var random = new Xoroshiro128StarStar(12);
+        Span<byte> seed = stackalloc byte[CryptoBox.SeedSize];
+        Span<byte> signSecretKey = stackalloc byte[CryptoSign.SecretKeySize];
+        Span<byte> signPublicKey = stackalloc byte[CryptoSign.PublicKeySize];
+        Span<byte> boxSecretKey = stackalloc byte[CryptoBox.SecretKeySize];
+        Span<byte> boxPublicKey = stackalloc byte[CryptoBox.PublicKeySize];
+        Span<byte> dualSignSecretKey = stackalloc byte[CryptoSign.SecretKeySize];
+        Span<byte> dualSignPublicKey = stackalloc byte[CryptoSign.PublicKeySize];
+        Span<byte> dualBoxSecretKey = stackalloc byte[CryptoBox.SecretKeySize];
+        Span<byte> dualBoxPublicKey = stackalloc byte[CryptoBox.PublicKeySize];
+        Span<byte> message = stackalloc byte[MessageSize];
+        Span<byte> cipher = stackalloc byte[MessageSize + CryptoBox.MacSize];
+        Span<byte> nonce = stackalloc byte[CryptoBox.NonceSize];
+        Span<byte> decrypted = stackalloc byte[MessageSize];
+        Span<byte> signature = stackalloc byte[CryptoSign.SignatureSize];
+
+        Span<byte> boxSecretKey2 = stackalloc byte[CryptoBox.SecretKeySize];
+        Span<byte> boxPublicKey2 = stackalloc byte[CryptoBox.PublicKeySize];
+        random.NextBytes(seed);
+        CryptoBox.CreateKey(seed, boxSecretKey2, boxPublicKey2);
+
+        for (var i = 0; i < 1_000; i++)
+        {
+            random.NextBytes(seed);
+
+            CryptoSign.CreateKey(seed, signSecretKey, signPublicKey);
+            CryptoBox.CreateKey(seed, boxSecretKey, boxPublicKey);
+            CryptoDual.CreateKey(seed, dualSignSecretKey, dualSignPublicKey, dualBoxSecretKey, dualBoxPublicKey);
+
+            dualSignSecretKey.SequenceEqual(signSecretKey).IsTrue();
+            dualSignPublicKey.SequenceEqual(signPublicKey).IsTrue();
+            dualBoxSecretKey.SequenceEqual(boxSecretKey).IsTrue();
+            CryptoDual.BoxPublicKey_Equals(dualBoxPublicKey, boxPublicKey).IsTrue();
+
+            CryptoDual.PublicKey_SignToBox(dualSignPublicKey, dualBoxPublicKey);
+            CryptoDual.BoxPublicKey_Equals(dualBoxPublicKey, boxPublicKey).IsTrue();
+            CryptoDual.PublicKey_BoxToSign(dualBoxPublicKey, dualSignPublicKey);
+            dualSignPublicKey.SequenceEqual(signPublicKey).IsTrue();
+
+            // Encryption
+            random.NextBytes(message);
+            random.NextBytes(nonce);
+            CryptoBox.Encrypt(message, nonce, boxSecretKey2, dualBoxPublicKey, cipher);
+            CryptoBox.TryDecrypt(cipher, nonce, boxSecretKey2, dualBoxPublicKey, decrypted).IsTrue();
+            message.SequenceEqual(decrypted).IsTrue();
+            CryptoBox.TryDecrypt(cipher, nonce, dualBoxSecretKey, boxPublicKey2, decrypted).IsTrue();
+            message.SequenceEqual(decrypted).IsTrue();
+
+            nonce[2]++;
+            CryptoBox.TryDecrypt(cipher, nonce, dualBoxSecretKey, boxPublicKey2, decrypted).IsFalse();
+
+            // Signature
+            CryptoSign.Sign(message, signSecretKey, signature);
+            CryptoSign.Verify(message, signPublicKey, signature).IsTrue();
+            signature[0]++;
+            CryptoSign.Verify(message, signPublicKey, signature).IsFalse();
+        }
     }
 }

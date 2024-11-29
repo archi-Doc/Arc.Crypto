@@ -466,7 +466,7 @@ public class FarmHash : IHash
                 ushort c = s[len - 1];
                 uint y = a + ((uint)b << 8);
                 uint z = len + ((uint)c << 2);
-                return ShiftMix(y * K2 ^ z * K0) * K2;
+                return ShiftMix((y * K2) ^ (z * K0)) * K2;
             }
 
             return K2;

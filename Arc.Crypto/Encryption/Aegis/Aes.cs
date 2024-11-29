@@ -173,6 +173,6 @@ internal static class AES
         uint t2 = Te0[(byte)(s2 >> 24)] ^ Te1[(byte)(s3 >> 16)] ^ Te2[(byte)(s0 >> 8)] ^ Te3[(byte)s1] ^ xk2;
         uint t3 = Te0[(byte)(s3 >> 24)] ^ Te1[(byte)(s0 >> 16)] ^ Te2[(byte)(s1 >> 8)] ^ Te3[(byte)s2] ^ xk3;
 
-        return new UInt128((ulong)t0 << 32 | t1, (ulong)t2 << 32 | t3);
+        return new UInt128(((ulong)t0 << 32) | t1, ((ulong)t2 << 32) | t3);
     }
 }
