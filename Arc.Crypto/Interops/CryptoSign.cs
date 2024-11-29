@@ -99,8 +99,8 @@ public static class CryptoSign
         secretKey64[31] &= 127; // 0111_1111
         secretKey64[31] |= 64; // 0100_0000
 
-        Ed25519Helper.ge25519_scalarmult_base(out var a, secretKey64);
-        Ed25519Helper.ge25519_p3_tobytes(publicKey32, ref a);
+        Ed25519Internal.ge25519_scalarmult_base(out var a, secretKey64);
+        Ed25519Internal.ge25519_p3_tobytes(publicKey32, ref a);
 
         seed32.CopyTo(secretKey64);
         publicKey32.CopyTo(secretKey64.Slice(SeedSize));
@@ -209,7 +209,7 @@ public static class CryptoSign
         }
 
         ge25519_p3 a;
-        if (Ed25519Helper.ge25519_frombytes_negate_vartime(out a, signPublicKey32) != 0/* ||
+        if (Ed25519Internal.ge25519_frombytes_negate_vartime(out a, signPublicKey32) != 0/* ||
             Ed25519Helper.ge25519_has_small_order(ref a) != 0 ||
             Ed25519Helper.ge25519_is_on_main_subgroup(ref a) == 0*/)
         {
@@ -217,11 +217,11 @@ public static class CryptoSign
         }
 
         var one = new fe25519(1);
-        Ed25519Helper.fe25519_sub(out var xMinusOne, ref one, ref a.Y);
-        Ed25519Helper.fe25519_add(out var xPlusOne, ref one, ref a.Y);
-        Ed25519Helper.fe25519_invert(out var inv, ref xMinusOne);
-        Ed25519Helper.fe25519_mul(out var res, ref xPlusOne, ref inv);
-        Ed25519Helper.fe25519_tobytes(boxPublicKey32, ref res);
+        Ed25519Internal.fe25519_sub(out var xMinusOne, ref one, ref a.Y);
+        Ed25519Internal.fe25519_add(out var xPlusOne, ref one, ref a.Y);
+        Ed25519Internal.fe25519_invert(out var inv, ref xMinusOne);
+        Ed25519Internal.fe25519_mul(out var res, ref xPlusOne, ref inv);
+        Ed25519Internal.fe25519_tobytes(boxPublicKey32, ref res);
 
         return true;
     }

@@ -5,7 +5,7 @@
 
 namespace Arc.Crypto.Ed25519;
 
-internal static partial class Ed25519Helper
+internal static partial class Ed25519Internal
 {
     public static readonly ge25519_precomp[] Table = [
   new(

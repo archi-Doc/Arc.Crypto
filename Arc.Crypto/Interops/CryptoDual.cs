@@ -69,13 +69,13 @@ public static class CryptoDual
             CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
         }
 
-        Ed25519Helper.ge25519_frombytes_negate_vartime(out var a, signPublicKey32);
+        Ed25519Internal.ge25519_frombytes_negate_vartime(out var a, signPublicKey32);
         var one = new fe25519(1);
-        Ed25519Helper.fe25519_sub(out var xMinusOne, ref one, ref a.Y);
-        Ed25519Helper.fe25519_add(out var xPlusOne, ref one, ref a.Y);
-        Ed25519Helper.fe25519_invert(out var inv, ref xMinusOne);
-        Ed25519Helper.fe25519_mul(out var res, ref xPlusOne, ref inv);
-        Ed25519Helper.fe25519_tobytes(boxPublicKey32, ref res);
+        Ed25519Internal.fe25519_sub(out var xMinusOne, ref one, ref a.Y);
+        Ed25519Internal.fe25519_add(out var xPlusOne, ref one, ref a.Y);
+        Ed25519Internal.fe25519_invert(out var inv, ref xMinusOne);
+        Ed25519Internal.fe25519_mul(out var res, ref xPlusOne, ref inv);
+        Ed25519Internal.fe25519_tobytes(boxPublicKey32, ref res);
 
         boxPublicKey32[31] |= (byte)(0x80 & signPublicKey32[31]);
     }
@@ -92,13 +92,13 @@ public static class CryptoDual
             CryptoHelper.ThrowSizeMismatchException(nameof(signPublicKey32), CryptoSign.PublicKeySize);
         }
 
-        Ed25519Helper.fe25519_frombytes(out var x, boxPublicKey32);
+        Ed25519Internal.fe25519_frombytes(out var x, boxPublicKey32);
         var one = new fe25519(1);
-        Ed25519Helper.fe25519_sub(out var xMinusOne, ref x, ref one);
-        Ed25519Helper.fe25519_add(out var xPlusOne, ref x, ref one);
-        Ed25519Helper.fe25519_invert(out var inv, ref xPlusOne);
-        Ed25519Helper.fe25519_mul(out var res, ref xMinusOne, ref inv);
-        Ed25519Helper.fe25519_tobytes(signPublicKey32, ref res);
+        Ed25519Internal.fe25519_sub(out var xMinusOne, ref x, ref one);
+        Ed25519Internal.fe25519_add(out var xPlusOne, ref x, ref one);
+        Ed25519Internal.fe25519_invert(out var inv, ref xPlusOne);
+        Ed25519Internal.fe25519_mul(out var res, ref xMinusOne, ref inv);
+        Ed25519Internal.fe25519_tobytes(signPublicKey32, ref res);
 
         signPublicKey32[31] |= (byte)(0x80 & boxPublicKey32[31]);
     }

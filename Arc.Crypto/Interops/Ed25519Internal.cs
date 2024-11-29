@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Arc.Crypto.Ed25519;
 
-internal static partial class Ed25519Helper
+internal static partial class Ed25519Internal
 {
     private const ulong Mask = 0x7ffffffffffffUL;
     private const int Length = 32;
@@ -204,58 +204,6 @@ internal static partial class Ed25519Helper
         s[31] ^= (byte)(fe25519_isnegative(ref x) << 7);
     }
 
-    public static void ge25519_scalarmult_base(out ge25519_p3 h, ReadOnlySpan<byte> a)
-    {
-        Span<sbyte> e = stackalloc sbyte[64];
-        sbyte carry;
-        ge25519_p1p1 r;
-        ge25519_p2 s;
-        ge25519_precomp t;
-        int i;
-
-        for (i = 0; i < 32; ++i)
-        {
-            e[(2 * i) + 0] = (sbyte)((a[i] >> 0) & 15);
-            e[(2 * i) + 1] = (sbyte)((a[i] >> 4) & 15);
-        }
-
-        carry = 0;
-        for (i = 0; i < 63; ++i)
-        {
-            e[i] += carry;
-            carry = (sbyte)(e[i] + 8);
-            carry >>= 4;
-            e[i] -= (sbyte)(carry * ((sbyte)1 << 4));
-        }
-
-        e[63] += carry;
-
-        ge25519_p3_0(out h);
-
-        for (i = 1; i < 64; i += 2)
-        {
-            ge25519_cmov8(out t, i / 2, e[i]);
-            ge25519_add_precomp(out r, ref h, ref t);
-            ge25519_p1p1_to_p3(out h, ref r);
-        }
-
-        ge25519_p3_dbl(out r, ref h);
-        ge25519_p1p1_to_p2(out s, ref r);
-        ge25519_p2_dbl(out r, ref s);
-        ge25519_p1p1_to_p2(out s, ref r);
-        ge25519_p2_dbl(out r, ref s);
-        ge25519_p1p1_to_p2(out s, ref r);
-        ge25519_p2_dbl(out r, ref s);
-        ge25519_p1p1_to_p3(out h, ref r);
-
-        for (i = 0; i < 64; i += 2)
-        {
-            ge25519_cmov8(out t, i / 2, e[i]);
-            ge25519_add_precomp(out r, ref h, ref t);
-            ge25519_p1p1_to_p3(out h, ref r);
-        }
-    }
-
     public static void ge25519_add_precomp(out ge25519_p1p1 r, ref ge25519_p3 p, ref ge25519_precomp q)
     {
         fe25519 t0;
@@ -269,49 +217,6 @@ internal static partial class Ed25519Helper
         fe25519_add(out r.Y, ref r.Z, ref r.Y);
         fe25519_add(out r.Z, ref t0, ref r.T);
         fe25519_sub(out r.T, ref t0, ref r.T);
-    }
-
-    public static byte equal(byte b, byte c)
-    {
-        byte ub = b;
-        byte uc = c;
-        byte x = (byte)(ub ^ uc);
-        uint y = x;
-        unchecked
-        {
-            y -= 1;
-        }
-
-        y >>= 31;
-        return (byte)y;
-    }
-
-    public static byte negative(sbyte b)
-    {
-        ulong x = unchecked((ulong)(long)b);
-        x >>= 63;
-        return (byte)x;
-    }
-
-    public static void ge25519_cmov8(out ge25519_precomp t, int pos, sbyte b)
-    {
-        ge25519_precomp minust;
-        byte bnegative = negative(b);
-        byte babs = (byte)(b - (((-bnegative) & b) * (1 << 1)));
-
-        ge25519_precomp_0(out t);
-        ge25519_cmov(ref t, ref Table[pos + 0], equal(babs, 1));
-        ge25519_cmov(ref t, ref Table[pos + 1], equal(babs, 2));
-        ge25519_cmov(ref t, ref Table[pos + 2], equal(babs, 3));
-        ge25519_cmov(ref t, ref Table[pos + 3], equal(babs, 4));
-        ge25519_cmov(ref t, ref Table[pos + 4], equal(babs, 5));
-        ge25519_cmov(ref t, ref Table[pos + 5], equal(babs, 6));
-        ge25519_cmov(ref t, ref Table[pos + 6], equal(babs, 7));
-        ge25519_cmov(ref t, ref Table[pos + 7], equal(babs, 8));
-        minust.yplusx = t.yminusx;
-        minust.yminusx = t.yplusx;
-        fe25519_neg(out minust.xy2d, ref t.xy2d);
-        ge25519_cmov(ref t, ref minust, bnegative);
     }
 
     public static void fe25519_cmov(ref fe25519 f, ref fe25519 g, byte b)

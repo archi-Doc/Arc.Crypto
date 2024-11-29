@@ -166,13 +166,13 @@ public static class CryptoBox
             CryptoHelper.ThrowSizeMismatchException(nameof(signPublicKey32), CryptoSign.PublicKeySize);
         }
 
-        Ed25519Helper.fe25519_frombytes(out var x, boxPublicKey32);
+        Ed25519Internal.fe25519_frombytes(out var x, boxPublicKey32);
         var one = new fe25519(1);
-        Ed25519Helper.fe25519_sub(out var xMinusOne, ref x, ref one);
-        Ed25519Helper.fe25519_add(out var xPlusOne, ref x, ref one);
-        Ed25519Helper.fe25519_invert(out var inv, ref xPlusOne);
-        Ed25519Helper.fe25519_mul(out var res, ref xMinusOne, ref inv);
-        Ed25519Helper.fe25519_tobytes(signPublicKey32, ref res);
+        Ed25519Internal.fe25519_sub(out var xMinusOne, ref x, ref one);
+        Ed25519Internal.fe25519_add(out var xPlusOne, ref x, ref one);
+        Ed25519Internal.fe25519_invert(out var inv, ref xPlusOne);
+        Ed25519Internal.fe25519_mul(out var res, ref xMinusOne, ref inv);
+        Ed25519Internal.fe25519_tobytes(signPublicKey32, ref res);
 
         return true;
     }
