@@ -111,15 +111,6 @@ public class Ed25519Test
             boxPublicKey.SequenceEqual(boxPublicKey2).IsTrue();
             CryptoSign.PublicKey_SignToBox2(signPublicKey, boxPublicKey2).IsTrue();
             boxPublicKey.SequenceEqual(boxPublicKey2).IsTrue();
-
-            // sign - > box -> sign
-            CryptoBox.PublicKey_BoxToSign(boxPublicKey2, signPublicKey3).IsTrue();
-
-            // box -> sign -> box?
-            CryptoBox.PublicKey_BoxToSign(boxPublicKey, signPublicKey3).IsTrue();
-            var a = signPublicKey3.SequenceEqual(signPublicKey);
-            CryptoSign.PublicKey_SignToBox(signPublicKey3, boxPublicKey2).IsTrue();
-            boxPublicKey.SequenceEqual(boxPublicKey2).IsTrue();
         }
     }
 

@@ -5,7 +5,7 @@ using Arc.Crypto.Ed25519;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Helper class for crypto_box functions in Libsodium, which implements public-key authenticated encryption.<br/>
+/// A low-level helper class for crypto_box functions in Libsodium, which implements public-key authenticated encryption.<br/>
 /// Seed 32bytes, Secret key 32bytes, Public key 32bytes, Nonce 24bytes, Mac 16bytes.<br/>
 /// Key exchange: X25519, Encryption: XSalsa20, Authentication: Poly1305.
 /// </summary>
@@ -37,7 +37,7 @@ public static class CryptoBox
     public const int MacSize = 16; // crypto_box_curve25519xsalsa20poly1305_MACBYTES
 
     /// <summary>
-    /// Creates a new key pair (secret and public  keys).
+    /// Creates a new key pair (secret(32) and public(32) keys).
     /// </summary>
     /// <param name="secretKey32">The buffer to hold the secret key. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
     /// <param name="publicKey32">The buffer to hold the public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
@@ -57,7 +57,7 @@ public static class CryptoBox
     }
 
     /// <summary>
-    /// Creates a new key pair (public and secret keys) from a seed.
+    /// Creates a new key pair (public(32) and secret keys(32)) from a seed(32).
     /// </summary>
     /// <param name="seed32">The seed to generate the key pair. The size must be <see cref="SeedSize"/>(32 bytes).</param>
     /// <param name="secretKey32">The buffer to hold the secret key. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
@@ -83,7 +83,8 @@ public static class CryptoBox
     }
 
     /// <summary>
-    /// Encrypts a message using the given nonce, secret key, and public key.
+    /// Encrypts a message using the given nonce(24), secret key(32), and public key(32).<br/>
+    /// Cipher = Message + MAC(16).
     /// </summary>
     /// <param name="message">The message to encrypt.</param>
     /// <param name="nonce24">The nonce to use for encryption. The size must be <see cref="NonceSize"/>(24 bytes).</param>
@@ -116,7 +117,8 @@ public static class CryptoBox
     }
 
     /// <summary>
-    /// Decrypts a cipher using the given nonce, secret key, and public key.
+    /// Decrypts a cipher using the given nonce(24), secret key(32), and public key(32).<br/>
+    /// Message = Cipher - MAC(16).
     /// </summary>
     /// <param name="cipher">The encrypted message to decrypt.</param>
     /// <param name="nonce24">The nonce used for encryption. The size must be <see cref="NonceSize"/>(24 bytes).</param>
@@ -152,28 +154,5 @@ public static class CryptoBox
         }
 
         return LibsodiumInterops.crypto_box_open_easy(message, cipher, (ulong)cipher.Length, nonce24, publicKey32, secretKey32) == 0;
-    }
-
-    public static bool PublicKey_BoxToSign(ReadOnlySpan<byte> boxPublicKey32, Span<byte> signPublicKey32)
-    {
-        if (boxPublicKey32.Length != PublicKeySize)
-        {
-            CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), PublicKeySize);
-        }
-
-        if (signPublicKey32.Length != CryptoSign.PublicKeySize)
-        {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signPublicKey32), CryptoSign.PublicKeySize);
-        }
-
-        Ed25519Internal.fe25519_frombytes(out var x, boxPublicKey32);
-        var one = new fe25519(1);
-        Ed25519Internal.fe25519_sub(out var xMinusOne, ref x, ref one);
-        Ed25519Internal.fe25519_add(out var xPlusOne, ref x, ref one);
-        Ed25519Internal.fe25519_invert(out var inv, ref xPlusOne);
-        Ed25519Internal.fe25519_mul(out var res, ref xMinusOne, ref inv);
-        Ed25519Internal.fe25519_tobytes(signPublicKey32, ref res);
-
-        return true;
     }
 }

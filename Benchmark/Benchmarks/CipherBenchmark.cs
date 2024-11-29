@@ -4,7 +4,6 @@ using System;
 using System.Security.Cryptography;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
-using static FastExpressionCompiler.ExpressionCompiler;
 
 namespace Benchmark;
 

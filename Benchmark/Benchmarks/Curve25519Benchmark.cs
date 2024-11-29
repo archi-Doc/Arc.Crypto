@@ -40,13 +40,6 @@ public class Curve25519Benchmark
         this.cryptoSignPublicKey2 = new byte[CryptoSign.PublicKeySize];
         CryptoSign.CreateKey(this.seed, this.cryptoSignSecretKey, this.cryptoSignPublicKey);
 
-        var ed25519SecretKey = new byte[CryptoSign.SecretKeySize];
-        var ed25519PublicKey2 = new byte[CryptoSign.PublicKeySize];
-        // Ed25519Operations.CreateKeyFromSeed(this.seed, ed25519PublicKey2, ed25519SecretKey);
-        CryptoSign.CreateKey2(this.seed, ed25519SecretKey, ed25519PublicKey2);
-        var result = ed25519SecretKey.AsSpan().SequenceEqual(this.cryptoSignSecretKey);
-        result = ed25519PublicKey2.AsSpan().SequenceEqual(this.cryptoSignPublicKey);
-
         this.cryptoBoxPublicKey = new byte[CryptoBox.SecretKeySize];
         this.cryptoBoxSecretKey = new byte[CryptoBox.PublicKeySize];
         CryptoBox.CreateKey(this.seed, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey);

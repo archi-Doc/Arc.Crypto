@@ -5,7 +5,7 @@ using Arc.Crypto.Ed25519;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Helper class for calling crypto_sign function in Libsodium, which implements public-key signature algorithm.<br/>
+/// A low-level helper class for calling crypto_sign function in Libsodium, which implements public-key signature algorithm.<br/>
 /// Seed 32 bytes, Secret key 64bytes, Public key 32bytes, Signature 64 bytes.<br/>
 /// Single-part signature: Ed25519, Multi-part signature: Ed25519ph.
 /// </summary>
@@ -32,7 +32,7 @@ public static class CryptoSign
     public const int SignatureSize = 64;
 
     /// <summary>
-    /// Creates a new key pair (secret and public key).
+    /// Creates a new key pair (secret(64) and public key(32)).
     /// </summary>
     /// <param name="secretKey64">A span to hold the secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
     /// <param name="publicKey32">A span to hold the public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
@@ -75,35 +75,6 @@ public static class CryptoSign
         }
 
         LibsodiumInterops.crypto_sign_seed_keypair(publicKey32, secretKey64, seed32);
-    }
-
-    public static void CreateKey2(ReadOnlySpan<byte> seed32, Span<byte> secretKey64, Span<byte> publicKey32)
-    {
-        if (seed32.Length != SeedSize)
-        {
-            CryptoHelper.ThrowSizeMismatchException(nameof(seed32), SeedSize);
-        }
-
-        if (secretKey64.Length != SecretKeySize)
-        {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
-        }
-
-        if (publicKey32.Length != PublicKeySize)
-        {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
-        }
-
-        Sha2Helper.Get512_Span(seed32, secretKey64);
-        secretKey64[0] &= 248; // 1111_1000
-        secretKey64[31] &= 127; // 0111_1111
-        secretKey64[31] |= 64; // 0100_0000
-
-        Ed25519Internal.ge25519_scalarmult_base(out var a, secretKey64);
-        Ed25519Internal.ge25519_p3_tobytes(publicKey32, ref a);
-
-        seed32.CopyTo(secretKey64);
-        publicKey32.CopyTo(secretKey64.Slice(SeedSize));
     }
 
     /// <summary>
