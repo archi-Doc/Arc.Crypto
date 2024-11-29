@@ -98,62 +98,70 @@ public class Curve25519Benchmark
         return secretKey;
     }
 
-    /*[Benchmark]
-    public byte[] CryptoSign_SecretKeyToSeed()
+    [Benchmark]
+    public byte[] CryptoBox_DeriveKeyMaterial()
     {
-        CryptoSign.SecretKeyToSeed(this.cryptoSignSecretKey, this.seed2);
-        return this.seed2;
+        var material = new byte[CryptoBox.KeyMaterialSize];
+        CryptoBox.DeriveKeyMaterial(material, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey2);
+        return material;
     }
 
-    [Benchmark]
-    public byte[] CryptoSign_SecretKeyToPublicKey()
-    {
-        CryptoSign.SecretKeyToPublicKey(this.cryptoSignSecretKey, this.cryptoSignPublicKey2);
-        return this.cryptoSignPublicKey2;
+        /*[Benchmark]
+        public byte[] CryptoSign_SecretKeyToSeed()
+        {
+            CryptoSign.SecretKeyToSeed(this.cryptoSignSecretKey, this.seed2);
+            return this.seed2;
+        }
+
+        [Benchmark]
+        public byte[] CryptoSign_SecretKeyToPublicKey()
+        {
+            CryptoSign.SecretKeyToPublicKey(this.cryptoSignSecretKey, this.cryptoSignPublicKey2);
+            return this.cryptoSignPublicKey2;
+        }
+
+        [Benchmark]
+        public byte[] CryptoBox_CreateKey()
+        {
+            var secretKey = new byte[CryptoBox.SecretKeySize];
+            var publicKey = new byte[CryptoBox.PublicKeySize];
+            CryptoBox.CreateKey(secretKey, publicKey);
+            return secretKey;
+        }
+
+        [Benchmark]
+        public byte[] CryptoBox_EncryptoDecrypt()
+        {
+            CryptoBox.Encrypt(this.message, this.nonce24, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey2, this.cipher);
+            var result = CryptoBox.TryDecrypt(this.cipher, this.nonce24, this.cryptoBoxSecretKey2, this.cryptoBoxPublicKey, this.message2);
+            return this.message2;
+        }
+
+        [Benchmark]
+        public byte[] SecretKey_SignToBox()
+        {
+            CryptoSign.SecretKey_SignToBox(this.cryptoSignSecretKey, this.cryptoBoxSecretKey);
+            return this.cryptoBoxSecretKey;
+        }*/
+
+        /*[Benchmark]
+        public byte[] PublicKey_SignToBox()
+        {
+            CryptoSign.PublicKey_SignToBox(this.cryptoSignPublicKey, this.cryptoBoxConvertedPublicKey);
+            return this.cryptoBoxConvertedPublicKey;
+        }
+
+        [Benchmark]
+        public byte[] PublicKey_SignToBox2()
+        {
+            CryptoSign.PublicKey_SignToBox2(this.cryptoSignPublicKey, this.cryptoBoxConvertedPublicKey);
+            return this.cryptoBoxConvertedPublicKey;
+        }
+
+        [Benchmark]
+        public byte[] PublicKey_BoxToSign()
+        {
+            CryptoBox.PublicKey_BoxToSign(this.cryptoBoxPublicKey, this.cryptoSignConvertedPublicKey);
+            return this.cryptoSignConvertedPublicKey;
+        }*/
     }
-
-    [Benchmark]
-    public byte[] CryptoBox_CreateKey()
-    {
-        var secretKey = new byte[CryptoBox.SecretKeySize];
-        var publicKey = new byte[CryptoBox.PublicKeySize];
-        CryptoBox.CreateKey(secretKey, publicKey);
-        return secretKey;
-    }
-
-    [Benchmark]
-    public byte[] CryptoBox_EncryptoDecrypt()
-    {
-        CryptoBox.Encrypt(this.message, this.nonce24, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey2, this.cipher);
-        var result = CryptoBox.TryDecrypt(this.cipher, this.nonce24, this.cryptoBoxSecretKey2, this.cryptoBoxPublicKey, this.message2);
-        return this.message2;
-    }
-
-    [Benchmark]
-    public byte[] SecretKey_SignToBox()
-    {
-        CryptoSign.SecretKey_SignToBox(this.cryptoSignSecretKey, this.cryptoBoxSecretKey);
-        return this.cryptoBoxSecretKey;
-    }*/
-
-    /*[Benchmark]
-    public byte[] PublicKey_SignToBox()
-    {
-        CryptoSign.PublicKey_SignToBox(this.cryptoSignPublicKey, this.cryptoBoxConvertedPublicKey);
-        return this.cryptoBoxConvertedPublicKey;
-    }
-
-    [Benchmark]
-    public byte[] PublicKey_SignToBox2()
-    {
-        CryptoSign.PublicKey_SignToBox2(this.cryptoSignPublicKey, this.cryptoBoxConvertedPublicKey);
-        return this.cryptoBoxConvertedPublicKey;
-    }
-
-    [Benchmark]
-    public byte[] PublicKey_BoxToSign()
-    {
-        CryptoBox.PublicKey_BoxToSign(this.cryptoBoxPublicKey, this.cryptoSignConvertedPublicKey);
-        return this.cryptoSignConvertedPublicKey;
-    }*/
-}

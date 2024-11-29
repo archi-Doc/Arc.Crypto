@@ -93,23 +93,25 @@ public class Ed25519Test
         const int MessageSize = 100;
 
         var random = new Xoroshiro128StarStar(12);
-        Span<byte> seed = stackalloc byte[CryptoBox.SeedSize];
-        Span<byte> signSecretKey = stackalloc byte[CryptoSign.SecretKeySize];
-        Span<byte> signPublicKey = stackalloc byte[CryptoSign.PublicKeySize];
-        Span<byte> boxSecretKey = stackalloc byte[CryptoBox.SecretKeySize];
-        Span<byte> boxPublicKey = stackalloc byte[CryptoBox.PublicKeySize];
-        Span<byte> dualSignSecretKey = stackalloc byte[CryptoSign.SecretKeySize];
-        Span<byte> dualSignPublicKey = stackalloc byte[CryptoSign.PublicKeySize];
-        Span<byte> dualBoxSecretKey = stackalloc byte[CryptoBox.SecretKeySize];
-        Span<byte> dualBoxPublicKey = stackalloc byte[CryptoBox.PublicKeySize];
-        Span<byte> message = stackalloc byte[MessageSize];
-        Span<byte> cipher = stackalloc byte[MessageSize + CryptoBox.MacSize];
-        Span<byte> nonce = stackalloc byte[CryptoBox.NonceSize];
-        Span<byte> decrypted = stackalloc byte[MessageSize];
-        Span<byte> signature = stackalloc byte[CryptoSign.SignatureSize];
+        Span<byte> seed = new byte[CryptoBox.SeedSize];
+        Span<byte> signSecretKey = new byte[CryptoSign.SecretKeySize];
+        Span<byte> signPublicKey = new byte[CryptoSign.PublicKeySize];
+        Span<byte> boxSecretKey = new byte[CryptoBox.SecretKeySize];
+        Span<byte> boxPublicKey = new byte[CryptoBox.PublicKeySize];
+        Span<byte> dualSignSecretKey = new byte[CryptoSign.SecretKeySize];
+        Span<byte> dualSignPublicKey = new byte[CryptoSign.PublicKeySize];
+        Span<byte> dualBoxSecretKey = new byte[CryptoBox.SecretKeySize];
+        Span<byte> dualBoxPublicKey = new byte[CryptoBox.PublicKeySize];
+        Span<byte> message = new byte[MessageSize];
+        Span<byte> cipher = new byte[MessageSize + CryptoBox.MacSize];
+        Span<byte> nonce = new byte[CryptoBox.NonceSize];
+        Span<byte> decrypted = new byte[MessageSize];
+        Span<byte> signature = new byte[CryptoSign.SignatureSize];
+        Span<byte> material = new byte[CryptoBox.KeyMaterialSize];
+        Span<byte> material2 = new byte[CryptoBox.KeyMaterialSize];
 
-        Span<byte> boxSecretKey2 = stackalloc byte[CryptoBox.SecretKeySize];
-        Span<byte> boxPublicKey2 = stackalloc byte[CryptoBox.PublicKeySize];
+        Span<byte> boxSecretKey2 = new byte[CryptoBox.SecretKeySize];
+        Span<byte> boxPublicKey2 = new byte[CryptoBox.PublicKeySize];
         random.NextBytes(seed);
         CryptoBox.CreateKey(seed, boxSecretKey2, boxPublicKey2);
 
@@ -148,6 +150,11 @@ public class Ed25519Test
             CryptoSign.Verify(message, signPublicKey, signature).IsTrue();
             signature[0]++;
             CryptoSign.Verify(message, signPublicKey, signature).IsFalse();
+
+            // Key derivation
+            CryptoBox.DeriveKeyMaterial(boxSecretKey2, boxPublicKey, material);
+            CryptoBox.DeriveKeyMaterial(boxSecretKey, boxPublicKey2, material2);
+            material.SequenceEqual(material2).IsTrue();
         }
     }
 }
