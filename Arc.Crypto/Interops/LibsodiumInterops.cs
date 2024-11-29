@@ -94,6 +94,10 @@ internal static unsafe partial class LibsodiumInterops
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int crypto_box_open_easy(Span<byte> m, ReadOnlySpan<byte> c, ulong clen, ReadOnlySpan<byte> n, ReadOnlySpan<byte> pk, ReadOnlySpan<byte> sk);
 
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_scalarmult_curve25519(Span<byte> q, ReadOnlySpan<byte> n, ReadOnlySpan<byte> p);
+
     #endregion
 
     #region crypto_sign

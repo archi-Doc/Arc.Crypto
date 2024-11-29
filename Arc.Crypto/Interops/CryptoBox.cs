@@ -37,6 +37,11 @@ public static class CryptoBox
     public const int MacSize = 16; // crypto_box_curve25519xsalsa20poly1305_MACBYTES
 
     /// <summary>
+    /// The size of the key material in bytes.
+    /// </summary>
+    public const int KeyMaterialSize = 32;
+
+    /// <summary>
     /// Creates a new key pair (secret(32) and public(32) keys).
     /// </summary>
     /// <param name="secretKey32">The buffer to hold the secret key. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
@@ -154,5 +159,34 @@ public static class CryptoBox
         }
 
         return LibsodiumInterops.crypto_box_open_easy(message, cipher, (ulong)cipher.Length, nonce24, publicKey32, secretKey32) == 0;
+    }
+
+    /// <summary>
+    /// Derives a key material from the secret key and public key.<br/>
+    /// Do not use the result directly!<br/>
+    /// At the very least, compute a hash of the result and the key before using it.<br/>
+    /// Hash (material | secretKey | public key).
+    /// </summary>
+    /// <param name="secretKey32">The secret key to use for key derivation. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
+    /// <param name="publicKey32">The public key to use for key derivation. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
+    /// <param name="material">The derived key material. The size must be message length + <see cref="KeyMaterialSize"/>(32 bytes).</param>
+    public static void DeriveKeyMaterial(ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> material)
+    {
+        if (secretKey32.Length != SecretKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey32), SecretKeySize);
+        }
+
+        if (publicKey32.Length != PublicKeySize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
+        }
+
+        if (material.Length != KeyMaterialSize)
+        {
+            CryptoHelper.ThrowSizeMismatchException(nameof(material), KeyMaterialSize);
+        }
+
+        LibsodiumInterops.crypto_scalarmult_curve25519(material, secretKey32, publicKey32);
     }
 }
