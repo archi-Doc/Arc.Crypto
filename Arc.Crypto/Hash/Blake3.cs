@@ -77,7 +77,7 @@ public static class Blake3
     {
         if (output.Length != Size)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(output), Size);
+            BaseHelper.ThrowSizeMismatchException(nameof(output), Size);
         }
 
         fixed (void* ptrOut = output, ptr = input)

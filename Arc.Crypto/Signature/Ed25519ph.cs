@@ -33,12 +33,12 @@ public ref struct Ed25519ph
     {
         if (secretKey.Length != CryptoSign.SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey), CryptoSign.SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(secretKey), CryptoSign.SecretKeySize);
         }
 
         if (signature.Length != CryptoSign.SignatureSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signature), CryptoSign.SignatureSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(signature), CryptoSign.SignatureSize);
         }
 
         LibsodiumInterops.crypto_sign_ed25519ph_final_create(ref this, signature, out var signatureLength, secretKey);
@@ -49,12 +49,12 @@ public ref struct Ed25519ph
     {
         if (publicKey.Length != CryptoSign.PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), CryptoSign.PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(publicKey), CryptoSign.PublicKeySize);
         }
 
         if (signature.Length != CryptoSign.SignatureSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signature), CryptoSign.SignatureSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(signature), CryptoSign.SignatureSize);
         }
 
         var verify = LibsodiumInterops.crypto_sign_ed25519ph_final_verify(ref this, signature, publicKey) == 0;

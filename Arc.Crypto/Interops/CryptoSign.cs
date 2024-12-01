@@ -38,12 +38,12 @@ public static class CryptoSign
     {
         if (secretKey64.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
         }
 
         if (publicKey32.Length != PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
         LibsodiumInterops.crypto_sign_keypair(publicKey32, secretKey64);
@@ -59,17 +59,17 @@ public static class CryptoSign
     {
         if (seed32.Length != SeedSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(seed32), SeedSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(seed32), SeedSize);
         }
 
         if (secretKey64.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
         }
 
         if (publicKey32.Length != PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
         LibsodiumInterops.crypto_sign_seed_keypair(publicKey32, secretKey64, seed32);
@@ -84,12 +84,12 @@ public static class CryptoSign
     {
         if (secretKey64.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
         }
 
         if (seed32.Length < SeedSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(seed32), SeedSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(seed32), SeedSize);
         }
 
         secretKey64.Slice(0, SeedSize).CopyTo(seed32); // LibsodiumInterops.crypto_sign_ed25519_sk_to_seed(seed, secretKey);
@@ -104,12 +104,12 @@ public static class CryptoSign
     {
         if (secretKey64.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
         }
 
         if (publicKey32.Length < PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
         secretKey64.Slice(SeedSize, PublicKeySize).CopyTo(publicKey32); // LibsodiumInterops.crypto_sign_ed25519_sk_to_pk(publicKey, secretKey);
@@ -125,12 +125,12 @@ public static class CryptoSign
     {
         if (secretKey64.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(secretKey64), SecretKeySize);
         }
 
         if (signature64.Length != SignatureSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signature64), SignatureSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(signature64), SignatureSize);
         }
 
         LibsodiumInterops.crypto_sign_ed25519_detached(signature64, out var signatureLength, message, (ulong)message.Length, secretKey64);
@@ -147,12 +147,12 @@ public static class CryptoSign
     {
         if (publicKey32.Length != PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
         if (signature64.Length != SignatureSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signature64), SignatureSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(signature64), SignatureSize);
         }
 
         return LibsodiumInterops.crypto_sign_ed25519_verify_detached(signature64, message, (ulong)message.Length, publicKey32) == 0;

@@ -1,12 +1,13 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using Arc;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
 using Tinyhand;
 
 namespace Benchmark;
 
-[TinyhandObject]
+/*[TinyhandObject]
 public partial class SerializeHashClass
 {// Slightly faster
     public SerializeHashClass()
@@ -99,4 +100,4 @@ public class SerializeHashBenchmark
         var b = tc.Hash.Equals(tc2.Hash);
         return b;
     }
-}
+}*/

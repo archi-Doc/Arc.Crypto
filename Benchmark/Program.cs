@@ -30,7 +30,7 @@ public class Program
             typeof(PasswordHashBenchmark),
             typeof(CipherBenchmark),
             typeof(Curve25519Benchmark),
-            typeof(SerializeHashBenchmark),
+            // typeof(SerializeHashBenchmark),
             typeof(Avx2Benchmark),
             typeof(DsaBenchmark),
             typeof(GetStringLengthBanchmark),
