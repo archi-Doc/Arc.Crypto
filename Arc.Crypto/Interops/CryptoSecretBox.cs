@@ -33,7 +33,7 @@ public static class CryptoSecretBox
     {
         if (key.Length != KeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(key), KeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(key), KeySize);
         }
 
         LibsodiumInterops.crypto_secretbox_keygen(key);
@@ -51,17 +51,17 @@ public static class CryptoSecretBox
     {
         if (nonce24.Length != NonceSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(nonce24), NonceSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(nonce24), NonceSize);
         }
 
         if (key32.Length != KeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(key32), KeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(key32), KeySize);
         }
 
         if (cipher.Length != message.Length + MacSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(cipher), message.Length + MacSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(cipher), message.Length + MacSize);
         }
 
         LibsodiumInterops.crypto_secretbox_easy(cipher, message, (ulong)message.Length, nonce24, key32);
@@ -85,17 +85,17 @@ public static class CryptoSecretBox
 
         if (nonce24.Length != NonceSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(nonce24), NonceSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(nonce24), NonceSize);
         }
 
         if (key32.Length != KeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(key32), KeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(key32), KeySize);
         }
 
         if (message.Length != cipher.Length - MacSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(message), cipher.Length - MacSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(message), cipher.Length - MacSize);
         }
 
         return LibsodiumInterops.crypto_secretbox_open_easy(message, cipher, (ulong)cipher.Length, nonce24, key32) == 0;

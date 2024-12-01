@@ -61,7 +61,7 @@ public static class CryptoPasswordHash
     {
         if (salt16.Length != SaltSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(salt16), SaltSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(salt16), SaltSize);
         }
 
         if (key.Length < MinimumKeySize)
@@ -88,7 +88,7 @@ public static class CryptoPasswordHash
         Span<byte> utf8 = stackalloc byte[HashStringLength];
         LibsodiumInterops.crypto_pwhash_str(utf8, utf8Password, (ulong)utf8Password.Length, (ulong)opsLimit, (UIntPtr)memLimit);
 
-        var trimmed = CryptoHelper.TrimAtFirstNull(utf8);
+        var trimmed = BaseHelper.TrimAtFirstNull(utf8);
         return Encoding.UTF8.GetString(trimmed);
     }
 
@@ -105,7 +105,7 @@ public static class CryptoPasswordHash
         var utf8 = new byte[HashStringLength];
         LibsodiumInterops.crypto_pwhash_str(utf8, utf8Password, (ulong)utf8Password.Length, (ulong)opsLimit, (UIntPtr)memLimit);
 
-        utf8 = CryptoHelper.TrimAtFirstNull(utf8);
+        utf8 = BaseHelper.TrimAtFirstNull(utf8);
         return utf8;
     }
 

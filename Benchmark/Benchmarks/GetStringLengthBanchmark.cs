@@ -33,7 +33,7 @@ public class GetStringLengthBanchmark
     [Benchmark]
     public int GetStringLength()
     {// (int)Math.Floor(Math.Log10(i)) + 1;
-        return Arc.Crypto.CryptoHelper.GetStringLength(this.number);
+        return Arc.BaseHelper.GetStringLength(this.number);
     }
 
     [Benchmark]

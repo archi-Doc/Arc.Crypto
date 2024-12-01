@@ -50,12 +50,12 @@ public static class CryptoBox
     {
         if (secretKey32.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey32), SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(secretKey32), SecretKeySize);
         }
 
         if (publicKey32.Length != PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
         LibsodiumInterops.crypto_box_keypair(publicKey32, secretKey32);
@@ -71,17 +71,17 @@ public static class CryptoBox
     {
         if (seed32.Length != SeedSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(seed32), SeedSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(seed32), SeedSize);
         }
 
         if (secretKey32.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey32), SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(secretKey32), SecretKeySize);
         }
 
         if (publicKey32.Length != PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
         LibsodiumInterops.crypto_box_seed_keypair(publicKey32, secretKey32, seed32);
@@ -100,22 +100,22 @@ public static class CryptoBox
     {
         if (nonce24.Length != NonceSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(nonce24), NonceSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(nonce24), NonceSize);
         }
 
         if (secretKey32.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey32), SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(secretKey32), SecretKeySize);
         }
 
         if (publicKey32.Length != PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
         if (cipher.Length != (message.Length + MacSize))
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(cipher), message.Length + MacSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(cipher), message.Length + MacSize);
         }
 
         LibsodiumInterops.crypto_box_easy(cipher, message, (ulong)message.Length, nonce24, publicKey32, secretKey32);
@@ -140,22 +140,22 @@ public static class CryptoBox
 
         if (nonce24.Length != NonceSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(nonce24), NonceSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(nonce24), NonceSize);
         }
 
         if (secretKey32.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey32), SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(secretKey32), SecretKeySize);
         }
 
         if (publicKey32.Length != PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
         if (message.Length != (cipher.Length - MacSize))
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(message), cipher.Length - MacSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(message), cipher.Length - MacSize);
         }
 
         return LibsodiumInterops.crypto_box_open_easy(message, cipher, (ulong)cipher.Length, nonce24, publicKey32, secretKey32) == 0;
@@ -174,17 +174,17 @@ public static class CryptoBox
     {
         if (secretKey32.Length != SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(secretKey32), SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(secretKey32), SecretKeySize);
         }
 
         if (publicKey32.Length != PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
         if (material.Length != KeyMaterialSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(material), KeyMaterialSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(material), KeyMaterialSize);
         }
 
         LibsodiumInterops.crypto_scalarmult_curve25519(material, secretKey32, publicKey32);

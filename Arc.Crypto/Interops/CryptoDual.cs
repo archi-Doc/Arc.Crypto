@@ -39,27 +39,27 @@ public static class CryptoDual
     {
         if (seed32.Length != CryptoSign.SeedSize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(seed32), CryptoSign.SeedSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(seed32), CryptoSign.SeedSize);
         }
 
         if (signSecretKey64.Length != CryptoSign.SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signSecretKey64), CryptoSign.SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(signSecretKey64), CryptoSign.SecretKeySize);
         }
 
         if (signPublicKey32.Length != CryptoSign.PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signPublicKey32), CryptoSign.PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(signPublicKey32), CryptoSign.PublicKeySize);
         }
 
         if (boxSecretKey32.Length != CryptoBox.SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(boxSecretKey32), CryptoBox.SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(boxSecretKey32), CryptoBox.SecretKeySize);
         }
 
         if (boxPublicKey32.Length != CryptoBox.PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
         }
 
         LibsodiumInterops.crypto_sign_seed_keypair(signPublicKey32, signSecretKey64, seed32);
@@ -77,12 +77,12 @@ public static class CryptoDual
     {
         if (signSecretKey64.Length != CryptoSign.SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signSecretKey64), CryptoSign.SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(signSecretKey64), CryptoSign.SecretKeySize);
         }
 
         if (boxSecretKey32.Length != CryptoBox.SecretKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(boxSecretKey32), CryptoBox.SecretKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(boxSecretKey32), CryptoBox.SecretKeySize);
         }
 
         // LibsodiumInterops.crypto_sign_ed25519_sk_to_curve25519(boxSecretKey, signSecretKey);
@@ -100,12 +100,12 @@ public static class CryptoDual
     {
         if (signPublicKey32.Length != CryptoSign.PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signPublicKey32), CryptoSign.PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(signPublicKey32), CryptoSign.PublicKeySize);
         }
 
         if (boxPublicKey32.Length != CryptoBox.PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
         }
 
         // return LibsodiumInterops.crypto_sign_ed25519_pk_to_curve25519(boxPublicKey32, signPublicKey32) == 0;
@@ -131,12 +131,12 @@ public static class CryptoDual
     {
         if (boxPublicKey32.Length != CryptoBox.PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
         }
 
         if (signPublicKey32.Length != CryptoSign.PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(signPublicKey32), CryptoSign.PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(signPublicKey32), CryptoSign.PublicKeySize);
         }
 
         Ed25519Internal.fe25519_frombytes(out var x, boxPublicKey32);
@@ -165,12 +165,12 @@ public static class CryptoDual
     {
         if (publicKey.Length != CryptoBox.PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey), CryptoBox.PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(publicKey), CryptoBox.PublicKeySize);
         }
 
         if (publicKey2.Length != CryptoBox.PublicKeySize)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(publicKey2), CryptoBox.PublicKeySize);
+            BaseHelper.ThrowSizeMismatchException(nameof(publicKey2), CryptoBox.PublicKeySize);
         }
 
         if (!publicKey.Slice(0, CryptoBox.PublicKeySize - 1).SequenceEqual(publicKey2.Slice(0, CryptoBox.PublicKeySize - 1)))

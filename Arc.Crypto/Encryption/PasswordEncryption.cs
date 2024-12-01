@@ -63,7 +63,7 @@ public static class PasswordEncryption
         var cipherLength = SaltSize + plaintext.Length + TagSize;
         if (ciphertext.Length != cipherLength)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(ciphertext), cipherLength);
+            BaseHelper.ThrowSizeMismatchException(nameof(ciphertext), cipherLength);
         }
 
         var salt = ciphertext.Slice(0, SaltSize);
@@ -164,7 +164,7 @@ public static class PasswordEncryption
         var plainLength = ciphertext.Length - SaltSize - TagSize;
         if (plaintext.Length != plainLength)
         {
-            CryptoHelper.ThrowSizeMismatchException(nameof(plaintext), plainLength);
+            BaseHelper.ThrowSizeMismatchException(nameof(plaintext), plainLength);
         }
 
         Span<byte> key32 = stackalloc byte[Aegis256.KeySize];
