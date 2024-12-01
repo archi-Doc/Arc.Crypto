@@ -233,7 +233,7 @@ public static class CryptoHelper
         where T : IStringConvertible<T>
     {
         // 1st Source
-        if (T.TryParse(source, out instance!))
+        if (T.TryParse(source, out instance!, out _))
         {// source.Length > 0 &&
             return true;
         }
@@ -241,7 +241,7 @@ public static class CryptoHelper
         // 2nd: Environment variable
         if (Environment.GetEnvironmentVariable(variable) is { } source2)
         {
-            if (T.TryParse(source2, out instance!))
+            if (T.TryParse(source2, out instance!, out _))
             {
                 return true;
             }
@@ -263,7 +263,7 @@ public static class CryptoHelper
     {
         if (Environment.GetEnvironmentVariable(variable) is { } source)
         {
-            return T.TryParse(source, out instance);
+            return T.TryParse(source, out instance, out _);
         }
         else
         {

@@ -18,16 +18,18 @@ public class StringConvertibleClass : IStringConvertible<StringConvertibleClass>
 
     static int IStringConvertible<StringConvertibleClass>.MaxStringLength => 1;
 
-    static bool IStringConvertible<StringConvertibleClass>.TryParse(ReadOnlySpan<char> source, out StringConvertibleClass? instance)
+    static bool IStringConvertible<StringConvertibleClass>.TryParse(ReadOnlySpan<char> source, out StringConvertibleClass? @object, out int read)
     {
+        read = 0;
         if (source.Length != 1 || source[0] != 'a')
         {
-            instance = null;
+            @object = null;
             return false;
         }
         else
         {
-            instance = new();
+            @object = new();
+            read = 1;
             return true;
         }
     }
@@ -62,16 +64,18 @@ public class StringConvertibleClass2 : IStringConvertible<StringConvertibleClass
 
     public static int MaxStringLength => 256;
 
-    static bool IStringConvertible<StringConvertibleClass2>.TryParse(ReadOnlySpan<char> source, out StringConvertibleClass2? instance)
+    static bool IStringConvertible<StringConvertibleClass2>.TryParse(ReadOnlySpan<char> source, out StringConvertibleClass2? instance, out int read)
     {
+        instance = null;
+        read = 0;
         if (source.Length > MaxStringLength)
         {
-            instance = null;
             return false;
         }
         else
         {
             instance = new(new string(source));
+            read = source.Length;
             return true;
         }
     }
