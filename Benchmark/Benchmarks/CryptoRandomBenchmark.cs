@@ -49,9 +49,16 @@ public class CryptoRandomBenchmark
     }
 
     [Benchmark]
-    public byte[] RandomVault_NextBytes()
+    public byte[] RandomVaultCrypto_NextBytes()
     {
         RandomVault.Crypto.NextBytes(this.random.AsSpan(0, this.Length));
+        return this.random;
+    }
+
+    [Benchmark]
+    public byte[] RandomVaultPseudo_NextBytes()
+    {
+        RandomVault.Pseudo.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 }
