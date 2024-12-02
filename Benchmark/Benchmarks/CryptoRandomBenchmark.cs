@@ -24,7 +24,7 @@ public class CryptoRandomBenchmark
     [Benchmark]
     public byte[] Xoshiro256()
     {
-        this.SpinWait();
+        // this.SpinWait();
         this.xo.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
@@ -32,7 +32,7 @@ public class CryptoRandomBenchmark
     [Benchmark]
     public byte[] Rng_Fill()
     {
-        this.SpinWait();
+        // this.SpinWait();
         RandomNumberGenerator.Fill(this.random.AsSpan(0, this.Length));
         return this.random;
     }
@@ -40,7 +40,7 @@ public class CryptoRandomBenchmark
     [Benchmark]
     public byte[] Rng_GetBytes()
     {
-        this.SpinWait();
+        // this.SpinWait();
         this.rng.GetBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
@@ -48,7 +48,7 @@ public class CryptoRandomBenchmark
     [Benchmark]
     public byte[] CryptoRandom_NextBytes()
     {
-        this.SpinWait();
+        // this.SpinWait();
         CryptoRandom.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
@@ -56,21 +56,29 @@ public class CryptoRandomBenchmark
     [Benchmark]
     public byte[] RandomVaultCrypto_NextBytes()
     {
-        this.SpinWait();
+        // this.SpinWait();
         RandomVault.Crypto.NextBytes(this.random.AsSpan(0, this.Length));
+        return this.random;
+    }
+
+    [Benchmark]
+    public byte[] RandomVault2Crypto_NextBytes()
+    {
+        // this.SpinWait();
+        RandomVault2.Crypto.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 
     [Benchmark]
     public byte[] RandomVaultPseudo_NextBytes()
     {
-        this.SpinWait();
+        // this.SpinWait();
         RandomVault.Pseudo.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 
-    private void SpinWait()
+    /*private void SpinWait()
     {
         Thread.SpinWait(10);
-    }
+    }*/
 }
