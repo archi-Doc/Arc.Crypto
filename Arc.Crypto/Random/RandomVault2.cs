@@ -1,37 +1,42 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using Arc.Collections;
 
 namespace Arc.Crypto;
 
 /// <summary>
 /// <see cref="RandomVault2"/> is is a random number pool.<br/>
-/// It's thread-safe and faster than lock in most cases.<br/>
+/// It's thread-safe and faster than lock() in most cases.<br/>
 /// Target: Random integers requested by multiple threads simultaneously<br/><br/>
 /// <see cref="RandomVault2"/> generates random integers using random generator<br/>
-/// specified by constructor parameters, and takes out integers from the buffer as needed.<br/>
+/// specified by constructor parameters, and takes out integers from the buffer as needed.
 /// </summary>
 public class RandomVault2 : RandomUInt64
 {
     public const int DefaultBufferSize = 4096;
-    private const int SkipVaultThreshold = 256;
-    private const int StackSize = 1024;
+
+    private const int SkipVaultThreshold = 32; // If the size of the random bytes exceeds this value, they will be generated directly without using the RandomVault.
+    private const int StackSize = 1024; // Specifies the stack size to be used when generating random numbers.
 
     static RandomVault2()
     {
         var xo = new Xoshiro256StarStar();
         Pseudo = new RandomVault2(() => xo.NextUInt64(), x => xo.NextBytes(x));
-        Crypto = new RandomVault2(null, x => CryptoRandom.NextBytes(x));
+        Crypto = new RandomVault2(default, x => CryptoRandom.NextBytes(x));
+        Crypto2 = new RandomVault2(default, x => RandomNumberGenerator.Fill(x));
     }
 
     /// <summary>
-    ///  Gets the cryptographically secure pseudo random number pool.
+    ///  Gets the cryptographically secure pseudo random number pool (<see cref="CryptoRandom.NextBytes(Span{byte})"/>).
     /// </summary>
     public static RandomVault2 Crypto { get; }
 
+    public static RandomVault2 Crypto2 { get; }
+
     /// <summary>
-    ///  Gets the pseudo random number pool.
+    ///  Gets the pseudo random number pool (<see cref="Xoshiro256StarStar"/>).
     /// </summary>
     public static RandomVault2 Pseudo { get; }
 
@@ -113,7 +118,7 @@ public class RandomVault2 : RandomUInt64
         }
         else if (nextUInt64 is not null)
         {
-            this.nextBytesFunc = (x) => UInt64ToNextBytes(this.nextUInt64Func!, x);
+            this.nextBytesFunc = (x) => UInt64ToNextBytes(this.nextUInt64Func, x);
             this.nextUInt64Func = nextUInt64;
         }
         else
@@ -121,8 +126,8 @@ public class RandomVault2 : RandomUInt64
             throw new ArgumentNullException("Valid nextUInt64 or nextBytes is required.");
         }
 
-        var capacity = DefaultBufferSize / sizeof(ulong);
-        this.queue = new CircularQueue<ulong>(capacity);
+        this.BufferSize = DefaultBufferSize;
+        this.queue = new CircularQueue<ulong>(this.BufferSize / sizeof(ulong));
     }
 
     /// <inheritdoc/>
@@ -133,10 +138,10 @@ public class RandomVault2 : RandomUInt64
             return value;
         }
 
-        // Fill
+        // Since the queue is empty, add random numbers equal to half the size of the buffer.
         ulong provisionedValue = 0;
         Span<byte> byteBuffer = stackalloc byte[StackSize];
-        int remaining = this.BufferSize;
+        int remaining = this.BufferSize >> 1;
         while (remaining > 0)
         {
             var size = Math.Min(StackSize, remaining);
@@ -150,19 +155,31 @@ public class RandomVault2 : RandomUInt64
             for (var i = 1; i < ulongBuffer.Length; i++)
             {
                 if (!this.queue.TryEnqueue(ulongBuffer[i]))
-                {// Queue is full
-                    goto QueueIsFull;
+                {// The queue is full
+                    goto Exit;
                 }
             }
 
             remaining -= size;
         }
 
-QueueIsFull:
+Exit:
         return provisionedValue;
     }
 
-    public int BufferSize => this.queue.Capacity;
+    public override void NextBytes(Span<byte> buffer)
+    {
+        if (buffer.Length < SkipVaultThreshold)
+        {
+            base.NextBytes(buffer);
+        }
+        else
+        {// If the size is large, the performance of RandomVault decreases, so the original function is called instead.
+            this.nextBytesFunc(buffer);
+        }
+    }
+
+    public int BufferSize { get; }
 
     private readonly NextUInt64Delegate nextUInt64Func;
     private readonly NextBytesDelegate nextBytesFunc;
