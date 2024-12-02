@@ -1,8 +1,5 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
@@ -12,11 +9,12 @@ namespace Benchmark;
 [Config(typeof(BenchmarkConfig))]
 public class CryptoRandomBenchmark
 {
-    public const int Length = 32; // SeedKey
+    [Params(8, 16, 256)]
+    public int Length { get; set; }
 
     private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
     private readonly Xoshiro256StarStar xo = new(12);
-    private readonly byte[] random = new byte[Length];
+    private readonly byte[] random = new byte[256];
 
     public CryptoRandomBenchmark()
     {
@@ -25,28 +23,35 @@ public class CryptoRandomBenchmark
     [Benchmark]
     public byte[] Xoshiro256()
     {
-        this.xo.NextBytes(this.random);
+        this.xo.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 
     [Benchmark]
     public byte[] Rng_Fill()
     {
-        RandomNumberGenerator.Fill(this.random);
+        RandomNumberGenerator.Fill(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 
     [Benchmark]
     public byte[] Rng_GetBytes()
     {
-        this.rng.GetBytes(this.random);
+        this.rng.GetBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 
     [Benchmark]
-    public byte[] RandomBytes()
+    public byte[] CryptoRandom_NextBytes()
     {
-        CryptoRandom.NextBytes(this.random);
+        CryptoRandom.NextBytes(this.random.AsSpan(0, this.Length));
+        return this.random;
+    }
+
+    [Benchmark]
+    public byte[] RandomVault_NextBytes()
+    {
+        RandomVault.Crypto.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 }
