@@ -24,15 +24,18 @@ public class RandomVault : RandomUInt64
     {
         var xo = new Xoshiro256StarStar();
         Pseudo = new RandomVault(x => xo.NextBytes(x), false);
-        Crypto = new RandomVault(x => CryptoRandom.NextBytes(x), true);
-        Crypto2 = new RandomVault(x => RandomNumberGenerator.Fill(x), true);
+        Crypto = new RandomVault(x => RandomNumberGenerator.Fill(x), true);
+        Crypto2 = new RandomVault(x => CryptoRandom.NextBytes(x), true);
     }
+
+    /// <summary>
+    ///  Gets the cryptographically secure pseudo random number pool (<see cref="RandomNumberGenerator.Fill(Span{byte})"/>).
+    /// </summary>
+    public static RandomVault Crypto { get; }
 
     /// <summary>
     ///  Gets the cryptographically secure pseudo random number pool (<see cref="CryptoRandom.NextBytes(Span{byte})"/>).
     /// </summary>
-    public static RandomVault Crypto { get; }
-
     public static RandomVault Crypto2 { get; }
 
     /// <summary>
