@@ -9,8 +9,8 @@ namespace Benchmark;
 [Config(typeof(BenchmarkConfig))]
 public class CryptoRandomBenchmark
 {
-    // [Params(8, 16, 256)]
-    [Params(256)]
+    [Params(8, 16, 256)]
+    // [Params(256)]
     public int Length { get; set; }
 
     private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
@@ -57,7 +57,7 @@ public class CryptoRandomBenchmark
     }
 
     [Benchmark]
-    public byte[] RandomVault2Crypto_NextBytes()
+    public byte[] RandomVaultCrypto2_NextBytes()
     {
         RandomVault2.Crypto2.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
@@ -66,7 +66,7 @@ public class CryptoRandomBenchmark
     [Benchmark]
     public byte[] RandomVaultPseudo_NextBytes()
     {
-        RandomVault.Pseudo.NextBytes(this.random.AsSpan(0, this.Length));
+        RandomVault2.Pseudo.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 }
