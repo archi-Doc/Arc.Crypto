@@ -62,4 +62,11 @@ public class CryptoRandomBenchmark
         RandomVault.Crypto2.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
+
+    [Benchmark]
+    public byte[] RandomVaultAegis_NextBytes()
+    {
+        RandomVault.Aegis.NextBytes(this.random.AsSpan(0, this.Length));
+        return this.random;
+    }
 }

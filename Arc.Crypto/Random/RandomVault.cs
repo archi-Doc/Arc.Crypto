@@ -3,6 +3,7 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Arc.Collections;
+using Arc.Crypto.Random;
 
 namespace Arc.Crypto;
 
@@ -26,6 +27,8 @@ public class RandomVault : RandomUInt64
         Pseudo = new RandomVault(x => xo.NextBytes(x), false);
         Crypto = new RandomVault(x => RandomNumberGenerator.Fill(x), true);
         Crypto2 = new RandomVault(x => CryptoRandom.NextBytes(x), true);
+        var aegis = new AegisRandom();
+        Aegis = new RandomVault(x => aegis.NextBytes(x), false);
     }
 
     /// <summary>
@@ -42,6 +45,8 @@ public class RandomVault : RandomUInt64
     ///  Gets the pseudo random number pool (<see cref="Xoshiro256StarStar"/>).
     /// </summary>
     public static RandomVault Pseudo { get; }
+
+    public static RandomVault Aegis { get; }
 
     /// <summary>
     ///  Initializes a new instance of the <see cref="RandomVault"/> class.<br/>
