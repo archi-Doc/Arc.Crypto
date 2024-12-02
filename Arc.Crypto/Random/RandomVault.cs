@@ -17,7 +17,7 @@ public class RandomVault : RandomUInt64
 {
     public const int DefaultBufferSize = 4096;
 
-    private const int SkipVaultThreshold = 32; // If the size of the random bytes exceeds this value, they will be generated directly without using the RandomVault.
+    private const int SkipVaultThreshold = 64; // If the size of the random bytes exceeds this value, they will be generated directly without using the RandomVault.
     private const int StackSize = 1024; // Specifies the stack size to be used when generating random numbers.
 
     static RandomVault()
@@ -34,7 +34,7 @@ public class RandomVault : RandomUInt64
     public static RandomVault Crypto { get; }
 
     /// <summary>
-    ///  Gets the cryptographically secure pseudo random number pool (<see cref="CryptoRandom.NextBytes(Span{byte})"/>).
+    ///  Gets the cryptographically secure pseudo random number pool (Libsodium: <see cref="CryptoRandom.NextBytes(Span{byte})"/>).
     /// </summary>
     public static RandomVault Crypto2 { get; }
 
