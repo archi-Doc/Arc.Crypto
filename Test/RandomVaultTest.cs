@@ -13,7 +13,7 @@ public class RandomVaultTest
     public void Test1()
     {
         var xo = new Xoshiro256StarStar(42);
-        var rv = new RandomVault(() => xo.NextUInt64(), x => xo.NextBytes(x));
+        var rv = new RandomVault(x => xo.NextBytes(x), false);
 
         DoubleToString(rv.NextDouble()).Is("0.0838629710598822");
         DoubleToString(rv.NextDouble()).Is("0.3789802506626686");
@@ -29,25 +29,9 @@ public class RandomVaultTest
         rv.NextUInt64().Is(14044878350692344958ul);
         rv.NextUInt64().Is(10760895422300929085ul);
 
-        // NextULong only
-        xo = new Xoshiro256StarStar(42);
-        rv = new RandomVault(() => xo.NextUInt64(), null);
-
-        DoubleToString(rv.NextDouble()).Is("0.0838629710598822");
-        DoubleToString(rv.NextDouble()).Is("0.3789802506626686");
-        DoubleToString(rv.NextDouble()).Is("0.6800434110281394");
-        DoubleToString(rv.NextDouble()).Is("0.9246929453253876");
-        DoubleToString(rv.NextDouble()).Is("0.9918039142821028");
-
-        rv.NextUInt64().Is(14199186830065750584ul);
-        rv.NextUInt64().Is(13267978908934200754ul);
-        rv.NextUInt64().Is(15679888225317814407ul);
-        rv.NextUInt64().Is(14044878350692344958ul);
-        rv.NextUInt64().Is(10760895422300929085ul);
-
         // NextBytes only
         xo = new Xoshiro256StarStar(42);
-        rv = new RandomVault(null, x => xo.NextBytes(x));
+        rv = new RandomVault(x => xo.NextBytes(x), false);
 
         DoubleToString(rv.NextDouble()).Is("0.0838629710598822");
         DoubleToString(rv.NextDouble()).Is("0.3789802506626686");
@@ -63,7 +47,7 @@ public class RandomVaultTest
 
         // Multi-thread
         var xo2 = new Xoshiro256StarStar(42);
-        var rv2 = new RandomVault(() => xo2.NextUInt64(), x => xo2.NextBytes(x));
+        var rv2 = new RandomVault(x => xo2.NextBytes(x), false);
 
         const int P = 100;
         const int N = 1000;

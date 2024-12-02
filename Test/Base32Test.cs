@@ -32,7 +32,7 @@ public class Base32Test
     public void Test2()
     {
         var xo = new Xoshiro256StarStar(42);
-        var rv = new RandomVault(() => xo.NextUInt64(), x => xo.NextBytes(x));
+        var rv = new RandomVault(x => xo.NextBytes(x), false);
 
         for (var i = 0; i < 300; i++)
         {

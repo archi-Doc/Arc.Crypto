@@ -29,7 +29,7 @@ public class Base64Benchmark
     public Base64Benchmark()
     {
         var xo = new Xoshiro256StarStar(42);
-        var rv = new RandomVault(() => xo.NextUInt64(), x => xo.NextBytes(x));
+        var rv = new RandomVault(x => xo.NextBytes(x), false);
 
         this.testArray = new byte[MaxLength];
         rv.NextBytes(this.testArray);

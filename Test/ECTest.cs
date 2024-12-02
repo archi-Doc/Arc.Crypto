@@ -47,7 +47,7 @@ public class ECTest
     public void SeedTest()
     {
         var xo = new Xoshiro256StarStar(42);
-        var rv = new RandomVault(() => xo.NextUInt64(), x => xo.NextBytes(x));
+        var rv = new RandomVault(x => xo.NextBytes(x), false);
 
         P256K1Curve.Instance.IsValidSeed(new byte[1]).IsFalse();
 
