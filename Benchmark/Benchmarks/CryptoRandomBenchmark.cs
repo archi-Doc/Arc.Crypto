@@ -52,21 +52,21 @@ public class CryptoRandomBenchmark
     [Benchmark]
     public byte[] RandomVaultCrypto_NextBytes()
     {
-        RandomVault2.Crypto.NextBytes(this.random.AsSpan(0, this.Length));
+        RandomVault.Crypto.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 
     [Benchmark]
     public byte[] RandomVaultCrypto2_NextBytes()
     {
-        RandomVault2.Crypto2.NextBytes(this.random.AsSpan(0, this.Length));
+        RandomVault.Crypto2.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 
     [Benchmark]
     public byte[] RandomVaultPseudo_NextBytes()
     {
-        RandomVault2.Pseudo.NextBytes(this.random.AsSpan(0, this.Length));
+        RandomVault.Pseudo.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 }
