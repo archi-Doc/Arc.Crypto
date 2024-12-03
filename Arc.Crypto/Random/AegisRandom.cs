@@ -45,6 +45,7 @@ public class AegisRandom
             var size = Math.Min(buffer.Length, this.remaining);
             this.buffer.AsSpan(this.position, size).CopyTo(buffer);
             buffer = buffer.Slice(size);
+            this.position += size;
         }
     }
 
