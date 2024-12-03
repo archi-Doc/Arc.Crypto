@@ -11,5 +11,12 @@ internal class Program
     public static async Task Main(string[] args)
     {
         Console.WriteLine("Sandbox");
+
+        var b = new byte[256];
+        RandomVault.Aegis.NextBytes(b);
+        RandomVault.Aegis.NextBytes(b);
+        RandomVault.Aegis.NextBytes(b);
+        RandomVault.Aegis.NextBytes(b);
+        RandomVault.Aegis.NextBytes(b);
     }
 }

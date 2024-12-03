@@ -21,6 +21,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="System.IO.Hashing" Version="9.0.0" />
+    <PackageReference Include="Tinyhand" Version="0.94.0" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
       <PrivateAssets>all</PrivateAssets>
@@ -42,6 +43,16 @@
     <Content Include="..\Arc.Crypto\runtimes\$(NETCoreSdkRuntimeIdentifier)\native\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\Aegis128Vectors.tinyhand" />
+    <None Remove="Resources\Aegis256Vectors.tinyhand" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Aegis128Vectors.tinyhand" />
+    <EmbeddedResource Include="Resources\Aegis256Vectors.tinyhand" />
   </ItemGroup>
 
 </Project>

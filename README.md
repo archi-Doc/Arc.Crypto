@@ -1,12 +1,12 @@
 ﻿## Arc.Crypto
-![Nuget](https://img.shields.io/nuget/v/Arc.Crypto) ![Build and Test](https://github.com/archi-Doc/Arc.Crypto/workflows/Build%20and%20Test/badge.svg)
+**Arc.Crypto** is a library equipped with various features related to cryptography.
 
-Arc.Crypto is a collection of classes used in cryptography, which includes
-
-- Hash functions (XXHash, FarmHash, SHA3)
+- Encryption (AEGIS-256, AEGIS-128L)
+- Hash functions (Blake2B, Blake3, FarmHash, XxHash3, SHA3)
+- Hashtables
 - Pseudo-random generator (xoshiro256**, Mersenne Twister)
 - Random number pool (RandomVault)
-- Password-encryption class (PasswordEncrypt)
+- Password-encryption class (PasswordEncryption)
 
 
 

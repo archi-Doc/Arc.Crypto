@@ -22,14 +22,14 @@ public class AesBenchmark
         this.aes.KeySize = 256;
 
         this.key = new byte[32];
-        RandomVault.Pseudo.NextBytes(this.key);
+        RandomVault.Xoshiro.NextBytes(this.key);
         this.aes.Key = this.key;
 
         this.iv = new byte[16];
-        RandomVault.Pseudo.NextBytes(this.iv);
+        RandomVault.Xoshiro.NextBytes(this.iv);
 
         this.source = new byte[1000];
-        RandomVault.Pseudo.NextBytes(this.source);
+        RandomVault.Xoshiro.NextBytes(this.source);
 
         this.destination = new byte[2000];
     }

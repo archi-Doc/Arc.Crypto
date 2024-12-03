@@ -19,7 +19,7 @@ public class HashTest
         const int Length = 1500;
 
         var buffer = new byte[Length];
-        RandomVault.Pseudo.NextBytes(buffer);
+        RandomVault.Xoshiro.NextBytes(buffer);
         for (var i = 0; i < N; i++)
         {
             for (var j = 0; j < Length; j++)
