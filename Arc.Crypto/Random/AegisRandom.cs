@@ -14,15 +14,19 @@ namespace Arc.Crypto.Random;
 public class AegisRandom
 {
     private const int RandomSize = 1024;
-    private const int SuffixSize = Aegis256.KeySize + Aegis256.NonceSize + Aegis256.MinTagSize;
-    private const int BufferSize = RandomSize + SuffixSize;
+    private const int KeyNonceSize = Aegis256.KeySize + Aegis256.NonceSize;
+    private const int SourceSize = RandomSize + KeyNonceSize;
+    private const int DestinationSize = RandomSize + KeyNonceSize + Aegis256.MinTagSize;
+    private const int StoreSize = 4096;
 
     #region FieldAndProperty
 
     private readonly Xoshiro256StarStar xo = new();
-    private readonly byte[] buffer = new byte[RandomSize + SuffixSize];
-    private readonly byte[] source = new byte[RandomSize + SuffixSize - Aegis256.MinTagSize];
+    private readonly byte[] source = new byte[SourceSize];
+    private readonly byte[] destination = new byte[DestinationSize];
+    private readonly byte[] store = new byte[StoreSize];
     private int position;
+    private int storeRemaining;
 
     private int remaining => RandomSize - this.position;
 
@@ -43,7 +47,7 @@ public class AegisRandom
             }
 
             var size = Math.Min(buffer.Length, this.remaining);
-            this.buffer.AsSpan(this.position, size).CopyTo(buffer);
+            this.destination.AsSpan(this.position, size).CopyTo(buffer);
             buffer = buffer.Slice(size);
             this.position += size;
         }
@@ -51,20 +55,28 @@ public class AegisRandom
 
     private void FillBuffer()
     {
-        Span<byte> suffix = stackalloc byte[SuffixSize];
-        Span<byte> suffix2 = stackalloc byte[SuffixSize];
-        this.buffer.AsSpan(RandomSize, SuffixSize).CopyTo(suffix);
-        RandomNumberGenerator.Fill(suffix2);
+        Span<byte> keyNonce = stackalloc byte[KeyNonceSize];
+        this.destination.AsSpan(RandomSize, KeyNonceSize).CopyTo(keyNonce);
 
-        var s = MemoryMarshal.Cast<byte, ulong>(suffix);
-        var s2 = MemoryMarshal.Cast<byte, ulong>(suffix2);
+        if (this.storeRemaining < KeyNonceSize)
+        {
+            RandomNumberGenerator.Fill(this.store);
+            this.storeRemaining = StoreSize;
+        }
+
+        Span<byte> keyNonce2 = stackalloc byte[KeyNonceSize];
+        this.store.AsSpan(StoreSize - this.storeRemaining, KeyNonceSize).CopyTo(keyNonce2);
+        this.storeRemaining -= KeyNonceSize;
+
+        var s = MemoryMarshal.Cast<byte, ulong>(keyNonce);
+        var s2 = MemoryMarshal.Cast<byte, ulong>(keyNonce2);
         for (var i = 0; i < s.Length; i++)
         {
             s[i] ^= s2[i];
         }
 
         this.xo.NextBytes(this.source);
-        Aegis256.Encrypt(this.buffer, this.source, suffix.Slice(Aegis256.KeySize, Aegis256.NonceSize), suffix.Slice(0, Aegis256.KeySize));
+        Aegis256.Encrypt(this.destination, this.source, keyNonce.Slice(Aegis256.KeySize, Aegis256.NonceSize), keyNonce.Slice(0, Aegis256.KeySize));
         this.position = 0;
     }
 }

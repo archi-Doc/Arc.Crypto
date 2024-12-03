@@ -9,8 +9,8 @@ namespace Benchmark;
 [Config(typeof(BenchmarkConfig))]
 public class CryptoRandomBenchmark
 {
-    [Params(8, 16, 256)]
-    // [Params(256)]
+    // [Params(8, 16, 256)]
+    [Params(256)]
     public int Length { get; set; }
 
     private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
