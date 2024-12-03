@@ -1,16 +1,14 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Arc.Crypto.Random;
 
-// Xoshiro256StarStar + AEGIS-256
+/// <summary>
+/// A high-performance cryptographically secure pseudo-random number generator combining RandomNumberGenerator and AEGIS-256.<br/>
+/// Please note that this is not thread-safe.
+/// </summary>
 public class AegisRandom
 {
     private const int RandomSize = 1024;

@@ -13,10 +13,10 @@ internal class Program
         Console.WriteLine("Sandbox");
 
         var b = new byte[256];
-        RandomVault.Aegis.NextBytes(b);
-        RandomVault.Aegis.NextBytes(b);
-        RandomVault.Aegis.NextBytes(b);
-        RandomVault.Aegis.NextBytes(b);
-        RandomVault.Aegis.NextBytes(b);
+        RandomVault.Crypto.NextBytes(b);
+        RandomVault.Crypto.NextBytes(b);
+        RandomVault.Crypto.NextBytes(b);
+        RandomVault.Crypto.NextBytes(b);
+        RandomVault.Crypto.NextBytes(b);
     }
 }
