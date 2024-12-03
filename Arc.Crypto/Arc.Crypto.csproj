@@ -9,7 +9,7 @@
     <PackageId>Arc.Crypto</PackageId>
     <Authors>archi-Doc</Authors>
     <Product>Arc.Crypto</Product>
-    <Description>C# library of hash functions</Description>
+    <Description>Arc.Crypto is a library equipped with various features related to cryptography.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/archi-Doc/Arc.Crypto</PackageProjectUrl>
     <RepositoryUrl>https://github.com/archi-Doc/Arc.Crypto</RepositoryUrl>

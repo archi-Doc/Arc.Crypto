@@ -1,14 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using System;
-using System.Collections;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
 using Arc.Crypto;
-using Arc.Threading;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Tinyhand;
 using Xunit;
 
