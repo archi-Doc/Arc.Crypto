@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Arc.Crypto;
 using Arc.Threading;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Tinyhand;
 using Xunit;
 
@@ -142,6 +143,40 @@ public partial class AegisVector
 
 public class AegisTest
 {
+    [Fact]
+    public void Test_MultiThread()
+    {
+        const int Length = 100;
+
+        Parallel.For(0, 10, x =>
+        {
+            var random = new Xoroshiro128StarStar(12);
+            Span<byte> key256 = new byte[Aegis256.KeySize];
+            random.NextBytes(key256);
+            Span<byte> nonce256 = new byte[Aegis256.NonceSize];
+            random.NextBytes(nonce256);
+            Span<byte> key128 = new byte[Aegis128L.KeySize];
+            random.NextBytes(key128);
+            Span<byte> nonce128 = new byte[Aegis128L.NonceSize];
+            random.NextBytes(nonce128);
+            Span<byte> message = new byte[Length];
+            random.NextBytes(message);
+            Span<byte> cipher = new byte[Length + Aegis256.MinTagSize];
+            Span<byte> decrypted = new byte[Length];
+
+            for (var i = 0; i < 100; i++)
+            {
+                Aegis256.Encrypt(cipher, message, nonce256, key256);
+                Aegis256.TryDecrypt(decrypted, cipher, nonce256, key256).IsTrue();
+                decrypted.SequenceEqual(message).IsTrue();
+
+                Aegis128L.Encrypt(cipher, message, nonce128, key128);
+                Aegis128L.TryDecrypt(decrypted, cipher, nonce128, key128).IsTrue();
+                decrypted.SequenceEqual(message).IsTrue();
+            }
+        });
+    }
+
     [Fact]
     public void Test_NoTag()
     {
