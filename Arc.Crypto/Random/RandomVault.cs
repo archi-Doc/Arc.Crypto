@@ -24,22 +24,22 @@ public class RandomVault : RandomUInt64
     static RandomVault()
     {
         var xo = new Xoshiro256StarStar();
-        Pseudo = new RandomVault(x => xo.NextBytes(x), false);
+        Xoshiro = new RandomVault(x => xo.NextBytes(x), false);
         RandomNumberGenerator = new RandomVault(x => System.Security.Cryptography.RandomNumberGenerator.Fill(x), true);
         Libsodium = new RandomVault(x => CryptoRandom.NextBytes(x), true);
         var aegis = new AegisRandom();
-        Crypto = new RandomVault(x => aegis.NextBytes(x), false);
+        Aegis = new RandomVault(x => aegis.NextBytes(x), false);
     }
-
-    /// <summary>
-    ///  Gets the pseudo random number pool (<see cref="Xoshiro256StarStar"/>).
-    /// </summary>
-    public static RandomVault Pseudo { get; }
 
     /// <summary>
     ///  Gets the cryptographically secure pseudo random number pool (<see cref="AegisRandom"/>).
     /// </summary>
-    public static RandomVault Crypto { get; }
+    public static RandomVault Aegis { get; }
+
+    /// <summary>
+    ///  Gets the pseudo random number pool (<see cref="Xoshiro256StarStar"/>).
+    /// </summary>
+    public static RandomVault Xoshiro { get; }
 
     /// <summary>
     ///  Gets the cryptographically secure pseudo random number pool (<see cref="RandomNumberGenerator.Fill(Span{byte})"/>).

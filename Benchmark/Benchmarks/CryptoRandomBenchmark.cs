@@ -43,28 +43,28 @@ public class CryptoRandomBenchmark
     }
 
     [Benchmark]
-    public byte[] RandomVaultPseudo_NextBytes()
+    public byte[] RandomVault_Pseudo_NextBytes()
     {
-        RandomVault.Pseudo.NextBytes(this.random.AsSpan(0, this.Length));
+        RandomVault.Xoshiro.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 
     [Benchmark]
-    public byte[] RandomVaultAegis_NextBytes()
+    public byte[] RandomVault_Aegis_NextBytes()
     {
-        RandomVault.Crypto.NextBytes(this.random.AsSpan(0, this.Length));
+        RandomVault.Aegis.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 
     [Benchmark]
-    public byte[] RandomVaultLibsodium_NextBytes()
+    public byte[] RandomVault_Libsodium_NextBytes()
     {
         RandomVault.Libsodium.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 
     [Benchmark]
-    public byte[] RandomVaultRng_NextBytes()
+    public byte[] RandomVault_Rng_NextBytes()
     {
         RandomVault.RandomNumberGenerator.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
