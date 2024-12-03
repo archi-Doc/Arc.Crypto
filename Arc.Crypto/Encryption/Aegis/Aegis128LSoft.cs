@@ -51,7 +51,10 @@ internal static class Aegis128LSoft
 
         CryptographicOperations.ZeroMemory(pad);
 
-        Finalize(ciphertext[^tagSize..], (ulong)associatedData.Length, (ulong)plaintext.Length);
+        if (tagSize > 0)
+        {
+            Finalize(ciphertext[^tagSize..], (ulong)associatedData.Length, (ulong)plaintext.Length);
+        }
     }
 
     internal static bool Decrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData = default, int tagSize = Aegis128L.MinTagSize)
@@ -86,14 +89,17 @@ internal static class Aegis128LSoft
             DecPartial(plaintext[i..], ciphertext[i..^tagSize]);
         }
 
-        Span<byte> tag = stackalloc byte[tagSize];
-        Finalize(tag, (ulong)associatedData.Length, (ulong)plaintext.Length);
-
-        if (!CryptographicOperations.FixedTimeEquals(tag, ciphertext[^tagSize..]))
+        if (tagSize > 0)
         {
-            CryptographicOperations.ZeroMemory(plaintext);
-            CryptographicOperations.ZeroMemory(tag);
-            return false;
+            Span<byte> tag = stackalloc byte[tagSize];
+            Finalize(tag, (ulong)associatedData.Length, (ulong)plaintext.Length);
+
+            if (!CryptographicOperations.FixedTimeEquals(tag, ciphertext[^tagSize..]))
+            {
+                CryptographicOperations.ZeroMemory(plaintext);
+                CryptographicOperations.ZeroMemory(tag);
+                return false;
+            }
         }
 
         return true;

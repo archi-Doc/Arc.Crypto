@@ -143,6 +143,35 @@ public partial class AegisVector
 public class AegisTest
 {
     [Fact]
+    public void Test_NoTag()
+    {
+        const int Length = 100;
+
+        var random = new Xoroshiro128StarStar(12);
+        Span<byte> key256 = stackalloc byte[Aegis256.KeySize];
+        Span<byte> nonce256 = stackalloc byte[Aegis256.NonceSize];
+        Span<byte> key128 = stackalloc byte[Aegis128L.KeySize];
+        Span<byte> nonce128 = stackalloc byte[Aegis128L.NonceSize];
+        Span<byte> message = stackalloc byte[Length];
+        Span<byte> cipher = stackalloc byte[Length];
+        Span<byte> decrypted = stackalloc byte[Length];
+        random.NextBytes(key256);
+        random.NextBytes(nonce256);
+        random.NextBytes(message);
+
+        for (var i = 0; i < Length; i += 13)
+        {
+            Aegis256.Encrypt(cipher[..i], message[..i], nonce256, key256, default, 0);
+            Aegis256.TryDecrypt(decrypted[..i], cipher[..i], nonce256, key256, default, 0);
+            decrypted[..i].SequenceEqual(message[..i]).IsTrue();
+
+            Aegis128L.Encrypt(cipher[..i], message[..i], nonce128, key128, default, 0);
+            Aegis128L.TryDecrypt(decrypted[..i], cipher[..i], nonce128, key128, default, 0);
+            decrypted[..i].SequenceEqual(message[..i]).IsTrue();
+        }
+    }
+
+    [Fact]
     public void TestVectors_128()
     {
         var assembly = System.Reflection.Assembly.GetExecutingAssembly();

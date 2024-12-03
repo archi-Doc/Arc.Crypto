@@ -36,14 +36,14 @@ public static class Aegis256
     /// <param name="nonce32">The nonce (32 bytes) to use for encryption.</param>
     /// <param name="key32">The key (32 bytes) to use for encryption.</param>
     /// <param name="associatedData">The associated data to authenticate.</param>
-    /// <param name="tagSize">The size of the authentication tag (16 or 32 bytes).</param>
+    /// <param name="tagSize">The size of the authentication tag (16 or 32 bytes, or 0).</param>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when <paramref name="tagSize"/> is not equal to <see cref="MinTagSize"/> or <see cref="MaxTagSize"/>,
     /// or when the lengths of <paramref name="ciphertext"/>, <paramref name="nonce32"/>, or <paramref name="key32"/> are invalid.
     /// </exception>
     public static void Encrypt(Span<byte> ciphertext, ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> nonce32, ReadOnlySpan<byte> key32, ReadOnlySpan<byte> associatedData = default, int tagSize = MinTagSize)
     {
-        if (tagSize != MinTagSize && tagSize != MaxTagSize)
+        if (tagSize != MinTagSize && tagSize != MaxTagSize && tagSize != 0)
         {
             throw new ArgumentOutOfRangeException(nameof(tagSize), tagSize, $"{nameof(tagSize)} must be equal to {MinTagSize} or {MaxTagSize}.");
         }
@@ -86,7 +86,7 @@ public static class Aegis256
     /// <param name="nonce32">The nonce (32 bytes) to use for decryption.</param>
     /// <param name="key32">The key (32 bytes) to use for decryption.</param>
     /// <param name="associatedData">The associated data to authenticate.</param>
-    /// <param name="tagSize">The size of the authentication tag (16 or 32 bytes).</param>
+    /// <param name="tagSize">The size of the authentication tag (16 or 32 bytes, or 0).</param>
     /// <returns><c>true</c> if decryption is successful; otherwise, <c>false</c>.</returns>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when <paramref name="tagSize"/> is not equal to <see cref="MinTagSize"/> or <see cref="MaxTagSize"/>,
@@ -94,7 +94,7 @@ public static class Aegis256
     /// </exception>
     public static bool TryDecrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce32, ReadOnlySpan<byte> key32, ReadOnlySpan<byte> associatedData = default, int tagSize = MinTagSize)
     {
-        if (tagSize != MinTagSize && tagSize != MaxTagSize)
+        if (tagSize != MinTagSize && tagSize != MaxTagSize && tagSize != 0)
         {
             throw new ArgumentOutOfRangeException(nameof(tagSize), tagSize, $"{nameof(tagSize)} must be equal to {MinTagSize} or {MaxTagSize}.");
         }
