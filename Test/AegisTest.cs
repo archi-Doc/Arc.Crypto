@@ -148,7 +148,7 @@ public class AegisTest
     {
         const int Length = 100;
 
-        Parallel.For(0, 1, x =>
+        Parallel.For(0, 10, x =>
         {
             var random = new Xoroshiro128StarStar(12);
             Span<byte> key256 = new byte[Aegis256.KeySize];
