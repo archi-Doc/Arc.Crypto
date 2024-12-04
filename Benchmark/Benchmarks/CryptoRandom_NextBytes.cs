@@ -10,7 +10,6 @@ namespace Benchmark;
 public class CryptoRandom_NextBytes
 {
     [Params(8, 16, 256)]
-    // [Params(256)]
     public int Length { get; set; }
 
     private readonly Xoshiro256StarStar xo = new(12);
@@ -42,9 +41,9 @@ public class CryptoRandom_NextBytes
     }
 
     [Benchmark]
-    public byte[] NextBytes_RandomVault2_Xoshiro()
+    public byte[] NextBytes_RandomVaultObs_Xoshiro()
     {
-        RandomVault2.Xoshiro.NextBytes(this.random.AsSpan(0, this.Length));
+        RandomVaultObsolete.Xoshiro.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 
@@ -56,9 +55,9 @@ public class CryptoRandom_NextBytes
     }
 
     [Benchmark]
-    public byte[] NextBytes_RandomVault2_Aegis()
+    public byte[] NextBytes_RandomVaultObs_Aegis()
     {
-        RandomVault2.Aegis.NextBytes(this.random.AsSpan(0, this.Length));
+        RandomVaultObsolete.Aegis.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 
@@ -70,9 +69,9 @@ public class CryptoRandom_NextBytes
     }
 
     [Benchmark]
-    public byte[] NextBytes_RandomVault2_Rng()
+    public byte[] NextBytes_RandomVaultObs_Rng()
     {
-        RandomVault2.RandomNumberGenerator.NextBytes(this.random.AsSpan(0, this.Length));
+        RandomVaultObsolete.RandomNumberGenerator.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 }

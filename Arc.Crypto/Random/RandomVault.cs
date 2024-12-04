@@ -1,5 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Arc.Collections;
@@ -16,19 +17,17 @@ namespace Arc.Crypto;
 /// </summary>
 public class RandomVault : RandomUInt64
 {
-    public const int DefaultBufferSize = 4096;
-
-    private const int SkipVaultThreshold = 64; // If the size of the random bytes exceeds this value, they will be generated directly without using the RandomVault.
-    private const int StackSize = 1024; // Specifies the stack size to be used when generating random numbers.
+    private const int DefaultBufferSize = 4096;
+    private const int DefaultSkipVaultThreshold = 256;
 
     static RandomVault()
     {
         var xo = new Xoshiro256StarStar();
-        Xoshiro = new RandomVault(x => xo.NextBytes(x), false);
+        Xoshiro = new RandomVault(x => xo.NextBytes(x), false, 16);
         RandomNumberGenerator = new RandomVault(x => System.Security.Cryptography.RandomNumberGenerator.Fill(x), true);
         Libsodium = new RandomVault(x => CryptoRandom.NextBytes(x), true);
         var aegis = new AegisRandom();
-        Aegis = new RandomVault(x => aegis.NextBytes(x), false);
+        Aegis = new RandomVault(x => aegis.NextBytes(x), false, 16);
     }
 
     /// <summary>
@@ -55,105 +54,110 @@ public class RandomVault : RandomUInt64
     ///  Initializes a new instance of the <see cref="RandomVault"/> class.<br/>
     /// </summary>
     /// <param name="nextBytes">Delegate that fills the elements of a specified span of bytes with random numbers.</param>
-    /// <param name="threadSafe">Indicates whether nextBytes action is thread-safe.</param>
-    public RandomVault(Action<Span<byte>> nextBytes, bool threadSafe)
+    /// <param name="isThreadSafe">Indicates whether nextBytes action is thread-safe.</param>
+    /// <param name="skipVaultThreshold">Threshold for skipping the vault and generating random bytes directly.</param>
+    public RandomVault(Action<Span<byte>> nextBytes, bool isThreadSafe, int skipVaultThreshold = DefaultSkipVaultThreshold)
     {
         this.nextBytesFunc = nextBytes;
-        this.threadSafe = threadSafe;
+        this.isThreadSafe = isThreadSafe;
 
         this.BufferSize = DefaultBufferSize;
-        this.queue = new CircularQueue<ulong>(this.BufferSize / sizeof(ulong));
+        this.buffer = new byte[this.BufferSize];
+        this.SkipVaultThreshold = skipVaultThreshold;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Generates the next random 64-bit unsigned integer.
+    /// </summary>
+    /// <returns>A random 64-bit unsigned integer.</returns>
     public override ulong NextUInt64()
     {
-        if (this.queue.TryDequeue(out var value))
+        using (this.lockObject.EnterScope())
         {
-            return value;
-        }
-
-        // Since the queue is empty, add random numbers equal to half the size of the buffer.
-        if (this.threadSafe)
-        {
-            return PrepareQueue();
-        }
-        else
-        {
-            lock (this.SyncObject)
+            if (this.remaining >= sizeof(ulong))
             {
-                return PrepareQueue();
-            }
-        }
-
-        ulong PrepareQueue()
-        {
-            bool provisioned = false;
-            ulong provisionedValue = 0;
-            Span<byte> byteBuffer = stackalloc byte[StackSize];
-            int remaining = this.BufferSize >> 1;
-            while (remaining > 0)
-            {
-                var size = Math.Min(StackSize, remaining);
-
-                var span = byteBuffer.Slice(0, size);
-                this.nextBytesFunc(span);
-
-                var ulongBuffer = MemoryMarshal.Cast<byte, ulong>(span);
-                int i;
-                if (provisioned)
-                {
-                    i = 0;
-                }
-                else
-                {
-                    provisioned = true;
-                    provisionedValue = ulongBuffer[0];
-                    i = 1;
-                }
-
-                for (; i < ulongBuffer.Length; i++)
-                {
-                    if (!this.queue.TryEnqueue(ulongBuffer[i]))
-                    {// The queue is full
-                        return provisionedValue;
-                    }
-                }
-
-                remaining -= size;
-            }
-
-            return provisionedValue;
-        }
-    }
-
-    public override void NextBytes(Span<byte> buffer)
-    {
-        if (buffer.Length < SkipVaultThreshold)
-        {
-            base.NextBytes(buffer);
-        }
-        else
-        {// If the size is large, the performance of RandomVault decreases, so the original function is called instead.
-            if (this.threadSafe)
-            {
-                this.nextBytesFunc(buffer);
+                var value = MemoryMarshal.Read<ulong>(this.buffer.AsSpan(this.position));
+                this.remaining -= sizeof(ulong);
+                return value;
             }
             else
             {
-                lock (this.SyncObject)
-                {
-                    this.nextBytesFunc(buffer);
-                }
+                Span<byte> tmp = stackalloc byte[sizeof(ulong)];
+                var a = this.remaining;
+                var b = sizeof(ulong) - this.remaining;
+                this.buffer.AsSpan(this.position, a).CopyTo(tmp);
+
+                this.PrepareBuffer();
+                this.buffer.AsSpan(this.position, b).CopyTo(tmp.Slice(a));
+                this.remaining -= b;
+
+                return MemoryMarshal.Read<ulong>(tmp);
             }
         }
     }
 
+    /// <summary>
+    /// Fills the elements of a specified span of bytes with random numbers.
+    /// </summary>
+    /// <param name="destination">The span to fill with random numbers.</param>
+    public override void NextBytes(Span<byte> destination)
+    {
+        using (this.lockObject.EnterScope())
+        {
+            // First, attempt to consume the prepared buffer.
+            var n = Math.Min(destination.Length, this.remaining);
+            if (n > 0)
+            {
+                this.buffer.AsSpan(this.position, n).CopyTo(destination);
+                this.remaining -= n;
+                destination = destination.Slice(n);
+            }
+
+            if (destination.Length == 0)
+            {
+                return;
+            }
+
+            if (destination.Length > this.SkipVaultThreshold)
+            {// If it is above the threshold, use the underlying function.
+                this.nextBytesFunc(destination);
+                // this.PrepareBuffer();
+            }
+            else
+            {
+                this.PrepareBuffer();
+                this.buffer.AsSpan(0, destination.Length).CopyTo(destination);
+                this.remaining -= destination.Length;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Prepares the buffer by filling it with random bytes.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void PrepareBuffer()
+    {
+        this.nextBytesFunc(this.buffer);
+        this.remaining = this.BufferSize;
+    }
+
+    /// <summary>
+    /// Gets the size of the buffer.
+    /// </summary>
     public int BufferSize { get; }
 
-    private readonly Action<Span<byte>> nextBytesFunc;
-    private readonly bool threadSafe;
-    private readonly CircularQueue<ulong> queue;
+    /// <summary>
+    /// Gets the threshold for skipping the vault and generating random bytes directly.
+    /// </summary>
+    public int SkipVaultThreshold { get; }
 
-    private object SyncObject => this.queue;
+    private readonly Action<Span<byte>> nextBytesFunc;
+    private readonly bool isThreadSafe;
+
+    private readonly Lock lockObject = new();
+    private readonly byte[] buffer;
+    private int remaining;
+
+    private int position => this.BufferSize - this.remaining;
 }

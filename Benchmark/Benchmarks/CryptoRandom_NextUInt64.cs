@@ -23,22 +23,22 @@ public class CryptoRandom_NextUInt64
         => RandomVault.Xoshiro.NextUInt64();
 
     [Benchmark]
-    public ulong NextUInt64_RandomVault2_Xoshiro256()
-        => RandomVault2.Xoshiro.NextUInt64();
+    public ulong NextUInt64_RandomVaultObs_Xoshiro256()
+        => RandomVaultObsolete.Xoshiro.NextUInt64();
 
     [Benchmark]
     public ulong NextUInt64_RandomVault_Aegis()
         => RandomVault.Aegis.NextUInt64();
 
     [Benchmark]
-    public ulong NextUInt64_RandomVault2_Aegis()
-        => RandomVault2.Aegis.NextUInt64();
+    public ulong NextUInt64_RandomVaultObs_Aegis()
+        => RandomVaultObsolete.Aegis.NextUInt64();
 
     [Benchmark]
     public ulong NextUInt64_RandomVault_Rng()
         => RandomVault.RandomNumberGenerator.NextUInt64();
 
     [Benchmark]
-    public ulong NextUInt64_RandomVault2_Rng()
-        => RandomVault2.RandomNumberGenerator.NextUInt64();
+    public ulong NextUInt64_RandomVaultObs_Rng()
+        => RandomVaultObsolete.RandomNumberGenerator.NextUInt64();
 }
