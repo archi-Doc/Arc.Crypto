@@ -201,11 +201,11 @@ public abstract class RandomUInt64
     /// <summary>
     /// Fills the elements of a specified span of bytes with random numbers.
     /// </summary>
-    /// <param name="buffer">The array to be filled with random numbers.</param>
-    public unsafe virtual void NextBytes(Span<byte> buffer)
+    /// <param name="destination">The span to fill with random numbers.</param>
+    public unsafe virtual void NextBytes(Span<byte> destination)
     {
-        var remaining = buffer.Length;
-        fixed (byte* pb = buffer)
+        var remaining = destination.Length;
+        fixed (byte* pb = destination)
         {
             byte* dest = pb;
             while (remaining >= sizeof(ulong))

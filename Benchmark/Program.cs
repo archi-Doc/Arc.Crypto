@@ -22,7 +22,7 @@ public class Program
         Console.WriteLine("Arc.Crypto Benchmark.");
 
         // RandomVaultBenchmark.Test1();
-        DebugRun<CryptoRandomBenchmark>();
+        DebugRun<CryptoRandom_NextBytes>();
 
         // var summary = BenchmarkRunner.Run<SpeedBenchmark>();
         var switcher = new BenchmarkSwitcher(new[]
@@ -42,7 +42,8 @@ public class Program
             typeof(Base64Benchmark),
             typeof(HexStringBenchmark),
             typeof(RandomVaultBenchmark),
-            typeof(CryptoRandomBenchmark),
+            typeof(CryptoRandom_NextBytes),
+            typeof(CryptoRandom_NextUInt64),
             typeof(PseudoRandomBenchmark),
             typeof(HashBenchmark),
             typeof(StringBenchmark),
@@ -119,6 +120,6 @@ public class BenchmarkConfig : BenchmarkDotNet.Configs.ManualConfig
         this.AddExporter(BenchmarkDotNet.Exporters.MarkdownExporter.GitHub);
         this.AddDiagnoser(BenchmarkDotNet.Diagnosers.MemoryDiagnoser.Default);
 
-        // this.AddJob(BenchmarkDotNet.Jobs.Job.ShortRun);
+        this.AddJob(BenchmarkDotNet.Jobs.Job.ShortRun);
     }
 }
