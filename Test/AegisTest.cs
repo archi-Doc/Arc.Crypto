@@ -233,18 +233,26 @@ public class AegisTest
 
         for (var j = 0; j < 1000; j += 13)
         {
-            var message = new byte[j];
-            var message2 = new byte[j];
+            var message = new byte[j].AsSpan();
+            var message2 = new byte[j].AsSpan();
             random.NextBytes(message);
-            var cipher = new byte[message.Length + Aegis256.MaxTagSize];
-            var cipher2 = new byte[message.Length + Aegis256.MaxTagSize];
+            var cipher = new byte[message.Length + Aegis256.MaxTagSize].AsSpan();
+            var cipher2 = new byte[message.Length + Aegis256.MaxTagSize].AsSpan();
 
             Aegis256.Encrypt(cipher, message, nonce, key, default, 32);
-            Aegis256.TryDecrypt(message2, cipher, nonce, key, default, 32);
+            Aegis256.TryDecrypt(message2, cipher, nonce, key, default, 32).IsTrue();
             message.SequenceEqual(message2).IsTrue();
 
             Aegis256Helper.Encrypt(message, nonce, key, cipher2, out _);
             cipher.SequenceEqual(cipher2).IsTrue();
+
+            // Same span
+            cipher2.Clear();
+            message.CopyTo(cipher2);
+            Aegis256.Encrypt(cipher2, cipher2[..^32], nonce, key, default, 32);
+            cipher.SequenceEqual(cipher2).IsTrue();
+            Aegis256.TryDecrypt(cipher2[..^32], cipher2, nonce, key, default, 32).IsTrue();
+            message.SequenceEqual(cipher2[..^32]).IsTrue();
         }
     }
 
