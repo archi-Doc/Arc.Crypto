@@ -63,7 +63,7 @@ public class RandomVault : RandomUInt64
 
         this.BufferSize = DefaultBufferSize;
         this.buffer = new byte[this.BufferSize];
-        this.SkipVaultThreshold = skipVaultThreshold;
+        this.SkipVaultThreshold = Math.Min(skipVaultThreshold, this.BufferSize);
     }
 
     /// <summary>
