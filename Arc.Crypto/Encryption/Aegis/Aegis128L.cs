@@ -28,7 +28,8 @@ public static class Aegis128L
     public const int MaxTagSize = 32;
 
     /// <summary>
-    /// Encrypts the specified plaintext using the Aegis-128L algorithm.
+    /// Encrypts the specified plaintext using the Aegis-128L algorithm.<br/>
+    /// <paramref name="plaintext"/> and <paramref name="ciphertext"/> can reference the same memory, but note that they must be different lengths in their respective spans.
     /// </summary>
     /// <param name="ciphertext">The buffer to receive the ciphertext.<br/>
     /// Allocate a buffer with the size of the plaintext length plus the Tag size (16 bytes or 32 bytes).</param>
@@ -81,7 +82,8 @@ public static class Aegis128L
     }
 
     /// <summary>
-    /// Decrypts the specified ciphertext using the Aegis-128L algorithm.
+    /// Decrypts the specified ciphertext using the Aegis-128L algorithm.<br/>
+    /// <paramref name="plaintext"/> and <paramref name="ciphertext"/> can reference the same memory, but note that they must be different lengths in their respective spans.
     /// </summary>
     /// <param name="plaintext">The buffer to receive the plaintext.<br/>
     /// Allocate a buffer with the size of the ciphertext length minus the Tag size (16 bytes or 32 bytes).</param>
