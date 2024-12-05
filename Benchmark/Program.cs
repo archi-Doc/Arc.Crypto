@@ -22,7 +22,7 @@ public class Program
         Console.WriteLine("Arc.Crypto Benchmark.");
 
         // RandomVaultBenchmark.Test1();
-        DebugRun<CryptoRandom_NextBytes>();
+        DebugRun<FillRandomBenchmark>();
 
         // var summary = BenchmarkRunner.Run<SpeedBenchmark>();
         var switcher = new BenchmarkSwitcher(new[]
@@ -44,7 +44,7 @@ public class Program
             typeof(RandomVaultBenchmark),
             typeof(CryptoRandom_NextBytes),
             typeof(CryptoRandom_NextUInt64),
-            typeof(RandomNumberGeneratorBenchmark),
+            typeof(FillRandomBenchmark),
             typeof(PseudoRandomBenchmark),
             typeof(HashBenchmark),
             typeof(StringBenchmark),
