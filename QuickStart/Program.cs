@@ -56,7 +56,7 @@ internal class Program
         // RandomVault is a random number pool.
         // It's thread-safe and faster than lock in most cases.
         var mt = new MersenneTwister(); // Create a random generator.
-        var rv = new RandomVault(x => mt.NextBytes(x), false); // Specify NextBytes() delegates.
+        var rv = new RandomVault(x => mt.NextBytes(x)); // Specify NextBytes() delegates.
         Console.WriteLine("RandomVault:");
         Console.WriteLine(rv.NextInt63());
         Console.WriteLine(rv.NextDouble());

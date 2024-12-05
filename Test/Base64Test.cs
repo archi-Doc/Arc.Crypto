@@ -14,7 +14,7 @@ public class Base64Test
     public void Test1()
     {
         var xo = new Xoshiro256StarStar(42);
-        var rv = new RandomVault(x => xo.NextBytes(x), false);
+        var rv = new RandomVault(x => xo.NextBytes(x));
 
         for (var i = 0; i < 300; i++)
         {
