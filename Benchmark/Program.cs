@@ -44,6 +44,7 @@ public class Program
             typeof(RandomVaultBenchmark),
             typeof(CryptoRandom_NextBytes),
             typeof(CryptoRandom_NextUInt64),
+            typeof(RandomNumberGeneratorBenchmark),
             typeof(PseudoRandomBenchmark),
             typeof(HashBenchmark),
             typeof(StringBenchmark),
