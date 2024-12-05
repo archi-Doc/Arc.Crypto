@@ -1,5 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
@@ -35,18 +36,18 @@ public class AegisRandom
         this.FillBuffer();
     }
 
-    public void NextBytes(Span<byte> buffer)
+    public void NextBytes(Span<byte> destination)
     {
-        while (buffer.Length > 0)
+        while (destination.Length > 0)
         {
             if (this.remaining == 0)
             {
                 this.FillBuffer();
             }
 
-            var size = Math.Min(buffer.Length, this.remaining);
-            this.destination.AsSpan(this.position, size).CopyTo(buffer);
-            buffer = buffer.Slice(size);
+            var size = Math.Min(destination.Length, this.remaining);
+            this.destination.AsSpan(this.position, size).CopyTo(destination);
+            destination = destination.Slice(size);
             this.position += size;
         }
     }
@@ -72,6 +73,8 @@ public class AegisRandom
         {
             s[i] ^= s2[i];
         }
+
+        s[0] ^= (ulong)Stopwatch.GetTimestamp();
 
         this.xo.NextBytes(this.source);
         Aegis256.Encrypt(this.destination, this.source, keyNonce.Slice(Aegis256.KeySize, Aegis256.NonceSize), keyNonce.Slice(0, Aegis256.KeySize));
