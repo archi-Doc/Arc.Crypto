@@ -3,14 +3,12 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using Arc.Collections;
 using Arc.Crypto.Random;
 
 namespace Arc.Crypto;
 
 /// <summary>
-/// <see cref="RandomVault"/> is is a random number pool.<br/>
-/// It's thread-safe and faster than lock() in most cases.<br/>
+/// <see cref="RandomVault"/> is is a thread-safe random number pool.<br/>
 /// Target: Random integers requested by multiple threads simultaneously<br/><br/>
 /// <see cref="RandomVault"/> generates random integers using random generator<br/>
 /// specified by constructor parameters, and takes out integers from the buffer as needed.
@@ -23,11 +21,11 @@ public class RandomVault : RandomUInt64
     static RandomVault()
     {
         var xo = new Xoshiro256StarStar();
-        Xoshiro = new RandomVault(x => xo.NextBytes(x), false, 16);
-        RandomNumberGenerator = new RandomVault(x => System.Security.Cryptography.RandomNumberGenerator.Fill(x), true);
-        Libsodium = new RandomVault(x => CryptoRandom.NextBytes(x), true);
+        Xoshiro = new RandomVault(x => xo.NextBytes(x), 16);
+        RandomNumberGenerator = new RandomVault(x => System.Security.Cryptography.RandomNumberGenerator.Fill(x));
+        Libsodium = new RandomVault(x => CryptoRandom.NextBytes(x));
         var aegis = new AegisRandom();
-        Aegis = new RandomVault(x => aegis.NextBytes(x), false, 16);
+        Aegis = new RandomVault(x => aegis.NextBytes(x), 16);
     }
 
     /// <summary>
@@ -54,16 +52,13 @@ public class RandomVault : RandomUInt64
     ///  Initializes a new instance of the <see cref="RandomVault"/> class.<br/>
     /// </summary>
     /// <param name="nextBytes">Delegate that fills the elements of a specified span of bytes with random numbers.</param>
-    /// <param name="isThreadSafe">Indicates whether nextBytes action is thread-safe.</param>
     /// <param name="skipVaultThreshold">Threshold for skipping the vault and generating random bytes directly.</param>
-    public RandomVault(Action<Span<byte>> nextBytes, bool isThreadSafe, int skipVaultThreshold = DefaultSkipVaultThreshold)
+    public RandomVault(Action<Span<byte>> nextBytes, int skipVaultThreshold = DefaultSkipVaultThreshold)
     {
         this.nextBytesFunc = nextBytes;
-        this.isThreadSafe = isThreadSafe;
-
         this.BufferSize = DefaultBufferSize;
         this.buffer = new byte[this.BufferSize];
-        this.SkipVaultThreshold = Math.Min(skipVaultThreshold, this.BufferSize);
+        this.skipVaultThreshold = Math.Min(skipVaultThreshold, this.BufferSize);
     }
 
     /// <summary>
@@ -118,13 +113,13 @@ public class RandomVault : RandomUInt64
                 return;
             }
 
-            if (destination.Length > this.SkipVaultThreshold)
+            if (destination.Length > this.skipVaultThreshold)
             {// If it is above the threshold, use the underlying function.
                 this.nextBytesFunc(destination);
                 // this.PrepareBuffer();
             }
             else
-            {
+            {// For other cases, prepare the buffer first and then copy (it is ensured that destination.Length is less than or equal to skipVaultThreshold/BufferSize).
                 this.PrepareBuffer();
                 this.buffer.AsSpan(0, destination.Length).CopyTo(destination);
                 this.remaining -= destination.Length;
@@ -147,14 +142,8 @@ public class RandomVault : RandomUInt64
     /// </summary>
     public int BufferSize { get; }
 
-    /// <summary>
-    /// Gets the threshold for skipping the vault and generating random bytes directly.
-    /// </summary>
-    public int SkipVaultThreshold { get; }
-
     private readonly Action<Span<byte>> nextBytesFunc;
-    private readonly bool isThreadSafe;
-
+    private readonly int skipVaultThreshold;
     private readonly Lock lockObject = new();
     private readonly byte[] buffer;
     private int remaining;

@@ -17,7 +17,7 @@ public class RandomVaultBenchmark
     public static void Test1()
     {
         var mt2 = new MersenneTwister(new ulong[] { 0x12345UL, 0x23456UL, 0x34567UL, 0x45678UL });
-        var poolSliding = new RandomVault(x => mt2.NextBytes(x), false);
+        var poolSliding = new RandomVault(x => mt2.NextBytes(x));
         Debug.Assert(poolSliding.NextUInt64() == 7266447313870364031UL);
 
         for (var i = 0; i < 20000; i++)
@@ -52,14 +52,14 @@ public class RandomVaultBenchmark
     public RandomVaultBenchmark()
     {
         this.PoolLock = new(() => this.Mt.NextUInt64());
-        this.Vault = new(x => this.Mt.NextBytes(x), false);
+        this.Vault = new(x => this.Mt.NextBytes(x));
         this.PoolSplit = new(() => this.Mt.NextUInt64());
         this.PoolConcurrentQueue = new(() => this.Mt.NextUInt64(), x => this.Mt.NextBytes(x));
 
         var mt = new MersenneTwister(42);
-        this.Vault2 = new(x => mt.NextBytes(x), false);
+        this.Vault2 = new(x => mt.NextBytes(x));
 
-        this.RngVault = new(x => RandomNumberGenerator.Fill(x), true);
+        this.RngVault = new(x => RandomNumberGenerator.Fill(x));
     }
 
     [GlobalSetup]
