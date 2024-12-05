@@ -29,6 +29,11 @@ public class RandomVault : RandomUInt64
     }
 
     /// <summary>
+    /// Gets the default cryptographically secure pseudo random number pool (<see cref="AegisRandom"/>).
+    /// </summary>
+    public static RandomVault Default => Aegis;
+
+    /// <summary>
     ///  Gets the cryptographically secure pseudo random number pool (<see cref="AegisRandom"/>).
     /// </summary>
     public static RandomVault Aegis { get; }
