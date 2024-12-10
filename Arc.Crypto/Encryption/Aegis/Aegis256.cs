@@ -71,8 +71,14 @@ public static class Aegis256
         }
         else if (Aegis256Arm.IsSupported())
         {
-            var s = default(Aegis256Arm);
-            s.Encrypt(ciphertext, plaintext, nonce32, key32, associatedData, tagSize);
+            if (AES.EnableArmIntrinsics)
+            {
+                default(Aegis256Arm).Encrypt(ciphertext, plaintext, nonce32, key32, associatedData, tagSize);
+            }
+            else
+            {
+                default(Aegis256Soft).Encrypt(ciphertext, plaintext, nonce32, key32, associatedData, tagSize);
+            }
         }
         else
         {
@@ -131,8 +137,14 @@ public static class Aegis256
         }
         else if (Aegis256Arm.IsSupported())
         {
-            var s = default(Aegis256Soft);
-            return s.Decrypt(plaintext, ciphertext, nonce32, key32, associatedData, tagSize);
+            if (AES.EnableArmIntrinsics)
+            {
+                return default(Aegis256Arm).Decrypt(plaintext, ciphertext, nonce32, key32, associatedData, tagSize);
+            }
+            else
+            {
+                return default(Aegis256Soft).Decrypt(plaintext, ciphertext, nonce32, key32, associatedData, tagSize);
+            }
         }
         else
         {

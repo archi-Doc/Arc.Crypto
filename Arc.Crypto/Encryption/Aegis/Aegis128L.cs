@@ -71,8 +71,14 @@ public static class Aegis128L
         }
         else if (Aegis128LArm.IsSupported())
         {
-            var s = default(Aegis128LSoft);
-            s.Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
+            if (AES.EnableArmIntrinsics)
+            {
+                default(Aegis128LArm).Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
+            }
+            else
+            {
+                default(Aegis128LSoft).Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
+            }
         }
         else
         {
@@ -131,8 +137,14 @@ public static class Aegis128L
         }
         else if (Aegis128LArm.IsSupported())
         {
-            var s = default(Aegis128LSoft);
-            return s.Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
+            if (AES.EnableArmIntrinsics)
+            {
+                return default(Aegis128LArm).Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
+            }
+            else
+            {
+                return default(Aegis128LSoft).Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
+            }
         }
         else
         {
