@@ -43,9 +43,9 @@
     <Content Include="..\Arc.Crypto\runtimes\$(NETCoreSdkRuntimeIdentifier)\native\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <!--<Content Include="..\Arc.Crypto\runtimes\linux-arm64\native\*.*">
+    <Content Include="..\Arc.Crypto\runtimes\linux-arm64\native\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>-->
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
