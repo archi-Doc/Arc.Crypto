@@ -29,10 +29,10 @@ internal class Program
         if (System.Runtime.Intrinsics.Arm.Aes.IsSupported)
         {
             var a = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-            var value = Vector128.Create(a.Reverse().ToArray());
-            var roundKey = Vector128.Create(a.Reverse().ToArray());
+            var value = Vector128.Create(a.ToArray());
+            var roundKey = Vector128.Create(a.ToArray());
             var result = System.Runtime.Intrinsics.Arm.Aes.Encrypt(value, roundKey);
-            result = System.Runtime.Intrinsics.Arm.Aes.InverseMixColumns(result);
+            // result = System.Runtime.Intrinsics.Arm.Aes.InverseMixColumns(result);
 
             Console.WriteLine("Arm");
             Console.WriteLine(value);
