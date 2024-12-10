@@ -57,6 +57,7 @@
 
   <Target Name="PreBuild" BeforeTargets="CoreCompile">
     <Message Text="Current SDK Runtime Identifier: $(NETCoreSdkRuntimeIdentifier)" Importance="High" />
+    <Message Text="Current Runtime Identifier: $(RuntimeIdentifier)" Importance="High" />
   </Target>
 
 </Project>
