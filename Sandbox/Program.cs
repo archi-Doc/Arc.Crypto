@@ -26,7 +26,7 @@ internal class Program
             Console.WriteLine(result);
         }
 
-        if (System.Runtime.Intrinsics.Arm.Aes.IsSupported)
+        if (System.Runtime.Intrinsics.Arm.Aes.Arm64.IsSupported)
         {
             var a = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
             var value = Vector128.Create(a.ToArray());
