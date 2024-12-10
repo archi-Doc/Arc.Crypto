@@ -15,7 +15,8 @@ internal class Program
 
         if (System.Runtime.Intrinsics.X86.Aes.IsSupported)
         {
-            var value = Vector128.Create(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 });
+            // var value = Vector128.Create(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 });
+            var value = Vector128.Create(new byte[] { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 15 });
             var roundKey = Vector128.Create(new byte[] { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 15 });
             var result = System.Runtime.Intrinsics.X86.Aes.Encrypt(value, roundKey);
 
@@ -29,7 +30,7 @@ internal class Program
         {
             var a = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
             var value = Vector128.Create(a.Reverse().ToArray());
-            var b = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+            var b = new byte[] { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 15 };
             var roundKey = Vector128.Create(b.Reverse().ToArray());
             var result = System.Runtime.Intrinsics.Arm.Aes.Encrypt(value, roundKey);
             // result = System.Runtime.Intrinsics.Arm.Aes.InverseMixColumns(result);
