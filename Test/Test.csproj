@@ -46,13 +46,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="blake3_dotnet.so" />
     <None Remove="Resources\Aegis128Vectors.tinyhand" />
     <None Remove="Resources\Aegis256Vectors.tinyhand" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="blake3_dotnet.so" />
+    <Content Include="blake3_dotnet.so">
+      <PackagePath>%(Identity)</PackagePath>
+      <Pack>true</Pack>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
