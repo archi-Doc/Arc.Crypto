@@ -77,6 +77,7 @@ public static class Aegis256
             }
             else
             {
+                // LibsodiumInterops.crypto_aead_aegis256_encrypt(ciphertext, out _, plaintext, (ulong)plaintext.Length, associatedData, (ulong)associatedData.Length, nonce32, key32, tagSize);
                 default(Aegis256Soft).Encrypt(ciphertext, plaintext, nonce32, key32, associatedData, tagSize);
             }
         }
