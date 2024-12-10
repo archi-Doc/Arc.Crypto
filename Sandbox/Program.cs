@@ -29,8 +29,8 @@ internal class Program
         {
             var value = Vector128.Create(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 });
             var roundKey = Vector128.Create(new byte[] { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 });
-            var result = System.Runtime.Intrinsics.Arm.Aes.Encrypt(value, roundKey);
-            result = System.Runtime.Intrinsics.Arm.Aes.InverseMixColumns(result);
+            var result = System.Runtime.Intrinsics.Arm.Aes.Encrypt(roundKey, value);
+            // result = System.Runtime.Intrinsics.Arm.Aes.InverseMixColumns(result);
 
             Console.WriteLine("Arm");
             Console.WriteLine(value);
