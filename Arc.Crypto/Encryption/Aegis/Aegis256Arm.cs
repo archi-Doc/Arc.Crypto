@@ -143,12 +143,31 @@ internal ref struct Aegis256Arm
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Update(Vector128<byte> message)
     {
-        Vector128<byte> s0 = Aes.Encrypt(this.S5, this.S0 ^ message);
+        var roundKey = this.S0 ^ message;
+        Vector128<byte> s0 = Aes.MixColumns(Aes.Encrypt(this.S5 ^ roundKey, roundKey));
+        s0 ^= roundKey;
+
+        Vector128<byte> s1 = Aes.MixColumns(Aes.Encrypt(this.S0 ^ this.S1, this.S1));
+        s1 ^= this.S1;
+
+        Vector128<byte> s2 = Aes.MixColumns(Aes.Encrypt(this.S1 ^ this.S2, this.S2));
+        s2 ^= this.S2;
+
+        Vector128<byte> s3 = Aes.MixColumns(Aes.Encrypt(this.S2 ^ this.S3, this.S3));
+        s3 ^= this.S3;
+
+        Vector128<byte> s4 = Aes.MixColumns(Aes.Encrypt(this.S3 ^ this.S4, this.S4));
+        s4 ^= this.S4;
+
+        Vector128<byte> s5 = Aes.MixColumns(Aes.Encrypt(this.S4 ^ this.S5, this.S5));
+        s5 ^= this.S5;
+
+        /*Vector128<byte> s0 = Aes.Encrypt(this.S5, this.S0 ^ message);
         Vector128<byte> s1 = Aes.Encrypt(this.S0, this.S1);
         Vector128<byte> s2 = Aes.Encrypt(this.S1, this.S2);
         Vector128<byte> s3 = Aes.Encrypt(this.S2, this.S3);
         Vector128<byte> s4 = Aes.Encrypt(this.S3, this.S4);
-        Vector128<byte> s5 = Aes.Encrypt(this.S4, this.S5);
+        Vector128<byte> s5 = Aes.Encrypt(this.S4, this.S5);*/
 
         this.S0 = s0;
         this.S1 = s1;
