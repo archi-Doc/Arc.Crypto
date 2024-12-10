@@ -190,9 +190,9 @@ internal ref struct Aegis256Arm
     {
         Vector128<byte> z = this.S1 ^ this.S4 ^ this.S5 ^ (this.S2 & this.S3);
 
-        Span<byte> pad = stackalloc byte[16];
+        var pad = new byte[16];
         ciphertext.CopyTo(pad);
-        Vector128<byte> t = Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(pad)); // Vector128.Create(pad);
+        Vector128<byte> t = Vector128.Create(pad);
         Vector128<byte> output = t ^ z;
 
         Span<byte> p = pad;
@@ -200,18 +200,18 @@ internal ref struct Aegis256Arm
         p[..ciphertext.Length].CopyTo(plaintext);
 
         p[ciphertext.Length..].Clear();
-        Vector128<byte> v = Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(pad)); // Vector128.Create(pad);
+        Vector128<byte> v = Vector128.Create(pad);
         this.Update(v);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void Finalize(scoped Span<byte> tag, ulong associatedDataLength, ulong plaintextLength)
     {
-        Span<byte> b = stackalloc byte[16];
+        var b = new byte[16];
         BinaryPrimitives.WriteUInt64LittleEndian(b[..8], associatedDataLength * 8);
         BinaryPrimitives.WriteUInt64LittleEndian(b[8..], plaintextLength * 8);
 
-        Vector128<byte> t = this.S3 ^ Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(b)); // Vector128.Create(b);
+        Vector128<byte> t = this.S3 ^ Vector128.Create(b);
 
         for (int i = 0; i < 7; i++)
         {
