@@ -55,4 +55,8 @@
     <EmbeddedResource Include="Resources\Aegis256Vectors.tinyhand" />
   </ItemGroup>
 
+  <Target Name="PreBuild" BeforeTargets="CoreCompile">
+    <Message Text="Current SDK Runtime Identifier: $(NETCoreSdkRuntimeIdentifier)" Importance="High" />
+  </Target>
+
 </Project>
