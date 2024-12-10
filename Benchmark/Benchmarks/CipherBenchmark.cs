@@ -190,10 +190,10 @@ public class CipherBenchmark
         return this.message2;
     }
 
-    [Benchmark]
+    /*[Benchmark]
     public byte[] Aegis256Decrypt_Libsodium()
     {
         Aegis256Helper.Decrypt(this.cipherAegis, this.nonce32, this.key, this.message2, out var messageLength);
         return this.message2;
-    }
+    }*/
 }
