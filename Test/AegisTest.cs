@@ -243,6 +243,9 @@ public class AegisTest
             Aegis256.TryDecrypt(message2, cipher, nonce, key, default, 32).IsTrue();
             message.SequenceEqual(message2).IsTrue();
 
+            AegisDotNet.AEGIS256.Decrypt(message2, cipher, nonce, key, default, 32);
+            message.SequenceEqual(message2).IsTrue();
+
             Aegis256Helper.Encrypt(message, nonce, key, cipher2, out _);
             cipher.SequenceEqual(cipher2).IsTrue();
 
