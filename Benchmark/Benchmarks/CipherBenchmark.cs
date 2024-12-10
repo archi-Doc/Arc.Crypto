@@ -147,7 +147,7 @@ public class CipherBenchmark
         return this.cipherAegis2;
     }
 
-    [Benchmark]
+    // [Benchmark]
     public byte[] Aegis256Encrypt_AegisDotNet()
     {
         AegisDotNet.AEGIS256.Encrypt(this.cipherAegis2, this.message, this.nonce32, this.key, default, 32);
@@ -183,17 +183,17 @@ public class CipherBenchmark
         return this.message2;
     }
 
-    [Benchmark]
+    // [Benchmark]
     public byte[] Aegis256Decrypt_AegisDotNet()
     {
         AegisDotNet.AEGIS256.Decrypt(this.message2, this.cipherAegis, this.nonce32, this.key, default, 32);
         return this.message2;
     }
 
-    /*[Benchmark]
+    [Benchmark]
     public byte[] Aegis256Decrypt_Libsodium()
     {
         Aegis256Helper.Decrypt(this.cipherAegis, this.nonce32, this.key, this.message2, out var messageLength);
         return this.message2;
-    }*/
+    }
 }
