@@ -15,12 +15,10 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <!--Workarounds for Arm64 test-->
     <TemporaryIdentifier>$(NETCoreSdkRuntimeIdentifier)</TemporaryIdentifier>
-  </PropertyGroup>
+    <TemporaryIdentifier Condition="'$(NETCoreSdkRuntimeIdentifier)' == 'ubuntu.22.04-arm64'">linux-arm64</TemporaryIdentifier>
 
-  <!--Workarounds for Arm64 test-->
-  <PropertyGroup Condition="$(NETCoreSdkRuntimeIdentifier)=='ubuntu.22.04-arm64'">
-    <TemporaryIdentifier>linux-arm64</TemporaryIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
@@ -49,7 +47,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arc.Crypto\Arc.Crypto.csproj" />
-    <Content Include="..\Arc.Crypto\runtimes\$(TempIdentifier)\native\*.*">
+    <Content Include="..\Arc.Crypto\runtimes\$(TemporaryIdentifier)\native\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
