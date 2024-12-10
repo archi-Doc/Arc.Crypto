@@ -151,8 +151,8 @@ internal ref struct Aegis128LArm
         Vector128<byte> s4 = Aes.MixColumns(Aes.Encrypt(this.S3 ^ roundKey, roundKey)) ^ roundKey;
 
         Vector128<byte> s5 = Aes.MixColumns(Aes.Encrypt(this.S4 ^ this.S5, this.S5)) ^ this.S5;
-        Vector128<byte> s6 = Aes.MixColumns(Aes.Encrypt(this.S5 ^ this.S6, this.S5)) ^ this.S6;
-        Vector128<byte> s7 = Aes.MixColumns(Aes.Encrypt(this.S6 ^ this.S7, this.S6)) ^ this.S7;
+        Vector128<byte> s6 = Aes.MixColumns(Aes.Encrypt(this.S5 ^ this.S6, this.S6)) ^ this.S6;
+        Vector128<byte> s7 = Aes.MixColumns(Aes.Encrypt(this.S6 ^ this.S7, this.S7)) ^ this.S7;
 
         /*Vector128<byte> s0 = Aes.Encrypt(this.S7, this.S0 ^ m0);
         Vector128<byte> s1 = Aes.Encrypt(this.S0, this.S1);
