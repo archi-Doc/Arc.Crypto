@@ -40,6 +40,7 @@ internal static unsafe partial class LibsodiumInterops
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int sodium_init();*/
 
+    /*
     #region AEGIS
 
     [LibraryImport(Name)]
@@ -58,7 +59,8 @@ internal static unsafe partial class LibsodiumInterops
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int crypto_aead_aegis128l_decrypt(Span<byte> m, out ulong mlen_p, IntPtr nsec, ReadOnlySpan<byte> c, ulong clen, ReadOnlySpan<byte> ad, ulong adlen, ReadOnlySpan<byte>
 npub, ReadOnlySpan<byte> k);
-    #endregion
+
+    #endregion*/
 
     #region crypto_pwhash
 
