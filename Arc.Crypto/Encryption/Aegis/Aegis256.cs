@@ -71,7 +71,7 @@ public static class Aegis256
         }
         else if (Aegis256Arm.IsSupported())
         {
-            var s = default(Aegis256Soft);
+            var s = default(Aegis256Arm);
             s.Encrypt(ciphertext, plaintext, nonce32, key32, associatedData, tagSize);
         }
         else
