@@ -43,6 +43,10 @@
     <Content Include="..\Arc.Crypto\runtimes\$(NETCoreSdkRuntimeIdentifier)\native\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!--Workarounds for Arm64 test-->
+    <Content Include="..\Arc.Crypto\runtimes\linux-arm64\native\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -54,5 +58,10 @@
     <EmbeddedResource Include="Resources\Aegis128Vectors.tinyhand" />
     <EmbeddedResource Include="Resources\Aegis256Vectors.tinyhand" />
   </ItemGroup>
+
+  <!--<Target Name="PreBuild" BeforeTargets="CoreCompile">
+    <Message Text="Current SDK Runtime Identifier: $(NETCoreSdkRuntimeIdentifier)" Importance="High" />
+    <Message Text="Current Runtime Identifier: $(RuntimeIdentifier)" Importance="High" />
+  </Target>-->
 
 </Project>

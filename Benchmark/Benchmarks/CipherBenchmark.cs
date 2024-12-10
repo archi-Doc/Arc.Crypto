@@ -154,7 +154,7 @@ public class CipherBenchmark
         return this.cipherAegis2;
     }
 
-    // [Benchmark]
+    [Benchmark]
     public byte[] Aegis256Encrypt_Libsodium()
     {
         Aegis256Helper.Encrypt(this.message, this.nonce32, this.key, this.cipherAegis2, out var cipherLength);
@@ -190,7 +190,7 @@ public class CipherBenchmark
         return this.message2;
     }
 
-    // [Benchmark]
+    [Benchmark]
     public byte[] Aegis256Decrypt_Libsodium()
     {
         Aegis256Helper.Decrypt(this.cipherAegis, this.nonce32, this.key, this.message2, out var messageLength);

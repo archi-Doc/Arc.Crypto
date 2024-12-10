@@ -40,6 +40,26 @@ internal static unsafe partial class LibsodiumInterops
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int sodium_init();*/
 
+    #region AEGIS
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_aead_aegis256_encrypt(Span<byte> c, out ulong clen_p, ReadOnlySpan<byte> m, ulong mlen, ReadOnlySpan<byte> ad, ulong adlen, IntPtr nsec, ReadOnlySpan<byte> npub, ReadOnlySpan<byte> k);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_aead_aegis256_decrypt(Span<byte> m, out ulong mlen_p, IntPtr nsec, ReadOnlySpan<byte> c, ulong clen, ReadOnlySpan<byte> ad, ulong adlen, ReadOnlySpan<byte> npub, ReadOnlySpan<byte> k);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_aead_aegis128l_encrypt(Span<byte> c, out ulong clen_p, ReadOnlySpan<byte> m, ulong mlen, ReadOnlySpan<byte> ad, ulong adlen, IntPtr nsec, ReadOnlySpan<byte> npub, ReadOnlySpan<byte> k);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int crypto_aead_aegis128l_decrypt(Span<byte> m, out ulong mlen_p, IntPtr nsec, ReadOnlySpan<byte> c, ulong clen, ReadOnlySpan<byte> ad, ulong adlen, ReadOnlySpan<byte>
+npub, ReadOnlySpan<byte> k);
+    #endregion
+
     #region crypto_pwhash
 
     [LibraryImport(Name)]

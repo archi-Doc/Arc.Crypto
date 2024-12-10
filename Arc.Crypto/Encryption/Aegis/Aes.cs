@@ -4,6 +4,8 @@ namespace Arc.Crypto;
 
 internal static class AES
 {
+    public const bool EnableArmIntrinsics = false; // Workarounds for Aes.Encrypt not working properly on AWS Graviton.
+
     // S-box multiplied for the first column
     // https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/aes-development/rijndael-ammended.pdf
     private static readonly uint[] Te0 =

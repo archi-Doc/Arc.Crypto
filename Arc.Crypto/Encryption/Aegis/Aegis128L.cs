@@ -66,18 +66,15 @@ public static class Aegis128L
 
         if (Aegis128Lx86.IsSupported())
         {
-            var s = default(Aegis128Lx86);
-            s.Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
+            default(Aegis128Lx86).Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
         }
-        else if (Aegis128LArm.IsSupported())
+        else if (AES.EnableArmIntrinsics && Aegis128LArm.IsSupported())
         {
-            var s = default(Aegis128LArm);
-            s.Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
+            default(Aegis128LArm).Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
         }
         else
         {
-            var s = default(Aegis128LSoft);
-            s.Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
+            default(Aegis128LSoft).Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
         }
     }
 
@@ -126,18 +123,15 @@ public static class Aegis128L
 
         if (Aegis128Lx86.IsSupported())
         {
-            var s = default(Aegis128Lx86);
-            return s.Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
+            return default(Aegis128Lx86).Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
         }
-        else if (Aegis128LArm.IsSupported())
+        else if (AES.EnableArmIntrinsics && Aegis128LArm.IsSupported())
         {
-            var s = default(Aegis128LArm);
-            return s.Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
+            return default(Aegis128LArm).Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
         }
         else
         {
-            var s = default(Aegis128LSoft);
-            return s.Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
+            return default(Aegis128LSoft).Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
         }
     }
 }
