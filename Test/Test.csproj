@@ -43,18 +43,14 @@
     <Content Include="..\Arc.Crypto\runtimes\$(NETCoreSdkRuntimeIdentifier)\native\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\Arc.Crypto\runtimes\linux-arm64\native\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
     <None Remove="Resources\Aegis128Vectors.tinyhand" />
     <None Remove="Resources\Aegis256Vectors.tinyhand" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="blake3_dotnet.so">
-      <PackagePath>%(Identity)</PackagePath>
-      <Pack>true</Pack>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>
