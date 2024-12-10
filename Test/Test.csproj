@@ -44,9 +44,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <!--Workarounds for Arm64 test-->
-    <Content Condition="'$(NETCoreSdkRuntimeIdentifier)'!='linux-arm64'" Include="..\Arc.Crypto\runtimes\linux-arm64\native\*.*">
+    <!--<Content Include="..\Arc.Crypto\runtimes\linux-arm64\native\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    </Content>-->
   </ItemGroup>
 
   <ItemGroup>
