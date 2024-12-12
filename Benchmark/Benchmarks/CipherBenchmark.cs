@@ -25,6 +25,8 @@ public class CipherBenchmark
     private readonly byte[] key;
     private readonly byte[] nonce24;
     private readonly byte[] nonce32;
+    private readonly byte[] tag16;
+    private readonly byte[] tag32;
     private readonly Aes aes;
     private readonly byte[] messageAesNi;
     private readonly int aesSize;
@@ -71,6 +73,8 @@ public class CipherBenchmark
         this.cipherAegis = new byte[this.message.Length + Aegis256Helper.ASizeInBytes];
         this.cipherAegis2 = new byte[this.message.Length + Aegis256Helper.ASizeInBytes];
         this.cipherAegis3 = new byte[this.message.Length + Aegis128L.MinTagSize];
+        this.tag16 = new byte[16];
+        this.tag32 = new byte[32];
         Aegis256Helper.Encrypt(this.message, this.nonce32, this.key, this.cipherAegis, out var cipherLength);
         Aegis256Helper.Decrypt(this.cipherAegis, this.nonce32, this.key, this.message2, out var messageLength);
         Aegis128L.Encrypt(this.cipherAegis3, this.message, this.nonce32.AsSpan(0, 16), this.key.AsSpan(0, 16));
@@ -149,6 +153,13 @@ public class CipherBenchmark
     {
         Aegis128L.Encrypt(this.cipherAegis3, this.message, this.nonce32.AsSpan(0, 16), this.key.AsSpan(0, 16));
         return this.cipherAegis3;
+    }
+
+    [Benchmark]
+    public byte[] Aegis128Tag()
+    {
+        Aegis128L.Encrypt(this.tag16, [], this.nonce32.AsSpan(0, 16), this.key.AsSpan(0, 16), this.message, 16);
+        return this.tag16;
     }
 
     [Benchmark]
