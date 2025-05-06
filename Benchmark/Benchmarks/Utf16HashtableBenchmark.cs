@@ -2,6 +2,7 @@
 
 using System.Collections;
 using System.Collections.Concurrent;
+using Arc.Collections;
 using Arc.Crypto;
 using Arc.Threading;
 using BenchmarkDotNet.Attributes;
@@ -20,6 +21,7 @@ public class Utf16HashtableBenchmark
     private readonly Utf16Hashtable<string> utf16Hashtable;
     private readonly ConcurrentDictionary<string, string> concurrentDictionary = new();
     private readonly Hashtable hashtable = new();
+    private readonly UnorderedMap<string, string> unorderedMap = new();
 
     public Utf16HashtableBenchmark()
     {
@@ -54,6 +56,7 @@ public class Utf16HashtableBenchmark
             this.utf16Hashtable.TryAdd(strings[i], strings[i]);
             this.concurrentDictionary.TryAdd(strings[i], strings[i]);
             this.hashtable.Add(strings[i], strings[i]);
+            this.unorderedMap.Add(strings[i], strings[i]);
         }
     }
 
@@ -111,6 +114,10 @@ public class Utf16HashtableBenchmark
         => this.hashtable[Id] is string st ? st : string.Empty;
 
     [Benchmark]
+    public string Lookup_UnorderedMap()
+        => this.unorderedMap.TryGetValue(Id, out var value) ? value : string.Empty;
+
+    [Benchmark]
     public bool RemoveAndAdd_Dictionary()
     {
         using (this.lockObject.EnterScope())
@@ -135,6 +142,17 @@ public class Utf16HashtableBenchmark
         {
             this.hashtable.Remove(Id);
             this.hashtable.Add(Id, Id);
+        }
+    }
+
+    [Benchmark]
+    public bool RemoveAndAdd_UnorderedMap()
+    {
+        using (this.lockObject.EnterScope())
+        {
+            var result = this.unorderedMap.Remove(Id);
+            this.unorderedMap.Add(Id, Id);
+            return result;
         }
     }
 }
