@@ -1,5 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System.Collections;
 using System.Collections.Concurrent;
 using Arc.Crypto;
 using Arc.Threading;
@@ -13,11 +14,12 @@ public class Utf16HashtableBenchmark
     private const string Id = "fghjkl1234567890";
     private readonly Lock lockObject = new Lock();
     private readonly Dictionary<string, string> dictionary;
-    private readonly Dictionary<char[], string> dictionary2;
+    // private readonly Dictionary<char[], string> dictionary2;
     private readonly Dictionary<string, string>.AlternateLookup<ReadOnlySpan<char>> lookup;
-    private readonly Dictionary<char[], string>.AlternateLookup<ReadOnlySpan<char>> lookup2;
+    // private readonly Dictionary<char[], string>.AlternateLookup<ReadOnlySpan<char>> lookup2;
     private readonly Utf16Hashtable<string> utf16Hashtable;
     private readonly ConcurrentDictionary<string, string> concurrentDictionary = new();
+    private readonly Hashtable hashtable = new();
 
     public Utf16HashtableBenchmark()
     {
@@ -40,17 +42,18 @@ public class Utf16HashtableBenchmark
             "abcd",];
 
         this.dictionary = new();
-        this.dictionary2 = new(Utf16StringEqualityComparer.Default);
+        // this.dictionary2 = new(Utf16StringEqualityComparer.Default);
         this.lookup = this.dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
-        this.lookup2 = this.dictionary2.GetAlternateLookup<ReadOnlySpan<char>>();
+        // this.lookup2 = this.dictionary2.GetAlternateLookup<ReadOnlySpan<char>>();
         this.utf16Hashtable = new();
         this.concurrentDictionary = new();
         for (var i = 0; i < strings.Length; i++)
         {
             this.dictionary.Add(strings[i], strings[i]);
-            this.lookup2.TryAdd(strings[i].AsSpan(), strings[i]);
-            this.utf16Hashtable.Add(strings[i], strings[i]);
+            // this.lookup2.TryAdd(strings[i].AsSpan(), strings[i]);
+            this.utf16Hashtable.TryAdd(strings[i], strings[i]);
             this.concurrentDictionary.TryAdd(strings[i], strings[i]);
+            this.hashtable.Add(strings[i], strings[i]);
         }
     }
 
@@ -65,11 +68,11 @@ public class Utf16HashtableBenchmark
     }
 
     [Benchmark]
-    public string Loopup_Dictionary()
+    public string Lookup_Dictionary()
         => this.dictionary.TryGetValue(Id, out var value) ? value : string.Empty;
 
     [Benchmark]
-    public string Loopup_DictionaryLock()
+    public string Lookup_DictionaryLock()
     {
         using (this.lockObject.EnterScope())
         {
@@ -78,7 +81,7 @@ public class Utf16HashtableBenchmark
     }
 
     [Benchmark]
-    public string Loopup_DictionaryLookup()
+    public string Lookup_DictionaryLookup()
     {
         using (this.lockObject.EnterScope())
         {
@@ -86,22 +89,26 @@ public class Utf16HashtableBenchmark
         }
     }
 
-    [Benchmark]
-    public string Loopup_Dictionary2Lookup()
+    /*[Benchmark]
+    public string Lookup_Dictionary2Lookup()
     {
         using (this.lockObject.EnterScope())
         {
             return this.lookup2.TryGetValue(Id.AsSpan(), out var value) ? value : string.Empty;
         }
-    }
+    }*/
 
     [Benchmark]
-    public string Loopup_Utf16Hashtable()
+    public string Lookup_Utf16Hashtable()
         => this.utf16Hashtable.TryGetValue(Id, out var value) ? value : string.Empty;
 
     [Benchmark]
-    public string Loopup_ConcurrentDictionary()
+    public string Lookup_ConcurrentDictionary()
         => this.concurrentDictionary.TryGetValue(Id, out var value) ? value : string.Empty;
+
+    [Benchmark]
+    public string Lookup_Hashtable()
+        => this.hashtable[Id] is string st ? st : string.Empty;
 
     [Benchmark]
     public bool RemoveAndAdd_Dictionary()
@@ -119,5 +126,15 @@ public class Utf16HashtableBenchmark
     {
         this.concurrentDictionary.TryRemove(Id, out _);
         return this.concurrentDictionary.TryAdd(Id, Id);
+    }
+
+    [Benchmark]
+    public void RemoveAndAdd_Hashtable()
+    {
+        using (this.lockObject.EnterScope())
+        {
+            this.hashtable.Remove(Id);
+            this.hashtable.Add(Id, Id);
+        }
     }
 }
