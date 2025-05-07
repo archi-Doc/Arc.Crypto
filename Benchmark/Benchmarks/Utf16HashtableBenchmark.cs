@@ -22,6 +22,8 @@ public class Utf16HashtableBenchmark
     private readonly ConcurrentDictionary<string, string> concurrentDictionary = new();
     private readonly Hashtable hashtable = new();
     private readonly UnorderedMap<string, string> unorderedMap = new();
+    private readonly UnorderedMapSlim<string, string> unorderedMapSlim = new();
+    private readonly Utf16UnorderedMap<string> utf16UnorderedMap = new();
 
     public Utf16HashtableBenchmark()
     {
@@ -57,6 +59,8 @@ public class Utf16HashtableBenchmark
             this.concurrentDictionary.TryAdd(strings[i], strings[i]);
             this.hashtable.Add(strings[i], strings[i]);
             this.unorderedMap.Add(strings[i], strings[i]);
+            this.unorderedMapSlim.Add(strings[i], strings[i]);
+            this.utf16UnorderedMap.Add(strings[i], strings[i]);
         }
     }
 
@@ -118,6 +122,14 @@ public class Utf16HashtableBenchmark
         => this.unorderedMap.TryGetValue(Id, out var value) ? value : string.Empty;
 
     [Benchmark]
+    public string Lookup_UnorderedMapSlim()
+        => this.unorderedMapSlim.TryGetValue(Id, out var value) ? value : string.Empty;
+
+    [Benchmark]
+    public string Lookup_Utf16UnorderedMap()
+        => this.utf16UnorderedMap.TryGetValue(Id, out var value) ? value : string.Empty;
+
+    [Benchmark]
     public bool RemoveAndAdd_Dictionary()
     {
         using (this.lockObject.EnterScope())
@@ -152,6 +164,28 @@ public class Utf16HashtableBenchmark
         {
             var result = this.unorderedMap.Remove(Id);
             this.unorderedMap.Add(Id, Id);
+            return result;
+        }
+    }
+
+    [Benchmark]
+    public bool RemoveAndAdd_UnorderedMapSlim()
+    {
+        using (this.lockObject.EnterScope())
+        {
+            var result = this.unorderedMapSlim.Remove(Id);
+            this.unorderedMapSlim.Add(Id, Id);
+            return result;
+        }
+    }
+
+    [Benchmark]
+    public bool RemoveAndAdd_Utf16UnorderedMap()
+    {
+        using (this.lockObject.EnterScope())
+        {
+            var result = this.utf16UnorderedMap.Remove(Id);
+            this.utf16UnorderedMap.Add(Id, Id);
             return result;
         }
     }
