@@ -16,7 +16,7 @@ namespace Arc.Crypto;
 /// However, if there is any writer thread, all access must be protected by mutual exclusion.
 /// </summary>
 /// <typeparam name="TValue">The type of values in the map.</typeparam>
-public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue>>
+public class Utf8UnorderedMap<TValue> : IEnumerable<KeyValuePair<byte[], TValue>>
 {// GetHashCodeCode
     private const int StartOfFreeList = -3;
 
@@ -31,11 +31,11 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
         /// so -2 means end of free list, -3 means index 0 but on free list, -4 means index 1 but on free list, etc.
         /// </summary>
         internal int next;
-        internal string key;
+        internal byte[] key;
         internal TValue value;
 #pragma warning restore SA1307 // Accessible fields should begin with upper-case letter
 
-        public string Key => this.key;
+        public byte[] Key => this.key;
 
         public TValue Value => this.value;
     }
@@ -49,22 +49,22 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
     private int _freeCount;
 
     /// <summary>
-    /// Gets the number of elements contained in the <see cref="Utf16UnorderedMap{TValue}"/>.
+    /// Gets the number of elements contained in the <see cref="Utf8UnorderedMap{TValue}"/>.
     /// </summary>
     public int Count => this._count - this._freeCount;
 
     /// <summary>
-    /// Gets the total capacity of the <see cref="Utf16UnorderedMap{TValue}"/>.
+    /// Gets the total capacity of the <see cref="Utf8UnorderedMap{TValue}"/>.
     /// </summary>
     public int Capacity => this._nodes.Length;
 
     #endregion
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Utf16UnorderedMap{TValue}"/> class that is empty with the specified initial capacity.
+    /// Initializes a new instance of the <see cref="Utf8UnorderedMap{TValue}"/> class that is empty with the specified initial capacity.
     /// </summary>
     /// <param name="minimumSize">The minimum capacity to allocate.</param>
-    public Utf16UnorderedMap(uint minimumSize = 0)
+    public Utf8UnorderedMap(uint minimumSize = 0)
     {
         this.Initialize(minimumSize);
     }
@@ -75,7 +75,7 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
     /// <param name="key">The key of the value to get or set.</param>
     /// <returns>The value associated with the specified key.</returns>
     /// <exception cref="KeyNotFoundException">The key does not exist in the collection.</exception>
-    public TValue this[string key]
+    public TValue this[byte[] key]
     {
         get
         {
@@ -91,41 +91,41 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
     }
 
     /// <summary>
-    /// Adds an element with the provided key and value to the <see cref="Utf16UnorderedMap{TValue}"/>.
+    /// Adds an element with the provided key and value to the <see cref="Utf8UnorderedMap{TValue}"/>.
     /// </summary>
     /// <param name="key">The key of the element to add.</param>
     /// <param name="value">The value of the element to add.</param>
     /// <exception cref="ArgumentNullException">key is null.</exception>
-    public void Add(string key, TValue value) => this.TryInsert(key, value, true);
+    public void Add(byte[] key, TValue value) => this.TryInsert(key, value, true);
 
     /// <summary>
-    /// Adds an element with the provided key and value to the <see cref="Utf16UnorderedMap{TValue}"/>.
+    /// Adds an element with the provided key and value to the <see cref="Utf8UnorderedMap{TValue}"/>.
     /// </summary>
     /// <param name="key">The key of the element to add.</param>
     /// <param name="value">The value of the element to add.</param>
     /// <exception cref="ArgumentNullException">key is null.</exception>
-    public void Add(ReadOnlySpan<char> key, TValue value) => this.TryInsert(key, value, true);
+    public void Add(ReadOnlySpan<byte> key, TValue value) => this.TryInsert(key, value, true);
 
     /// <summary>
-    /// Attempts to add the specified key and value to the <see cref="Utf16UnorderedMap{TValue}"/>.
-    /// </summary>
-    /// <param name="key">The key of the element to add.</param>
-    /// <param name="value">The value of the element to add.</param>
-    /// <returns><see langword="true"/> if the key/value pair was added successfully; <see langword="false"/> if the key already exists.</returns>
-    /// <exception cref="ArgumentNullException">key is null.</exception>
-    public bool TryAdd(string key, TValue value) => this.TryInsert(key, value, false);
-
-    /// <summary>
-    /// Attempts to add the specified key and value to the <see cref="Utf16UnorderedMap{TValue}"/>.
+    /// Attempts to add the specified key and value to the <see cref="Utf8UnorderedMap{TValue}"/>.
     /// </summary>
     /// <param name="key">The key of the element to add.</param>
     /// <param name="value">The value of the element to add.</param>
     /// <returns><see langword="true"/> if the key/value pair was added successfully; <see langword="false"/> if the key already exists.</returns>
     /// <exception cref="ArgumentNullException">key is null.</exception>
-    public bool TryAdd(ReadOnlySpan<char> key, TValue value) => this.TryInsert(key, value, false);
+    public bool TryAdd(byte[] key, TValue value) => this.TryInsert(key, value, false);
 
     /// <summary>
-    /// Removes all keys and values from the <see cref="Utf16UnorderedMap{TValue}"/>.
+    /// Attempts to add the specified key and value to the <see cref="Utf8UnorderedMap{TValue}"/>.
+    /// </summary>
+    /// <param name="key">The key of the element to add.</param>
+    /// <param name="value">The value of the element to add.</param>
+    /// <returns><see langword="true"/> if the key/value pair was added successfully; <see langword="false"/> if the key already exists.</returns>
+    /// <exception cref="ArgumentNullException">key is null.</exception>
+    public bool TryAdd(ReadOnlySpan<byte> key, TValue value) => this.TryInsert(key, value, false);
+
+    /// <summary>
+    /// Removes all keys and values from the <see cref="Utf8UnorderedMap{TValue}"/>.
     /// </summary>
     public void Clear()
     {
@@ -142,17 +142,17 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
     }
 
     /// <summary>
-    /// Determines whether the <see cref="Utf16UnorderedMap{TValue}"/> contains the specified key.
+    /// Determines whether the <see cref="Utf8UnorderedMap{TValue}"/> contains the specified key.
     /// </summary>
-    /// <param name="key">The key to locate in the <see cref="Utf16UnorderedMap{TValue}"/>.</param>
-    /// <returns><see langword="true"/> if the <see cref="Utf16UnorderedMap{TValue}"/> contains an element with the specified key; otherwise, <see langword="false"/>.</returns>
-    public bool ContainsKey(ReadOnlySpan<char> key) => this.TryGetValue(key, out _);
+    /// <param name="key">The key to locate in the <see cref="Utf8UnorderedMap{TValue}"/>.</param>
+    /// <returns><see langword="true"/> if the <see cref="Utf8UnorderedMap{TValue}"/> contains an element with the specified key; otherwise, <see langword="false"/>.</returns>
+    public bool ContainsKey(ReadOnlySpan<byte> key) => this.TryGetValue(key, out _);
 
     /// <summary>
-    /// Determines whether the <see cref="Utf16UnorderedMap{TValue}"/> contains a specific value.
+    /// Determines whether the <see cref="Utf8UnorderedMap{TValue}"/> contains a specific value.
     /// </summary>
-    /// <param name="value">The value to locate in the <see cref="Utf16UnorderedMap{TValue}"/>.</param>
-    /// <returns><see langword="true"/> if the <see cref="Utf16UnorderedMap{TValue}"/> contains an element with the specified value; otherwise, <see langword="false"/>.</returns>
+    /// <param name="value">The value to locate in the <see cref="Utf8UnorderedMap{TValue}"/>.</param>
+    /// <returns><see langword="true"/> if the <see cref="Utf8UnorderedMap{TValue}"/> contains an element with the specified value; otherwise, <see langword="false"/>.</returns>
     public bool ContainsValue(TValue value)
     {
         var nodes = this._nodes;
@@ -180,13 +180,13 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
     }
 
     /// <summary>
-    /// Removes the element with the specified key from the <see cref="Utf16UnorderedMap{TValue}"/>.
+    /// Removes the element with the specified key from the <see cref="Utf8UnorderedMap{TValue}"/>.
     /// </summary>
     /// <param name="key">The key of the element to remove.</param>
     /// <returns><see langword="true"/> if the element is successfully removed; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="ArgumentNullException">key is null.</exception>
     /// <exception cref="InvalidOperationException">An error occurred during the operation.</exception>
-    public bool Remove(ReadOnlySpan<char> key)
+    public bool Remove(ReadOnlySpan<byte> key)
     {
         uint collisionCount = 0;
         var hashCode = unchecked((uint)XxHash3.Hash64(key)); // GetHashCodeCode
@@ -239,8 +239,8 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
     /// <param name="key">The key whose value to get.</param>
     /// <param name="value">When this method returns, contains the value associated with the specified key, if the key is found;
     /// otherwise, the default value for the type of the value parameter.</param>
-    /// <returns><see langword="true"/> if the object that implements <see cref="Utf16UnorderedMap{TValue}"/> contains an element with the specified key; otherwise, <see langword="false"/>.</returns>
-    public bool TryGetValue(ReadOnlySpan<char> key, [MaybeNullWhen(false)] out TValue value)
+    /// <returns><see langword="true"/> if the object that implements <see cref="Utf8UnorderedMap{TValue}"/> contains an element with the specified key; otherwise, <see langword="false"/>.</returns>
+    public bool TryGetValue(ReadOnlySpan<byte> key, [MaybeNullWhen(false)] out TValue value)
     {
         var hashCode = unchecked((uint)XxHash3.Hash64(key)); // GetHashCodeCode
         var i = this.GetBucket(hashCode);
@@ -283,7 +283,7 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
         return capacity;
     }
 
-    private bool TryInsert(string key, TValue value, bool overwrite)
+    private bool TryInsert(byte[] key, TValue value, bool overwrite)
     {
         if (key is null)
         {
@@ -299,7 +299,7 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
         while ((uint)i < (uint)nodes.Length)
         {
             ref Node node2 = ref nodes[i];
-            if (node2.hashCode == hashCode && key.Equals(node2.key))
+            if (node2.hashCode == hashCode && key.AsSpan().SequenceEqual(node2.key))
             {
                 if (overwrite)
                 {
@@ -350,7 +350,7 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
         return true;
     }
 
-    private bool TryInsert(ReadOnlySpan<char> key, TValue value, bool overwrite)
+    private bool TryInsert(ReadOnlySpan<byte> key, TValue value, bool overwrite)
     {
         var nodes = this._nodes;
         var hashCode = unchecked((uint)XxHash3.Hash64(key)); // GetHashCodeCode
@@ -405,7 +405,7 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
         ref Node node = ref nodes[index];
         node.hashCode = hashCode;
         node.next = bucket - 1; // Value in _buckets is 1-based
-        node.key = key.ToString();
+        node.key = key.ToArray();
         node.value = value;
         bucket = index + 1; // Value in _buckets is 1-based
 
@@ -444,18 +444,18 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
     #region IEnumerable
 
 #pragma warning disable SA1202 // Elements should be ordered by access
-    public IEnumerator<KeyValuePair<string, TValue>> GetEnumerator() => new Enumerator(this);
+    public IEnumerator<KeyValuePair<byte[], TValue>> GetEnumerator() => new Enumerator(this);
 #pragma warning restore SA1202 // Elements should be ordered by access
 
     IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
 
-    public struct Enumerator : IEnumerator<KeyValuePair<string, TValue>>
+    public struct Enumerator : IEnumerator<KeyValuePair<byte[], TValue>>
     {
-        private readonly Utf16UnorderedMap<TValue> _map;
+        private readonly Utf8UnorderedMap<TValue> _map;
         private int _index;
-        private KeyValuePair<string, TValue> _current;
+        private KeyValuePair<byte[], TValue> _current;
 
-        internal Enumerator(Utf16UnorderedMap<TValue> dictionary)
+        internal Enumerator(Utf8UnorderedMap<TValue> dictionary)
         {
             this._map = dictionary;
             this._index = 0;
@@ -470,7 +470,7 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
 
                 if (node.next >= -1)
                 {
-                    this._current = new KeyValuePair<string, TValue>(node.key, node.value);
+                    this._current = new KeyValuePair<byte[], TValue>(node.key, node.value);
                     return true;
                 }
             }
@@ -480,7 +480,7 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
             return false;
         }
 
-        public KeyValuePair<string, TValue> Current => this._current;
+        public KeyValuePair<byte[], TValue> Current => this._current;
 
         public void Dispose()
         {
@@ -495,7 +495,7 @@ public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue
                     throw new InvalidOperationException();
                 }
 
-                return new KeyValuePair<string, TValue>(this._current.Key, this._current.Value);
+                return new KeyValuePair<byte[], TValue>(this._current.Key, this._current.Value);
             }
         }
 
