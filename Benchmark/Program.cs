@@ -22,11 +22,12 @@ public class Program
         Console.WriteLine("Arc.Crypto Benchmark.");
 
         // RandomVaultBenchmark.Test1();
-        DebugRun<CipherBenchmark>();
+        DebugRun<Utf16HashtableBenchmark>();
 
         // var summary = BenchmarkRunner.Run<SpeedBenchmark>();
         var switcher = new BenchmarkSwitcher(new[]
         {
+            typeof(Utf16HashtableBenchmark),
             typeof(PasswordHashBenchmark),
             typeof(CipherBenchmark),
             typeof(Curve25519Benchmark),
