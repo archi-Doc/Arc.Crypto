@@ -1,8 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -11,8 +9,11 @@ namespace Arc.Crypto;
 #pragma warning disable SA1309 // Field names should not begin with underscore
 
 /// <summary>
-/// Represents a collection of utf-16 key/value pairs that are organized based on the hash code of the key.
-/// This is a lightweight implementation optimized for performance with minimal memory overhead.
+/// Represents a collection of utf-16 key/value pairs that are organized based on the hash code of the key.<br/>
+/// This is a lightweight implementation optimized for performance with minimal memory overhead.<br/>
+/// <br/>NOT thread-safe: <br/>
+/// It can be accessed from multiple reader threads if used as immutable.<br/>
+/// However, if there is any writer thread, all access must be protected by mutual exclusion.
 /// </summary>
 /// <typeparam name="TValue">The type of values in the map.</typeparam>
 public class Utf16UnorderedMap<TValue> : IEnumerable<KeyValuePair<string, TValue>>

@@ -96,15 +96,6 @@ public class Utf16HashtableBenchmark
         }
     }
 
-    /*[Benchmark]
-    public string Lookup_Dictionary2Lookup()
-    {
-        using (this.lockObject.EnterScope())
-        {
-            return this.lookup2.TryGetValue(Id.AsSpan(), out var value) ? value : string.Empty;
-        }
-    }*/
-
     [Benchmark]
     public string Lookup_Utf16Hashtable()
         => this.utf16Hashtable.TryGetValue(Id, out var value) ? value : string.Empty;
@@ -119,15 +110,30 @@ public class Utf16HashtableBenchmark
 
     [Benchmark]
     public string Lookup_UnorderedMap()
-        => this.unorderedMap.TryGetValue(Id, out var value) ? value : string.Empty;
+    {
+        using (this.lockObject.EnterScope())
+        {
+            return this.unorderedMap.TryGetValue(Id, out var value) ? value : string.Empty;
+        }
+    }
 
     [Benchmark]
     public string Lookup_UnorderedMapSlim()
-        => this.unorderedMapSlim.TryGetValue(Id, out var value) ? value : string.Empty;
+    {
+        using (this.lockObject.EnterScope())
+        {
+            return this.unorderedMapSlim.TryGetValue(Id, out var value) ? value : string.Empty;
+        }
+    }
 
     [Benchmark]
     public string Lookup_Utf16UnorderedMap()
-        => this.utf16UnorderedMap.TryGetValue(Id, out var value) ? value : string.Empty;
+    {
+        using (this.lockObject.EnterScope())
+        {
+            return this.utf16UnorderedMap.TryGetValue(Id, out var value) ? value : string.Empty;
+        }
+    }
 
     [Benchmark]
     public bool RemoveAndAdd_Dictionary()
