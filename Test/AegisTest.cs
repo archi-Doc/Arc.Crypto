@@ -5,6 +5,7 @@ using Tinyhand;
 using Xunit;
 
 #pragma warning disable SA1202 // Elements should be ordered by access
+#pragma warning disable SA1512 // Single-line comments should not be followed by blank line
 #pragma warning disable SA1601 // Partial elements should be documented
 
 namespace Test;
@@ -192,6 +193,10 @@ public class AegisTest
             Aegis256.TryDecrypt(decrypted[..i], cipher[..i], nonce256, key256, default, 0);
             decrypted[..i].SequenceEqual(message[..i]).IsTrue();
 
+            // decrypted[..i].Clear();
+            // Aegis256.Encrypt(decrypted[..i], cipher[..i], nonce256, key256, default, 0);
+            // decrypted[..i].SequenceEqual(message[..i]).IsTrue();
+
             Aegis128L.Encrypt(cipher[..i], message[..i], nonce128, key128, default, 0);
             Aegis128L.TryDecrypt(decrypted[..i], cipher[..i], nonce128, key128, default, 0);
             decrypted[..i].SequenceEqual(message[..i]).IsTrue();
@@ -274,6 +279,32 @@ public class AegisTest
             Aegis128L.Encrypt(cipher, message, nonce, key, default, 32);
             Aegis128L.TryDecrypt(message2, cipher, nonce, key, default, 32);
             message.SequenceEqual(message2).IsTrue();
+        }
+    }
+
+    [Fact]
+    public void DoubleEncryption32()
+    {
+        const int length = 32;
+        var random = new Xoroshiro128StarStar(11);
+        Span<byte> key = stackalloc byte[Aegis256.KeySize];
+        Span<byte> nonce = stackalloc byte[Aegis256.NonceSize];
+        var message = new byte[length];
+        var message2 = new byte[length];
+        var message3 = new byte[length];
+        var cipher = new byte[length];
+
+        for (var j = 0; j < 10; j++)
+        {
+            random.NextBytes(key);
+            random.NextBytes(nonce);
+            random.NextBytes(message);
+
+            Aegis256.Encrypt(cipher, message, nonce, key, default, 0);
+            Aegis256.TryDecrypt(message2, cipher, nonce, key, default, 0).IsTrue();
+            message.SequenceEqual(message2).IsTrue();
+            Aegis256.Encrypt(message3, cipher, nonce, key, default, 0);
+            message.SequenceEqual(message3).IsTrue();
         }
     }
 }
