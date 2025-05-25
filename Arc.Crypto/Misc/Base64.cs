@@ -180,7 +180,10 @@ public static class Base64
         /// <param name="sourceLength">The source length.</param>
         /// <returns>The base64 encoded length of <paramref name="sourceLength"/>.</returns>
         public static int GetEncodedLength(int sourceLength)
-            => gfoidl.Base64.Base64.Url.GetEncodedLength(sourceLength);
+        {// gfoidl.Base64.Base64.Url.GetEncodedLength(sourceLength);
+            (int q, int r) = int.DivRem(sourceLength, 3);
+            return (q << 2) + (r << 1) - (r >> 1);
+        }
 
         /// <summary>
         /// Gets the maximum length of the decoded data.

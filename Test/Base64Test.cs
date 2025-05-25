@@ -11,6 +11,21 @@ namespace Test;
 public class Base64Test
 {
     [Fact]
+    public void TestEncodedLength()
+    {
+        for (var i = 0; i < 100; i++)
+        {
+            var length = Base64.Url.GetEncodedLength(i);
+            var length2 = gfoidl.Base64.Base64.Url.GetEncodedLength(i);
+            length.Is(length2);
+            /*var length2 = Base64.Url.GetEncodedLength2(i);
+            length2.Is(length);
+            length2 = Base64.Url.GetEncodedLength3(i);
+            length2.Is(length);*/
+        }
+    }
+
+    [Fact]
     public void Test1()
     {
         var xo = new Xoshiro256StarStar(42);
