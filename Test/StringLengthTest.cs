@@ -35,7 +35,7 @@ public class StringLengthTest
         foreach (var y in list)
         {
             var s = y.ToString();
-            s.Length.Is(Arc.BaseHelper.GetStringLength(y));
+            s.Length.Is(Arc.BaseHelper.CountDecimalChars(y));
         }
     }
 
@@ -63,7 +63,7 @@ public class StringLengthTest
         foreach (var y in list)
         {
             var s = y.ToString();
-            s.Length.Is(Arc.BaseHelper.GetStringLength(y));
+            s.Length.Is(Arc.BaseHelper.CountDecimalChars(y));
         }
     }
 }

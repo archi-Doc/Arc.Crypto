@@ -3,8 +3,6 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography;
-using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 
@@ -22,11 +20,12 @@ public class Program
         Console.WriteLine("Arc.Crypto Benchmark.");
 
         // RandomVaultBenchmark.Test1();
-        DebugRun<Utf16HashtableBenchmark>();
+        DebugRun<GetEncodedLengthBenchmark>();
 
         // var summary = BenchmarkRunner.Run<SpeedBenchmark>();
         var switcher = new BenchmarkSwitcher(new[]
         {
+            typeof(GetEncodedLengthBenchmark),
             typeof(Utf16HashtableBenchmark),
             typeof(PasswordHashBenchmark),
             typeof(CipherBenchmark),
