@@ -21,7 +21,7 @@ public class Xoroshiro128StarStarTest
 
         xo.Reset(43);
         var bytes2 = new byte[Length2];
-        var ulongs = MemoryMarshal.Cast<byte, ulong>(bytes2);
+        var ulongs = MemoryMarshal.Cast<byte, ulong>(bytes2.AsSpan());
         for (var i = 0; i < Length2 / sizeof(ulong); i++)
         {
             ulongs[i] = xo.NextUInt64();
