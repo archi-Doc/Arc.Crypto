@@ -53,6 +53,14 @@ public abstract class RandomUInt64
     public uint NextUInt32() => (uint)(this.NextUInt64() >> 32);
 
     /// <summary>
+    /// [int.MinValue, int.MaxValue]<br/>
+    /// Returns a random integer.
+    /// </summary>
+    /// <returns>A 32-bit signed integer [int.MinValue, int.MaxValue].</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int NextInt32() => unchecked((int)(this.NextUInt64() >> 32));
+
+    /// <summary>
     /// [0, int.MaxValue]<br/>
     /// Returns a random integer.
     /// </summary>

@@ -145,7 +145,7 @@ public abstract class ECCurveBase
 
             var length = (d.GetByteCount(true) + (sizeof(ulong) - sizeof(byte))) / sizeof(ulong);
             var u = new ulong[length];
-            d.TryWriteBytes(MemoryMarshal.AsBytes<ulong>(u), out _, true, true);
+            d.TryWriteBytes(MemoryMarshal.AsBytes<ulong>(u.AsSpan()), out _, true, true);
 
             var sum = 0;
             foreach (var x in u)

@@ -13,6 +13,12 @@ internal class Program
     {
         Console.WriteLine("Sandbox");
 
+        var r = RandomVault.Default.NextInt32();
+        r = RandomVault.Default.NextInt32();
+        r = RandomVault.Default.NextInt32();
+        r = RandomVault.Default.NextInt32();
+        r = RandomVault.Default.NextInt32();
+
         if (System.Runtime.Intrinsics.X86.Aes.IsSupported)
         {
             var value = Vector128.Create(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 });
