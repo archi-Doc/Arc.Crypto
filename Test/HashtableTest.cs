@@ -2,7 +2,7 @@
 
 using System;
 using System.Linq;
-using Arc.Crypto;
+using Arc.Collections;
 using Xunit;
 
 namespace Test;

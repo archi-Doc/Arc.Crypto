@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
+using Arc.Collections;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
 
