@@ -28,7 +28,7 @@ public class HashTest
                 var hash = System.IO.Hashing.XxHash3.HashToUInt64(span, 0);
                 var hash2 = Arc.Crypto.XxHash3.Hash64(span, 0);
                 hash.Is(hash2);
-                hash2 = Arc.Crypto.XxHash3Slim.Hash64(span, 0);
+                hash2 = Arc.Collections.XxHash3Slim.Hash64(span, 0);
                 hash.Is(hash2);
             }
         }
