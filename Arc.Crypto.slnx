@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Project Path="Arc.Crypto/Arc.Crypto.csproj" />
+  <Project Path="Benchmark/Benchmark.csproj">
+    <BuildDependency Project="Arc.Crypto/Arc.Crypto.csproj" />
+  </Project>
+  <Project Path="QuickStart/QuickStart.csproj" />
+  <Project Path="Sandbox/Sandbox.csproj" />
+  <Project Path="Test/Test.csproj" />
+</Solution>
