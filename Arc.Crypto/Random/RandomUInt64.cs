@@ -122,6 +122,15 @@ public abstract class RandomUInt64
     }
 
     /// <summary>
+    /// Returns a random 64-bit signed integer.
+    /// </summary>
+    /// <returns>
+    /// A random <see cref="long"/> value spanning the full <see cref="long"/> range.
+    /// </returns>
+    public long NextInt64()
+        => (long)this.NextUInt64();
+
+    /// <summary>
     /// [0, maxValue)<br/>
     /// Returns a random integer.
     /// </summary>
