@@ -24,7 +24,8 @@ public class HashBenchmark
         this.xxh64 = new XxHash64();
     }
 
-    [Params(10, 100, 200, 1000, 1_000_000)]
+    // [Params(10, 100, 200, 1000, 1_000_000)]
+    [Params(10, 100)]
     public int Length { get; set; }
 
     [Benchmark]
@@ -41,6 +42,9 @@ public class HashBenchmark
 
     [Benchmark]
     public ulong ArcXxHash3() => Arc.Crypto.XxHash3.Hash64(this.data.AsSpan(0, this.Length));
+
+    [Benchmark]
+    public ulong ArcXxHash3b() => Arc.Crypto.XxHash3Slim.Hash64(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
     public ulong XxHash3() => System.IO.Hashing.XxHash3.HashToUInt64(this.data.AsSpan(0, this.Length));
