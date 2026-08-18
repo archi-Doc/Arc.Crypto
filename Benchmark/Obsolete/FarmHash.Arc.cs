@@ -12,7 +12,7 @@ namespace Arc.Crypto;
 /// <summary>
 /// FarmHash 64bit Class.
 /// </summary>
-public class FarmHash : IHash
+public class FarmHashObs : IHash
 {
     /// <summary>
     /// Length of the hash in bytes.
@@ -34,9 +34,9 @@ public class FarmHash : IHash
     private InternalState state;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="FarmHash"/> class.
+    /// Initializes a new instance of the <see cref="FarmHashObs"/> class.
     /// </summary>
-    public FarmHash()
+    public FarmHashObs()
     {
         this.state.buffer = new byte[BufferSize];
         this.state.bufferPosition = -1; // force initialize.

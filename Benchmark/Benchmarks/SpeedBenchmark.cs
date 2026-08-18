@@ -31,7 +31,7 @@ public class SpeedBenchmark
         this.data = new byte[N];
         new Random(42).NextBytes(this.data);
 
-        this.farm = new FarmHash();
+        this.farm = new FarmHashObs();
         this.farmBeta = new Beta.Crypto.FarmHash(); // System.Numerics.BitOperation
         this.xxh32 = new XXHash32();
         this.xxh64 = new XxHash64();

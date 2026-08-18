@@ -42,11 +42,8 @@ public class HashTest
         uint hash32;
         byte[] array;
 
-        hash64 = Arc.Crypto.FarmHash.Hash64(data.AsSpan()); // The fastest and best algorithm.
         hash64 = Arc.Crypto.XxHash64.Hash64(data.AsSpan()); // As fast as FarmHash.
-        hash32 = Arc.Crypto.FarmHash.Hash32(data.AsSpan()); // 32 bit version is slower than 64 bit version.
         hash32 = Arc.Crypto.XXHash32.Hash32(data.AsSpan()); // Same as above.
-        hash32 = unchecked((uint)Arc.Crypto.FarmHash.Hash64(data.AsSpan())); // I recommend getting 64 bit and discarding half.
         hash32 = Arc.Crypto.Adler32.Hash32(data.AsSpan()); // Slow
         hash32 = Arc.Crypto.Crc32.Hash32(data.AsSpan()); // Slowest
 
@@ -98,18 +95,6 @@ public class HashTest
         }
 
         this.TestHashUpdate_do(adler32, data, random);
-
-        // FarmHash
-        var farm = new FarmHash();
-        for (var n = 0; n < 1000; n++)
-        {
-            var span = data.AsSpan(0, n);
-            var h = BitConverter.ToUInt64(farm.GetHash(span));
-            var h2 = FarmHash.Hash64(span);
-            Assert.Equal(h, h2);
-        }
-
-        this.TestHashUpdate_do(farm, data, random);
 
         // xxHash32
         var xxh32 = new XXHash32();
@@ -344,18 +329,6 @@ public class HashTest
     }
 
     [Fact]
-    public void TestFarmHash()
-    {
-        uint value;
-        value = FarmHash.Hash32(string.Empty);
-        Assert.Equal((uint)0xdc56d17a, value);
-
-        this.TestUtf8String_FarmHash32("abc", 0x2f635ec7);
-        this.TestUtf8String_FarmHash32("message digest", 0x0c10337e);
-        this.TestUtf8String_FarmHash32("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 0x3bb6b2a4);
-    }
-
-    [Fact]
     public void TestAdler32()
     {
         uint value;
@@ -370,13 +343,6 @@ public class HashTest
         this.TestUtf8StringSplit(adler, "abc", 1, 0x024d0127);
         this.TestUtf8StringSplit(adler, "message digest", 4, 0x29750586);
         this.TestUtf8StringSplit(adler, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 10, 0x8adb150c);
-    }
-
-    private void TestUtf8String_FarmHash32(string text, uint expected)
-    {
-        var bytes = Encoding.UTF8.GetBytes(text);
-        var value = FarmHash.Hash32(bytes);
-        Assert.Equal(expected, value);
     }
 
     private void TestUtf8String_Adler32(string text, uint expected)
