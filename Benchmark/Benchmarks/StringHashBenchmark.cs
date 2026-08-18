@@ -15,6 +15,8 @@ public class StringHashBenchmark
     private string String3 = "ABC";
     private string String40 = "Benchmark.Benchmarks.StringHashBenchmark";
     private string String80 = "Benchmark.Benchmarks.StringHashBenchmark";
+    private string String40A = "Benchmark.Benchmarks";
+    private string String40B = ".StringHashBenchmark";
     private string String200 = "Benchmark.Benchmarks.StringHashBenchmarkBenchmark.Benchmarks.StringHashBenchmarkBenchmark.Benchmarks.StringHashBenchmarkBenchmark.Benchmarks.StringHashBenchmarkBenchmark.Benchmarks.StringHashBenchmark";
 
     public StringHashBenchmark()
@@ -48,7 +50,7 @@ public class StringHashBenchmark
     [Benchmark]
     public ulong String80_FarmHash32() => Arc.Crypto.FarmHash.Hash32(String80);*/
 
-    [Benchmark]
+    /*[Benchmark]
     public ulong String80_FarmHash64() => Arc.Crypto.FarmHash.Hash64(this.String80);
 
     [Benchmark]
@@ -59,6 +61,50 @@ public class StringHashBenchmark
 
     [Benchmark]
     public ulong String80_FarmHash3_64() => Arc.Crypto.FarmHash3.Hash64(this.String80);
+
+    [Benchmark]
+    public ulong String40x2_FarmHash2_64()
+    {
+        var farm = default(FarmHash2);
+        farm.Append(this.String40A);
+        farm.Append(this.String40B);
+        return farm.Finalize();
+    }*/
+
+    [Benchmark]
+    public ulong String40x2_FarmHash3_64()
+    {
+        var farm = default(FarmHash3);
+        farm.Append(this.String40A);
+        farm.Append(this.String40B);
+        return farm.Finalize();
+    }
+
+    [Benchmark]
+    public ulong String40x100_FarmHash2_64()
+    {
+        var farm = default(FarmHash2);
+        farm.Append(this.String40A);
+        for (var i = 0; i < 100; i++)
+        {
+            farm.Append(this.String40B);
+        }
+
+        return farm.Finalize();
+    }
+
+    [Benchmark]
+    public ulong String40x100_FarmHash3_64()
+    {
+        var farm = default(FarmHash3);
+        farm.Append(this.String40A);
+        for (var i = 0; i < 100; i++)
+        {
+            farm.Append(this.String40B);
+        }
+
+        return farm.Finalize();
+    }
 
     /*[Benchmark]
     public ulong String80_XxHash3Slim() => Arc.Collections.XxHash3Slim.Hash64(String80);

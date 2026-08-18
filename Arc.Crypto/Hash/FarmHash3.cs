@@ -5,8 +5,10 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using static System.Numerics.BitOperations;
 
+#pragma warning disable SA1132 // Do not combine fields
 #pragma warning disable SA1204
 #pragma warning disable SA1310 // Field names should not contain underscore
+#pragma warning disable SA1519 // Braces should not be omitted from multi-line child statement
 
 namespace Arc.Crypto;
 
@@ -37,9 +39,7 @@ public unsafe ref struct FarmHash3
     private fixed byte buffer[BufferSize];
     private int position;
     private bool blockPhase;
-#pragma warning disable SA1132 // Do not combine fields
     private ulong x, y, z, v0, v1, w0, w1, u, mul;
-#pragma warning restore SA1132 // Do not combine fields
 
     /// <summary>
     /// Static function: Calculates a 64bit hash from the given data.
@@ -93,7 +93,6 @@ public unsafe ref struct FarmHash3
         }
 
         fixed (byte* pin = input)
-#pragma warning disable SA1519 // Braces should not be omitted from multi-line child statement
         fixed (byte* buf = this.buffer)
         {
             byte* src = pin;
@@ -155,7 +154,6 @@ public unsafe ref struct FarmHash3
             this.Rounds(buf + 64, 1);
             this.ProcessDirect(src + fill, len - fill, buf + 64, buf);
         }
-#pragma warning restore SA1519 // Braces should not be omitted from multi-line child statement
     }
 
     /// <summary>
@@ -319,7 +317,6 @@ public unsafe ref struct FarmHash3
         }
     }
 
-    // farmhashuo.cc
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong H(ulong x, ulong y, ulong mul, int r)
     {
@@ -425,7 +422,6 @@ public unsafe ref struct FarmHash3
         }
     }
 
-    // 33-64 farmhashxo.cc
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong HashLen33to64(byte* s, uint len)
     {
@@ -439,7 +435,6 @@ public unsafe ref struct FarmHash3
         }
     }
 
-    // 65-96 farmhashxo.cc
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong HashLen65to96(byte* s, uint len)
     {
@@ -454,9 +449,6 @@ public unsafe ref struct FarmHash3
         }
     }
 
-    // farmhashna.cc
-    // Return a 16-byte hash for 48 bytes.  Quick and dirty.
-    // Callers do best to use "random-looking" values for a and b.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void WeakHashLen32WithSeeds(ulong w, ulong x, ulong y, ulong z, ulong a, ulong b, out ulong first, out ulong second)
     {
@@ -473,13 +465,10 @@ public unsafe ref struct FarmHash3
         }
     }
 
-    // farmhashna.cc
-    // Return a 16-byte hash for s[0] ... s[31], a, and b.  Quick and dirty.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void WeakHashLen32WithSeeds(byte* s, ulong a, ulong b, out ulong first, out ulong second)
         => WeakHashLen32WithSeeds(Fetch64(s), Fetch64(s + 8), Fetch64(s + 16), Fetch64(s + 24), a, b, out first, out second);
 
-    // na(97-256) farmhashna.cc
     private static ulong Hash64NA(byte* s, uint len)
     {
         const ulong seed = 81;
@@ -527,7 +516,6 @@ public unsafe ref struct FarmHash3
         }
     }
 
-    // uo(257-) farmhashuo.cc, Hash64WithSeeds
     private static ulong Hash64UO(byte* s, uint len)
     {
         unchecked
