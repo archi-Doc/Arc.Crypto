@@ -23,44 +23,44 @@ public class StringHashBenchmark
     {
     }
 
-    /*[Benchmark]
-    public ulong String3_FarmHash32() => Arc.Crypto.FarmHash.Hash32(String3);
+    [Benchmark]
+    public ulong String3_FarmHash64() => Arc.Crypto.FarmHash.Hash64(this.String3);
 
     [Benchmark]
-    public ulong String3_FarmHash64() => Arc.Crypto.FarmHash.Hash64(String3);
+    public ulong String3_XxHash3() => Arc.Crypto.XxHash3.Hash64(this.String3);
 
     [Benchmark]
-    public ulong String3_XxHash3() => Arc.Crypto.XxHash3.Hash64(String3);
+    public ulong String3_XxHash3Slim() => Arc.Collections.XxHash3Slim.Hash64(this.String3);
 
     [Benchmark]
-    public ulong String3_XxHash3Slim() => Arc.Collections.XxHash3Slim.Hash64(String3);
+    public ulong String40_FarmHash64() => Arc.Crypto.FarmHash.Hash64(this.String40);
 
     [Benchmark]
-    public ulong String40_FarmHash32() => Arc.Crypto.FarmHash.Hash32(String40);
+    public ulong String40_XxHash3() => Arc.Crypto.XxHash3.Hash64(this.String40);
 
     [Benchmark]
-    public ulong String40_FarmHash64() => Arc.Crypto.FarmHash.Hash64(String40);
+    public ulong String40_XxHash3Slim() => Arc.Collections.XxHash3Slim.Hash64(this.String40);
 
     [Benchmark]
-    public ulong String40_XxHash3() => Arc.Crypto.XxHash3.Hash64(String40);
-
-    [Benchmark]
-    public ulong String40_XxHash3Slim() => Arc.Collections.XxHash3Slim.Hash64(String40);
-
-    [Benchmark]
-    public ulong String80_FarmHash32() => Arc.Crypto.FarmHash.Hash32(String80);*/
-
-    /*[Benchmark]
     public ulong String80_FarmHash64() => Arc.Crypto.FarmHash.Hash64(this.String80);
 
     [Benchmark]
     public ulong String80_XxHash3() => Arc.Crypto.XxHash3.Hash64(this.String80);
 
     [Benchmark]
+    public ulong String80_XxHash3Slim() => Arc.Collections.XxHash3Slim.Hash64(this.String80);
+
+    [Benchmark]
     public ulong String80_FarmHash2_64() => Arc.Crypto.FarmHash2.Hash64(this.String80);
 
     [Benchmark]
-    public ulong String80_FarmHash3_64() => Arc.Crypto.FarmHash3.Hash64(this.String80);
+    public ulong String40x2_FarmHash_64()
+    {
+        var farm = default(FarmHash);
+        farm.Append(this.String40A);
+        farm.Append(this.String40B);
+        return farm.Finalize();
+    }
 
     [Benchmark]
     public ulong String40x2_FarmHash2_64()
@@ -69,14 +69,18 @@ public class StringHashBenchmark
         farm.Append(this.String40A);
         farm.Append(this.String40B);
         return farm.Finalize();
-    }*/
+    }
 
     [Benchmark]
-    public ulong String40x2_FarmHash3_64()
+    public ulong String40x100_FarmHash_64()
     {
-        var farm = default(FarmHash3);
+        var farm = default(FarmHash);
         farm.Append(this.String40A);
-        farm.Append(this.String40B);
+        for (var i = 0; i < 100; i++)
+        {
+            farm.Append(this.String40B);
+        }
+
         return farm.Finalize();
     }
 
@@ -94,30 +98,11 @@ public class StringHashBenchmark
     }
 
     [Benchmark]
-    public ulong String40x100_FarmHash3_64()
-    {
-        var farm = default(FarmHash3);
-        farm.Append(this.String40A);
-        for (var i = 0; i < 100; i++)
-        {
-            farm.Append(this.String40B);
-        }
-
-        return farm.Finalize();
-    }
-
-    /*[Benchmark]
-    public ulong String80_XxHash3Slim() => Arc.Collections.XxHash3Slim.Hash64(String80);
+    public ulong String200_FarmHash64() => Arc.Crypto.FarmHash.Hash64(this.String200);
 
     [Benchmark]
-    public ulong String200_FarmHash32() => Arc.Crypto.FarmHash.Hash32(String200);
+    public ulong String200_XxHash3() => Arc.Crypto.XxHash3.Hash64(this.String200);
 
     [Benchmark]
-    public ulong String200_FarmHash64() => Arc.Crypto.FarmHash.Hash64(String200);
-
-    [Benchmark]
-    public ulong String200_XxHash3() => Arc.Crypto.XxHash3.Hash64(String200);
-
-    [Benchmark]
-    public ulong String200_XxHash3Slim() => Arc.Collections.XxHash3Slim.Hash64(String200);*/
+    public ulong String200_XxHash3Slim() => Arc.Collections.XxHash3Slim.Hash64(this.String200);
 }

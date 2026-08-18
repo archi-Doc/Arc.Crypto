@@ -18,7 +18,7 @@ namespace Arc.Crypto;
 /// The result is identical to <see cref="Hash64(ReadOnlySpan{byte})"/> over the concatenated input.
 /// Call <see cref="Initialize"/> to reuse the instance after <see cref="Finalize"/>.
 /// </summary>
-public unsafe ref struct FarmHash3
+public unsafe ref struct FarmHash
 {
     private const ulong K0 = 0xc3a5c85c97cb3127UL;
     private const ulong K1 = 0xb492b66fbe98f273UL;

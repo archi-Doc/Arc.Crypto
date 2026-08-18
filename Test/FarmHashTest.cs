@@ -10,9 +10,9 @@ public class FarmHashTest
     [Fact]
     public void Empty()
     {
-        var farm = default(FarmHash3);
+        var farm = default(FarmHash);
 
-        Assert.Equal(FarmHash3.Hash64(ReadOnlySpan<byte>.Empty), farm.Finalize());
+        Assert.Equal(FarmHash.Hash64(ReadOnlySpan<byte>.Empty), farm.Finalize());
     }
 
     [Theory]
@@ -59,9 +59,9 @@ public class FarmHashTest
     public void AppendSingleBlock(int length)
     {
         var data = CreateData(length);
-        var expected = FarmHash3.Hash64(data);
+        var expected = FarmHash.Hash64(data);
 
-        var farm = default(FarmHash3);
+        var farm = default(FarmHash);
         farm.Append(data);
 
         Assert.Equal(expected, farm.Finalize());
@@ -91,9 +91,9 @@ public class FarmHashTest
     public void AppendOneByteAtATime(int length)
     {
         var data = CreateData(length);
-        var expected = FarmHash3.Hash64(data);
+        var expected = FarmHash.Hash64(data);
 
-        var farm = default(FarmHash3);
+        var farm = default(FarmHash);
         for (var i = 0; i < data.Length; i++)
         {
             farm.Append(data.AsSpan(i, 1));
@@ -122,9 +122,9 @@ public class FarmHashTest
     public void AppendTwoBlocks(int length, int split)
     {
         var data = CreateData(length);
-        var expected = FarmHash3.Hash64(data);
+        var expected = FarmHash.Hash64(data);
 
-        var farm = default(FarmHash3);
+        var farm = default(FarmHash);
         farm.Append(data.AsSpan(0, split));
         farm.Append(data.AsSpan(split));
 
@@ -147,11 +147,11 @@ public class FarmHashTest
     public void EveryPossibleTwoWaySplit(int length)
     {
         var data = CreateData(length);
-        var expected = FarmHash3.Hash64(data);
+        var expected = FarmHash.Hash64(data);
 
         for (var split = 0; split <= length; split++)
         {
-            var farm = default(FarmHash3);
+            var farm = default(FarmHash);
             farm.Append(data.AsSpan(0, split));
             farm.Append(data.AsSpan(split));
 
@@ -168,11 +168,11 @@ public class FarmHashTest
     public void VariousChunkSizes(int length)
     {
         var data = CreateData(length);
-        var expected = FarmHash3.Hash64(data);
+        var expected = FarmHash.Hash64(data);
 
         for (var chunkSize = 1; chunkSize <= 129; chunkSize++)
         {
-            var farm = default(FarmHash3);
+            var farm = default(FarmHash);
 
             for (var offset = 0; offset < data.Length;)
             {
@@ -190,12 +190,12 @@ public class FarmHashTest
     {
         const int length = 100_000;
         var data = CreateData(length);
-        var expected = FarmHash3.Hash64(data);
+        var expected = FarmHash.Hash64(data);
 
         for (var iteration = 0; iteration < 100; iteration++)
         {
             var random = new Random(iteration);
-            var farm = default(FarmHash3);
+            var farm = default(FarmHash);
             var offset = 0;
 
             while (offset < data.Length)
@@ -213,9 +213,9 @@ public class FarmHashTest
     public void EmptyAppendDoesNotChangeHash()
     {
         var data = CreateData(1000);
-        var expected = FarmHash3.Hash64(data);
+        var expected = FarmHash.Hash64(data);
 
-        var farm = default(FarmHash3);
+        var farm = default(FarmHash);
         farm.Append(data.AsSpan(0, 200));
         farm.Append(ReadOnlySpan<byte>.Empty);
         farm.Append(data.AsSpan(200));
@@ -229,14 +229,14 @@ public class FarmHashTest
     {
         var data = CreateData(1000);
 
-        var farm = default(FarmHash3);
+        var farm = default(FarmHash);
         farm.Append(data);
 
         var hash1 = farm.Finalize();
         var hash2 = farm.Finalize();
 
         Assert.Equal(hash1, hash2);
-        Assert.Equal(FarmHash3.Hash64(data), hash1);
+        Assert.Equal(FarmHash.Hash64(data), hash1);
     }
 
     [Fact]
@@ -249,12 +249,12 @@ public class FarmHashTest
         data1.CopyTo(combined, 0);
         data2.CopyTo(combined, data1.Length);
 
-        var farm = default(FarmHash3);
+        var farm = default(FarmHash);
         farm.Append(data1);
         _ = farm.Finalize();
         farm.Append(data2);
 
-        Assert.Equal(FarmHash3.Hash64(combined), farm.Finalize());
+        Assert.Equal(FarmHash.Hash64(combined), farm.Finalize());
     }
 
     [Fact]
@@ -263,14 +263,14 @@ public class FarmHashTest
         var first = CreateData(100);
         var second = CreateData(200, 123);
 
-        var farm = default(FarmHash3);
+        var farm = default(FarmHash);
         farm.Append(first);
         _ = farm.Finalize();
 
         farm.Initialize();
         farm.Append(second);
 
-        Assert.Equal(FarmHash3.Hash64(second), farm.Finalize());
+        Assert.Equal(FarmHash.Hash64(second), farm.Finalize());
     }
 
     [Fact]
@@ -279,14 +279,14 @@ public class FarmHashTest
         var first = CreateData(1000);
         var second = CreateData(700, 123);
 
-        var farm = default(FarmHash3);
+        var farm = default(FarmHash);
         farm.Append(first);
         _ = farm.Finalize();
 
         farm.Initialize();
         farm.Append(second);
 
-        Assert.Equal(FarmHash3.Hash64(second), farm.Finalize());
+        Assert.Equal(FarmHash.Hash64(second), farm.Finalize());
     }
 
     [Theory]
@@ -298,11 +298,11 @@ public class FarmHashTest
     [InlineData("🌸🍣🚀")]
     public void CharSpan(string text)
     {
-        var farm = default(FarmHash3);
+        var farm = default(FarmHash);
         farm.Append(text.AsSpan());
 
-        Assert.Equal(FarmHash3.Hash64(text), farm.Finalize());
-        Assert.Equal(FarmHash3.Hash64(text.AsSpan()), farm.Finalize());
+        Assert.Equal(FarmHash.Hash64(text), farm.Finalize());
+        Assert.Equal(FarmHash.Hash64(text.AsSpan()), farm.Finalize());
     }
 
     [Fact]
@@ -313,12 +313,12 @@ public class FarmHashTest
         const string c = "🌸!";
         const string combined = a + b + c;
 
-        var farm = default(FarmHash3);
+        var farm = default(FarmHash);
         farm.Append(a.AsSpan());
         farm.Append(b.AsSpan());
         farm.Append(c.AsSpan());
 
-        Assert.Equal(FarmHash3.Hash64(combined), farm.Finalize());
+        Assert.Equal(FarmHash.Hash64(combined), farm.Finalize());
     }
 
     [Fact]
@@ -328,7 +328,7 @@ public class FarmHashTest
         var b = CreateData(1000);
         b[500] ^= 0x80;
 
-        Assert.NotEqual(FarmHash3.Hash64(a), FarmHash3.Hash64(b));
+        Assert.NotEqual(FarmHash.Hash64(a), FarmHash.Hash64(b));
     }
 
     private static byte[] CreateData(int length, int seed = 0)
