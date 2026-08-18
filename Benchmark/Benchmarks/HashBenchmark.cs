@@ -11,7 +11,7 @@ public class HashBenchmark
 {
     private const int N = 1_000_000;
     private readonly byte[] data;
-    private FarmHash farm;
+    private FarmHashObs farm;
     private XXHash32 xxh32;
     private XxHash64 xxh64;
 
@@ -19,7 +19,7 @@ public class HashBenchmark
     {
         this.data = new byte[N];
         new Random(42).NextBytes(this.data);
-        this.farm = new FarmHash();
+        this.farm = new FarmHashObs();
         this.xxh32 = new XXHash32();
         this.xxh64 = new XxHash64();
     }
@@ -29,10 +29,10 @@ public class HashBenchmark
     public int Length { get; set; }
 
     [Benchmark]
-    public ulong ArcFarmHash32() => Arc.Crypto.FarmHash.Hash32(this.data.AsSpan(0, this.Length));
+    public ulong ArcFarmHash32() => Arc.Crypto.FarmHashObs.Hash32(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
-    public ulong ArcFarmHash64() => Arc.Crypto.FarmHash.Hash64(this.data.AsSpan(0, this.Length));
+    public ulong ArcFarmHash64() => Arc.Crypto.FarmHashObs.Hash64(this.data.AsSpan(0, this.Length));
 
     [Benchmark]
     public uint ArcXXHash32() => Arc.Crypto.XXHash32.Hash32(this.data.AsSpan(0, this.Length));

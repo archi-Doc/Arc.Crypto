@@ -13,13 +13,13 @@ public class StringBenchmark
     public int String_GetHashCode() => TestString.GetHashCode();
 
     [Benchmark]
-    public uint ArcFarmHash32_Direct() => Arc.Crypto.FarmHash.Hash32(TestString);
+    public uint ArcFarmHash32_Direct() => Arc.Crypto.FarmHashObs.Hash32(TestString);
 
     [Benchmark]
-    public uint ArcFarmHash32_64to32() => unchecked((uint)Arc.Crypto.FarmHash.Hash64(TestString));
+    public uint ArcFarmHash32_64to32() => unchecked((uint)Arc.Crypto.FarmHashObs.Hash64(TestString));
 
     [Benchmark]
-    public ulong ArcFarmHash64_Direct() => Arc.Crypto.FarmHash.Hash64(TestString);
+    public ulong ArcFarmHash64_Direct() => Arc.Crypto.FarmHashObs.Hash64(TestString);
 
     /*[Benchmark]
     public ulong ArcFarmHash64_GetBytes() => Arc.Crypto.FarmHash.Hash64(Encoding.UTF8.GetBytes(TestString));

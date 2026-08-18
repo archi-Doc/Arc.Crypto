@@ -115,8 +115,15 @@ public unsafe ref struct FarmHash2
         => this.Append(MemoryMarshal.AsBytes(input));
 
     /// <summary>
-    /// Finalizes the hash. Do not append more data or call this method again afterward.
+    /// Finalizes the hash computation and returns the 64-bit hash value.
     /// </summary>
+    /// <returns>A 64-bit unsigned integer representing the FarmHash hash value of all appended data.</returns>
+    /// <remarks>
+    /// This method completes the hash computation. After calling this method, the <see cref="FarmHash2"/> instance
+    /// should not be used again. Do not append more data or call this method again afterward.
+    /// The method handles both short inputs (≤256 bytes) and long inputs (&gt;256 bytes) differently
+    /// to optimize performance.
+    /// </remarks>
     public ulong Finalize()
     {
         fixed (byte* p = this.buffer)

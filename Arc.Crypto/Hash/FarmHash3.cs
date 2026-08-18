@@ -29,7 +29,6 @@ public unsafe ref struct FarmHash3
     private const ulong Y0 = 113;                  // (0 * K2) + 113
     private const ulong Z0 = 0x7cb371d23f5eb1e0UL; // ShiftMix(Y0 * K2) * K2
     private const ulong U0 = 0x834c8e2dc0a14e71UL; // 81 - Z0
-    private const ulong M0 = K2;                   // K2 + (U0 & 0x82)
 
     private const int RawLimit = 256;              // up to this total size, the raw input is kept and hashed by the small-input algorithms.
     private const int BufferSize = RawLimit + 64;  // 320
@@ -39,7 +38,8 @@ public unsafe ref struct FarmHash3
     private fixed byte buffer[BufferSize];
     private int position;
     private bool blockPhase;
-    private ulong x, y, z, v0, v1, w0, w1, u, mul;
+
+    private ulong x, y, z, v0, v1, w0, w1, u;
 
     /// <summary>
     /// Static function: Calculates a 64bit hash from the given data.
@@ -99,7 +99,7 @@ public unsafe ref struct FarmHash3
             var len = input.Length;
             if (!this.blockPhase)
             {
-                if (this.position + len <= RawLimit)
+                if (len <= RawLimit - this.position)
                 {// keep raw input.
                     Buffer.MemoryCopy(src, buf + this.position, len, len);
                     this.position += len;
@@ -115,7 +115,6 @@ public unsafe ref struct FarmHash3
                 this.w0 = 0;
                 this.w1 = 0;
                 this.u = U0;
-                this.mul = M0;
                 this.blockPhase = true;
 
                 var c = BufferSize - this.position;
@@ -141,7 +140,7 @@ public unsafe ref struct FarmHash3
 
             // Block phase.
             var t = this.position;
-            if (t + len <= 64)
+            if (len <= 64 - t)
             {// still fits in the pending tail.
                 Buffer.MemoryCopy(src, buf + 64 + t, len, len);
                 this.position = t + len;
@@ -179,21 +178,20 @@ public unsafe ref struct FarmHash3
             unchecked
             {// farmhashuo final mixing over the last 64 bytes, buffer[position..position + 64).
                 byte* s = buf + this.position;
-                var mul = this.mul;
                 var u = this.u * 9;
                 var v1 = RotateRight(this.v1, 28);
                 var v0 = RotateRight(this.v0, 20);
                 var w0 = this.w0 + (ulong)(uint)(this.position - 1);
                 u += this.y;
                 var y = this.y + u;
-                var x = RotateRight(y - this.x + v0 + Fetch64(s + 8), 37) * mul;
-                y = RotateRight(y ^ v1 ^ Fetch64(s + 48), 42) * mul;
+                var x = RotateRight(y - this.x + v0 + Fetch64(s + 8), 37) * K2;
+                y = RotateRight(y ^ v1 ^ Fetch64(s + 48), 42) * K2;
                 x ^= this.w1 * 9;
                 y += v0 + Fetch64(s + 40);
-                var z = RotateRight(this.z + w0, 33) * mul;
-                WeakHashLen32WithSeeds(s, v1 * mul, x + w0, out v0, out v1);
+                var z = RotateRight(this.z + w0, 33) * K2;
+                WeakHashLen32WithSeeds(s, v1 * K2, x + w0, out v0, out v1);
                 WeakHashLen32WithSeeds(s + 32, z + this.w1, y + Fetch64(s + 16), out w0, out var w1);
-                return H(HashLen16(v0 + x, w0 ^ y, mul) + z - u, H(v1 + y, w1 + z, K2, 30) ^ x, K2, 31);
+                return H(HashLen16(v0 + x, w0 ^ y, K2) + z - u, H(v1 + y, w1 + z, K2, 30) ^ x, K2, 31);
             }
         }
     }
@@ -226,7 +224,7 @@ public unsafe ref struct FarmHash3
     {
         unchecked
         {
-            ulong x = this.x, y = this.y, z = this.z, v0 = this.v0, v1 = this.v1, w0 = this.w0, w1 = this.w1, u = this.u, mul = this.mul;
+            ulong x = this.x, y = this.y, z = this.z, v0 = this.v0, v1 = this.v1, w0 = this.w0, w1 = this.w1, u = this.u;
             do
             {
                 var a0 = Fetch64(s);
@@ -246,7 +244,7 @@ public unsafe ref struct FarmHash3
                 w1 += a7;
                 x = RotateRight(x, 26) * 9;
                 y = RotateRight(y, 29);
-                z *= mul;
+                z *= K2;
                 v0 = RotateRight(v0, 33);
                 v1 = RotateRight(v1, 30);
                 w0 = (w0 ^ x) * 9;
@@ -275,6 +273,7 @@ public unsafe ref struct FarmHash3
                 s += 64;
             }
             while (--blocks > 0);
+
             this.x = x;
             this.y = y;
             this.z = z;
@@ -283,7 +282,6 @@ public unsafe ref struct FarmHash3
             this.w0 = w0;
             this.w1 = w1;
             this.u = u;
-            this.mul = mul;
         }
     }
 
@@ -525,7 +523,6 @@ public unsafe ref struct FarmHash3
             var z = Z0;
             ulong v0 = 81, v1 = 0, w0 = 0, w1 = 0;
             var u = U0;
-            var mul = M0;
 
             // Set end so that after the loop we have 1 to 64 bytes left to process.
             byte* end = s + ((len - 1) / 64 * 64);
@@ -549,7 +546,7 @@ public unsafe ref struct FarmHash3
                 w1 += a7;
                 x = RotateRight(x, 26) * 9;
                 y = RotateRight(y, 29);
-                z *= mul;
+                z *= K2;
                 v0 = RotateRight(v0, 33);
                 v1 = RotateRight(v1, 30);
                 w0 = (w0 ^ x) * 9;
@@ -583,14 +580,14 @@ public unsafe ref struct FarmHash3
             w0 += (len - 1) & 63;
             u += y;
             y += u;
-            x = RotateRight(y - x + v0 + Fetch64(s + 8), 37) * mul;
-            y = RotateRight(y ^ v1 ^ Fetch64(s + 48), 42) * mul;
+            x = RotateRight(y - x + v0 + Fetch64(s + 8), 37) * K2;
+            y = RotateRight(y ^ v1 ^ Fetch64(s + 48), 42) * K2;
             x ^= w1 * 9;
             y += v0 + Fetch64(s + 40);
-            z = RotateRight(z + w0, 33) * mul;
-            WeakHashLen32WithSeeds(s, v1 * mul, x + w0, out v0, out v1);
+            z = RotateRight(z + w0, 33) * K2;
+            WeakHashLen32WithSeeds(s, v1 * K2, x + w0, out v0, out v1);
             WeakHashLen32WithSeeds(s + 32, z + w1, y + Fetch64(s + 16), out w0, out w1);
-            return H(HashLen16(v0 + x, w0 ^ y, mul) + z - u, H(v1 + y, w1 + z, K2, 30) ^ x, K2, 31);
+            return H(HashLen16(v0 + x, w0 ^ y, K2) + z - u, H(v1 + y, w1 + z, K2, 30) ^ x, K2, 31);
         }
     }
 }
