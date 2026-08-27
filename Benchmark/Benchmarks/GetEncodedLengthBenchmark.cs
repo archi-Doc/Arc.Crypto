@@ -28,7 +28,7 @@ public class GetEncodedLengthBenchmark
         var x = 0;
         for (var i = 0; i < 100; i += 13)
         {
-            x += Base64.Url.GetEncodedLength(i);
+            x += Base64c.Url.GetEncodedLength(i);
         }
 
         return x;

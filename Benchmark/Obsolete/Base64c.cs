@@ -11,7 +11,7 @@ namespace Arc.Crypto;
 /// <summary>
 /// Base64 encoding/decoding class.
 /// </summary>
-public static class Base64
+public static class Base64c
 {
     public static class Default
     {
