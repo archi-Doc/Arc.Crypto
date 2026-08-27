@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 
-namespace FastBase64Lib;
+namespace Arc.Crypto;
 
 #pragma warning disable SA1117
 #pragma warning disable SA1519 // Braces should not be omitted from multi-line child statement
@@ -14,10 +14,18 @@ namespace FastBase64Lib;
 public static unsafe class FastBase64
 {
     // ------------------------------------------------------------------
-    // 長さ計算
+    // Length calculation
     // ------------------------------------------------------------------
 
-    /// <summary>入力 <paramref name="byteCount"/> バイトをエンコードした後の文字数(パディング込み・厳密値)。</summary>
+    /// <summary>
+    /// Gets the exact number of Base64 characters required to encode the specified number of bytes,
+    /// including padding characters.
+    /// </summary>
+    /// <param name="byteCount">The number of bytes to encode.</param>
+    /// <returns>The exact number of Base64 characters required.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="byteCount"/> is negative, or the encoded length exceeds <see cref="int.MaxValue"/>.
+    /// </exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetEncodedLength(int byteCount)
     {
@@ -35,8 +43,15 @@ public static unsafe class FastBase64
         return (int)len;
     }
 
-    /// <summary>エンコード列の長さ <paramref name="encodedLength"/> からデコード結果の最大バイト数(上限)を返す。
-    /// パディングの有無に関わらず安全なバッファサイズとして使える。</summary>
+    /// <summary>
+    /// Gets the maximum number of decoded bytes for a Base64 sequence of the specified length.
+    /// This value can be used as a safe destination buffer size regardless of padding.
+    /// </summary>
+    /// <param name="encodedLength">The length of the Base64-encoded sequence.</param>
+    /// <returns>The maximum number of decoded bytes.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="encodedLength"/> is negative.
+    /// </exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetMaxDecodedLength(int encodedLength)
     {
@@ -48,14 +63,30 @@ public static unsafe class FastBase64
         return (int)((long)encodedLength * 3 / 4);
     }
 
-    /// <summary>実際の入力を見て(末尾の '=' を数えて)デコード結果の厳密なバイト数を返す。長さが不正なら FormatException。</summary>
+    /// <summary>
+    /// Gets the exact number of bytes produced by decoding the specified UTF-8 Base64 sequence.
+    /// Trailing padding characters are taken into account.
+    /// </summary>
+    /// <param name="utf8">The Base64 sequence represented as UTF-8 (ASCII) bytes.</param>
+    /// <returns>The exact number of decoded bytes.</returns>
+    /// <exception cref="FormatException">
+    /// The Base64 sequence has an invalid length.
+    /// </exception>
     public static int GetDecodedLength(ReadOnlySpan<byte> utf8)
     {
         int len = TrimPadding(utf8, out _);
         return DecodedLengthFromTrimmed(len);
     }
 
-    /// <inheritdoc cref="GetDecodedLength(ReadOnlySpan{byte})"/>
+    /// <summary>
+    /// Gets the exact number of bytes produced by decoding the specified Base64 character sequence.
+    /// Trailing padding characters are taken into account.
+    /// </summary>
+    /// <param name="chars">The Base64 character sequence.</param>  
+    /// <returns>The exact number of decoded bytes.</returns>
+    /// <exception cref="FormatException">
+    /// The Base64 sequence has an invalid length.
+    /// </exception>
     public static int GetDecodedLength(ReadOnlySpan<char> chars)
     {
         int len = TrimPadding(chars, out _);
@@ -63,10 +94,18 @@ public static unsafe class FastBase64
     }
 
     // ------------------------------------------------------------------
-    // エンコード (public API)
+    // Encoding (public API)
     // ------------------------------------------------------------------
 
-    /// <summary>UTF-8(ASCII) バイト列へエンコード。書き込んだバイト数を返す。</summary>
+    /// <summary>
+    /// Encodes the specified bytes as Base64 into a UTF-8 (ASCII) byte destination.
+    /// </summary>
+    /// <param name="bytes">The bytes to encode.</param>
+    /// <param name="utf8Destination">The destination buffer that receives the Base64 UTF-8 bytes.</param>
+    /// <returns>The number of bytes written to <paramref name="utf8Destination"/>.</returns>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="utf8Destination"/> is too small to contain the encoded data.
+    /// </exception>
     public static int Encode(ReadOnlySpan<byte> bytes, Span<byte> utf8Destination)
     {
         int encodedLength = GetEncodedLength(bytes.Length);
@@ -85,10 +124,19 @@ public static unsafe class FastBase64
         {
             EncodeBytesCore(src, bytes.Length, dest);
         }
+
         return encodedLength;
     }
 
-    /// <summary>UTF-16 文字列 (Span&lt;char&gt;) へエンコード。書き込んだ文字数を返す。</summary>
+    /// <summary>
+    /// Encodes the specified bytes as Base64 into a UTF-16 character destination.
+    /// </summary>
+    /// <param name="bytes">The bytes to encode.</param>
+    /// <param name="charsDestination">The destination buffer that receives the Base64 characters.</param>
+    /// <returns>The number of characters written to <paramref name="charsDestination"/>.</returns>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="charsDestination"/> is too small to contain the encoded data.
+    /// </exception>
     public static int Encode(ReadOnlySpan<byte> bytes, Span<char> charsDestination)
     {
         int encodedLength = GetEncodedLength(bytes.Length);
@@ -107,10 +155,15 @@ public static unsafe class FastBase64
         {
             EncodeCharsCore(src, bytes.Length, dest);
         }
+
         return encodedLength;
     }
 
-    /// <summary>string へエンコード。</summary>
+    /// <summary>
+    /// Encodes the specified bytes as Base64 and returns the result as a string.
+    /// </summary>
+    /// <param name="bytes">The bytes to encode.</param>
+    /// <returns>A Base64 string representing the input bytes.</returns>
     public static string EncodeToString(ReadOnlySpan<byte> bytes)
     {
         if (bytes.IsEmpty)
@@ -120,8 +173,9 @@ public static unsafe class FastBase64
 
         int encodedLength = GetEncodedLength(bytes.Length);
 
-        // 新規確保した文字列を fixed で直接書き込む (string.Create と同等の定石。
-        // 確保直後で他から参照されていないため安全)。
+        // Write directly into the newly allocated string through a fixed pointer.
+        // This follows the same general pattern as string.Create and is safe because
+        // the string has just been allocated and is not yet referenced elsewhere.
         string result = new string('\0', encodedLength);
         fixed (char* dest = result)
         fixed (byte* src = &MemoryMarshal.GetReference(bytes))
@@ -133,10 +187,22 @@ public static unsafe class FastBase64
     }
 
     // ------------------------------------------------------------------
-    // デコード (public API)
+    // Decoding (public API)
     // ------------------------------------------------------------------
 
-    /// <summary>UTF-8(ASCII) バイト列からデコード。不正な入力・バッファ不足なら false。</summary>
+    /// <summary>
+    /// Attempts to decode a UTF-8 (ASCII) Base64 sequence into the specified byte destination.
+    /// </summary>
+    /// <param name="utf8">The Base64 sequence represented as UTF-8 (ASCII) bytes.</param>
+    /// <param name="bytesDestination">The destination buffer that receives the decoded bytes.</param>
+    /// <param name="bytesWritten">
+    /// When this method returns, contains the number of bytes written to
+    /// <paramref name="bytesDestination"/>.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if decoding succeeds; otherwise, <see langword="false"/>
+    /// if the input is invalid or the destination buffer is too small.
+    /// </returns>
     public static bool TryDecode(ReadOnlySpan<byte> utf8, Span<byte> bytesDestination, out int bytesWritten)
     {
         bytesWritten = 0;
@@ -165,11 +231,24 @@ public static unsafe class FastBase64
                 return false;
             }
         }
+
         bytesWritten = required;
         return true;
     }
 
-    /// <summary>UTF-16 文字列 (ReadOnlySpan&lt;char&gt;) からデコード。不正な入力・バッファ不足なら false。</summary>
+    /// <summary>
+    /// Attempts to decode a UTF-16 Base64 character sequence into the specified byte destination.
+    /// </summary>
+    /// <param name="chars">The Base64 character sequence.</param>
+    /// <param name="bytesDestination">The destination buffer that receives the decoded bytes.</param>
+    /// <param name="bytesWritten">
+    /// When this method returns, contains the number of bytes written to
+    /// <paramref name="bytesDestination"/>.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if decoding succeeds; otherwise, <see langword="false"/>
+    /// if the input is invalid or the destination buffer is too small.
+    /// </returns>
     public static bool TryDecode(ReadOnlySpan<char> chars, Span<byte> bytesDestination, out int bytesWritten)
     {
         bytesWritten = 0;
@@ -198,11 +277,23 @@ public static unsafe class FastBase64
                 return false;
             }
         }
+
         bytesWritten = required;
         return true;
     }
 
-    /// <summary>UTF-8(ASCII) バイト列からデコード。書き込んだバイト数を返す。不正な入力なら FormatException。</summary>
+    /// <summary>
+    /// Decodes a UTF-8 (ASCII) Base64 sequence into the specified byte destination.
+    /// </summary>
+    /// <param name="utf8">The Base64 sequence represented as UTF-8 (ASCII) bytes.</param>
+    /// <param name="bytesDestination">The destination buffer that receives the decoded bytes.</param>
+    /// <returns>The number of bytes written to <paramref name="bytesDestination"/>.</returns>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="bytesDestination"/> may be too small to contain the decoded data.
+    /// </exception>
+    /// <exception cref="FormatException">
+    /// The input is not a valid Base64 sequence.
+    /// </exception>
     public static int Decode(ReadOnlySpan<byte> utf8, Span<byte> bytesDestination)
     {
         if (!TryDecode(utf8, bytesDestination, out int written))
@@ -213,7 +304,18 @@ public static unsafe class FastBase64
         return written;
     }
 
-    /// <summary>UTF-16 文字列からデコード。書き込んだバイト数を返す。不正な入力なら FormatException。</summary>
+    /// <summary>
+    /// Decodes a UTF-16 Base64 character sequence into the specified byte destination.
+    /// </summary>
+    /// <param name="chars">The Base64 character sequence.</param>
+    /// <param name="bytesDestination">The destination buffer that receives the decoded bytes.</param>
+    /// <returns>The number of bytes written to <paramref name="bytesDestination"/>.</returns>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="bytesDestination"/> may be too small to contain the decoded data.
+    /// </exception>
+    /// <exception cref="FormatException">
+    /// The input is not a valid Base64 sequence.
+    /// </exception>
     public static int Decode(ReadOnlySpan<char> chars, Span<byte> bytesDestination)
     {
         if (!TryDecode(chars, bytesDestination, out int written))
@@ -224,12 +326,22 @@ public static unsafe class FastBase64
         return written;
     }
 
-    /// <summary>string からデコードして新しい byte[] を返す。不正な入力なら FormatException。</summary>
+    /// <summary>
+    /// Decodes the specified Base64 string and returns the decoded bytes in a new array.
+    /// </summary>
+    /// <param name="base64">The Base64 string to decode.</param>
+    /// <returns>A byte array containing the decoded data.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="base64"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="FormatException">
+    /// <paramref name="base64"/> is not a valid Base64 string.
+    /// </exception>
     public static byte[] Decode(string base64)
     {
         ArgumentNullException.ThrowIfNull(base64);
         ReadOnlySpan<char> chars = base64;
-        int required = GetDecodedLength(chars); // 長さが不正ならここで FormatException
+        int required = GetDecodedLength(chars); // Throws FormatException here if the length is invalid.
         if (required == 0)
         {
             return Array.Empty<byte>();
@@ -256,10 +368,11 @@ public static unsafe class FastBase64
     }
 
     // ------------------------------------------------------------------
-    // 長さ・パディング ヘルパ
+    // Length and padding helpers
     // ------------------------------------------------------------------
 
-    // 末尾の '='(最大 2 個)を除いた長さを返す。パディングの付き方が不正なら ok = false。
+    // Returns the length excluding up to two trailing '=' padding characters.
+    // Sets ok to false if the padding layout is invalid.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int TrimPadding(ReadOnlySpan<byte> s, out bool ok)
     {
@@ -273,7 +386,8 @@ public static unsafe class FastBase64
                 trimmed--;
             }
         }
-        // パディング付きの場合、全体長は 4 の倍数でなければならない
+
+        // When padding is present, the total encoded length must be a multiple of four.
         ok = trimmed == len || (len & 3) == 0;
         return trimmed;
     }
@@ -296,7 +410,8 @@ public static unsafe class FastBase64
         return trimmed;
     }
 
-    // パディング除去後の長さ → デコード結果の厳密なバイト数。長さ %4 == 1 は不正 (-1)。
+    // Converts the length after removing padding to the exact decoded byte count.
+    // A length where length % 4 == 1 is invalid and returns -1.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int DecodedLengthFromTrimmedNoThrow(int trimmedLength)
     {
@@ -321,22 +436,23 @@ public static unsafe class FastBase64
     }
 
     // ------------------------------------------------------------------
-    // 変換テーブル
+    // Conversion tables
     // ------------------------------------------------------------------
 
     private static ReadOnlySpan<byte> EncodingMap =>
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"u8;
 
-    // ASCII → 6bit 値。不正な文字は -1。(RVA 静的データとして埋め込まれ、割り当ては発生しない)
+    // ASCII to 6-bit value. Invalid characters map to -1.
+    // The table is embedded as static RVA data and does not allocate.
     private static ReadOnlySpan<sbyte> DecodingMap => new sbyte[256]
     {
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, //   0- 15
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, //  16- 31
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, //  32- 47  '+' '/'
-        52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, //  48- 63  '0'-'9'
-        -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, //  64- 79  'A'-'O'
-        15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, //  80- 95  'P'-'Z'
-        -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, //  96-111  'a'-'o'
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 0- 15
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 16- 31
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, // 32- 47  '+' '/'
+        52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, // 48- 63  '0'-'9'
+        -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, // 64- 79  'A'-'O'
+        15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, // 80- 95  'P'-'Z'
+        -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, // 96-111  'a'-'o'
         41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1, // 112-127  'p'-'z'
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -349,17 +465,19 @@ public static unsafe class FastBase64
     };
 
     // ------------------------------------------------------------------
-    // エンコード コア: SIMD 共通変換
+    // Encoding core: common SIMD transformation
     //
-    //   入力ベクトルの各 32bit レーンに [b1, b0, b2, b1] (LE) の並びで
-    //   3 バイトを置き、AND/乗算シフトで 4 つの 6bit インデックスへ分解、
-    //   飽和減算 + pshufb LUT で ASCII に変換する (Muła の手法)。
+    // For each 32-bit lane of the input vector, the three source bytes are
+    // arranged as [b1, b0, b2, b1] in little-endian order. AND operations
+    // and multiply-shifts then split them into four 6-bit indices, which are
+    // converted to ASCII using saturated subtraction and a pshufb lookup table
+    // (Muła's technique).
     // ------------------------------------------------------------------
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Vector256<sbyte> EncodeVector256(Vector256<sbyte> str)
     {
-        // 各レーンへ 3 バイトを [b1,b0,b2,b1] で配置するシャッフル
+        // Shuffle mask that arranges three input bytes as [b1,b0,b2,b1] in each lane.
         Vector256<sbyte> shuffleVec = Vector256.Create(
              5, 4, 6, 5, 8, 7, 9, 8, 11, 10, 12, 11, 14, 13, 15, 14,
              1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10);
@@ -369,7 +487,7 @@ public static unsafe class FastBase64
         Vector256<ushort> shiftAC = Vector256.Create(0x04000040).AsUInt16();
         Vector256<short> shiftBB = Vector256.Create(0x01000010).AsInt16();
 
-        // 6bit 値 → ASCII 差分 LUT
+        // 6-bit value to ASCII adjustment lookup table.
         Vector256<sbyte> lut = Vector256.Create(
             65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0,
             65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0);
@@ -382,9 +500,10 @@ public static unsafe class FastBase64
         Vector256<sbyte> t2 = Avx2.And(str, maskBB);
         Vector256<ushort> t1 = Avx2.MultiplyHigh(t0.AsUInt16(), shiftAC);
         Vector256<short> t3 = Avx2.MultiplyLow(t2.AsInt16(), shiftBB);
-        str = Avx2.Or(t1.AsSByte(), t3.AsSByte()); // 各バイト = 6bit インデックス (0..63)
+        str = Avx2.Or(t1.AsSByte(), t3.AsSByte()); // Each byte is a 6-bit index in the range 0..63.
 
-        // 変換: index<=25 → +'A'、26..51 → +('a'-26)、52..61 → +('0'-52)、62 → '+'、63 → '/'
+        // Convert indices: <=25 -> +'A', 26..51 -> +('a'-26),
+        // 52..61 -> +('0'-52), 62 -> '+', 63 -> '/'.
         Vector256<byte> indices = Avx2.SubtractSaturate(str.AsByte(), const51.AsByte());
         Vector256<sbyte> mask = Avx2.CompareGreaterThan(str, const25);
         Vector256<sbyte> lutIdx = Avx2.Subtract(indices.AsSByte(), mask);
@@ -422,7 +541,7 @@ public static unsafe class FastBase64
     }
 
     // ------------------------------------------------------------------
-    // エンコード コア: bytes → UTF-8 bytes
+    // Encoding core: bytes -> UTF-8 bytes
     // ------------------------------------------------------------------
 
     private static void EncodeBytesCore(byte* srcStart, int srcLength, byte* destStart)
@@ -431,13 +550,14 @@ public static unsafe class FastBase64
         byte* dest = destStart;
         byte* srcEnd = srcStart + (uint)srcLength;
 
-        // ---- AVX2: 24 バイト → 32 文字 / ループ ----
+        // ---- AVX2: 24 bytes -> 32 characters per iteration ----
         if (Avx2.IsSupported && srcLength >= 32)
         {
             byte* srcMax = srcEnd - 32;
 
-            // 初回は src-4 を読めないため、src から 32B ロードして 4B 右論理シフト相当の
-            // レーン移動 (permutevar8x32) で位置合わせする
+            // The first iteration cannot read from src - 4, so load 32 bytes from src
+            // and align the data using a lane permutation equivalent to a logical
+            // four-byte right shift.
             Vector256<int> permute = Vector256.Create(0, 0, 1, 2, 3, 4, 5, 6);
             Vector256<sbyte> str = Avx.LoadVector256(src).AsSByte();
             str = Avx2.PermuteVar8x32(str.AsInt32(), permute).AsSByte();
@@ -451,12 +571,14 @@ public static unsafe class FastBase64
                 {
                     break;
                 }
-                // 2 回目以降: 下位レーンが 4B 分オーバーラップするよう src-4 からロード
+
+                // From the second iteration onward, load from src - 4 so that
+                // the lower lane overlaps the preceding input by four bytes.
                 str = Avx.LoadVector256(src - 4).AsSByte();
             }
         }
 
-        // ---- SSSE3: 12 バイト → 16 文字 / ループ ----
+        // ---- SSSE3: 12 bytes -> 16 characters per iteration ----
         if (Ssse3.IsSupported && srcEnd - src >= 16)
         {
             byte* srcMax = srcEnd - 16;
@@ -466,10 +588,11 @@ public static unsafe class FastBase64
                 Sse2.Store((sbyte*)dest, EncodeVector128(str));
                 src += 12;
                 dest += 16;
-            } while (src <= srcMax);
+            }
+            while (src <= srcMax);
         }
 
-        // ---- スカラー ----
+        // ---- Scalar ----
         ref byte map = ref MemoryMarshal.GetReference(EncodingMap);
         while (srcEnd - src >= 3)
         {
@@ -482,7 +605,7 @@ public static unsafe class FastBase64
             dest += 4;
         }
 
-        long remaining = srcEnd - src; // 0, 1, 2
+        long remaining = srcEnd - src; // 0, 1, or 2 bytes.
         if (remaining == 1)
         {
             uint t = (uint)(src[0] << 16);
@@ -502,8 +625,9 @@ public static unsafe class FastBase64
     }
 
     // ------------------------------------------------------------------
-    // エンコード コア: bytes → UTF-16 chars
-    //   (ASCII ベクトルを vpmovzxbw / punpcklbw でゼロ拡張して直接ストア)
+    // Encoding core: bytes -> UTF-16 chars
+    //   Zero-extends ASCII vectors using vpmovzxbw / punpcklbw and stores
+    //   them directly as UTF-16 characters.
     // ------------------------------------------------------------------
 
     private static void EncodeCharsCore(byte* srcStart, int srcLength, char* destStart)
@@ -512,7 +636,7 @@ public static unsafe class FastBase64
         char* dest = destStart;
         byte* srcEnd = srcStart + (uint)srcLength;
 
-        // ---- AVX2: 24 バイト → 32 文字 (64 バイトストア) / ループ ----
+        // ---- AVX2: 24 bytes -> 32 characters (64-byte store) per iteration ----
         if (Avx2.IsSupported && srcLength >= 32)
         {
             byte* srcMax = srcEnd - 32;
@@ -537,7 +661,7 @@ public static unsafe class FastBase64
             }
         }
 
-        // ---- SSSE3: 12 バイト → 16 文字 / ループ ----
+        // ---- SSSE3: 12 bytes -> 16 characters per iteration ----
         if (Ssse3.IsSupported && srcEnd - src >= 16)
         {
             byte* srcMax = srcEnd - 16;
@@ -549,10 +673,11 @@ public static unsafe class FastBase64
                 Sse2.Store((byte*)(dest + 8), Sse2.UnpackHigh(ascii, zero));
                 src += 12;
                 dest += 16;
-            } while (src <= srcMax);
+            }
+            while (src <= srcMax);
         }
 
-        // ---- スカラー ----
+        // ---- Scalar ----
         ref byte map = ref MemoryMarshal.GetReference(EncodingMap);
         while (srcEnd - src >= 3)
         {
@@ -585,14 +710,26 @@ public static unsafe class FastBase64
     }
 
     // ------------------------------------------------------------------
-    // デコード コア: SIMD 共通変換
+    // Decoding core: common SIMD transformation
     //
-    //   上位/下位ニブルの pshufb LUT でビットマスクを引き、AND 結果が
-    //   非ゼロなら不正文字 (ptest で一括検証)。有効文字は差分 LUT で
-    //   6bit 値へ変換し、pmaddubsw + pmaddwd + pshufb で 3 バイトに詰める。
+    // Uses pshufb lookup tables indexed by the high and low nibbles to
+    // derive validation bitmasks. A nonzero AND result indicates an invalid
+    // character and is checked collectively with ptest. Valid characters
+    // are converted to 6-bit values using an adjustment lookup table, then
+    // packed into three-byte groups using pmaddubsw, pmaddwd, and pshufb.
     // ------------------------------------------------------------------
 
-    /// <summary>32 文字 → 24 バイト。不正文字を含む場合 false (結果は未定義)。</summary>
+    /// <summary>
+    /// Decodes 32 Base64 characters into 24 bytes.
+    /// </summary>
+    /// <param name="str">The vector containing 32 Base64 characters.</param>
+    /// <param name="result">
+    /// When successful, receives the decoded bytes. The result is undefined if invalid characters are present.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if all characters are valid Base64 characters;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool DecodeVector256(Vector256<sbyte> str, out Vector256<sbyte> result)
     {
@@ -625,14 +762,14 @@ public static unsafe class FastBase64
         if (!Avx.TestZ(lo, hi))
         {
             result = default;
-            return false; // 不正文字あり
+            return false; // Contains an invalid character.
         }
 
         Vector256<sbyte> eq2F = Avx2.CompareEqual(str, mask2F);
         Vector256<sbyte> shift = Avx2.Shuffle(lutShift, Avx2.Add(eq2F, hiNibbles));
-        str = Avx2.Add(str, shift); // 各バイト = 6bit 値
+        str = Avx2.Add(str, shift); // Each byte is now a 6-bit value.
 
-        // (a<<6|b), (c<<6|d) → (a<<18|b<<12|c<<6|d) → 下位 3 バイトを詰める
+        // (a<<6|b), (c<<6|d) -> (a<<18|b<<12|c<<6|d), then pack the lower three bytes.
         Vector256<short> mergeAbBc = Avx2.MultiplyAddAdjacent(str.AsByte(), mergeConst0);
         Vector256<int> merged = Avx2.MultiplyAddAdjacent(mergeAbBc, mergeConst1);
         Vector256<sbyte> packed = Avx2.Shuffle(merged.AsSByte(), packBytesInLaneMask);
@@ -640,7 +777,15 @@ public static unsafe class FastBase64
         return true;
     }
 
-    /// <summary>16 文字 → 12 バイト。不正文字を含む場合 false。</summary>
+    /// <summary>
+    /// Decodes 16 Base64 characters into 12 bytes.
+    /// </summary>
+    /// <param name="str">The vector containing 16 Base64 characters.</param>
+    /// <param name="result">When successful, receives the decoded bytes.</param>
+    /// <returns>
+    /// <see langword="true"/> if all characters are valid Base64 characters;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool DecodeVector128(Vector128<sbyte> str, out Vector128<sbyte> result)
     {
@@ -663,7 +808,8 @@ public static unsafe class FastBase64
         Vector128<sbyte> hi = Ssse3.Shuffle(lutHi, hiNibbles);
         Vector128<sbyte> lo = Ssse3.Shuffle(lutLo, loNibbles);
 
-        // 検証: SSE4.1 の ptest があれば 1 命令、なければ SSE2 の pmovmskb で代替
+        // Validation uses the SSE4.1 ptest instruction when available;
+        // otherwise, it falls back to SSE2 pmovmskb.
         if (Sse41.IsSupported)
         {
             if (!Sse41.TestZ(lo, hi))
@@ -693,9 +839,10 @@ public static unsafe class FastBase64
     }
 
     // ------------------------------------------------------------------
-    // デコード コア: UTF-8 bytes → bytes
-    //   srcLength はパディング除去後の長さ。destEnd はバッファ終端
-    //   (SIMD ストアのはみ出し保護に使用)。
+    // Decoding core: UTF-8 bytes -> bytes
+    //   srcLength is the length after removing padding. destEnd points to
+    //   the end of the destination buffer and is used to prevent SIMD stores
+    //   from writing beyond the buffer.
     // ------------------------------------------------------------------
 
     private static bool DecodeFromUtf8Core(byte* srcStart, int srcLength, byte* destStart, byte* destEnd)
@@ -704,7 +851,8 @@ public static unsafe class FastBase64
         byte* dest = destStart;
         byte* srcEnd = srcStart + (uint)srcLength;
 
-        // ---- AVX2: 32 文字 → 24 バイト / ループ (ストアは 32B、有効 24B) ----
+        // ---- AVX2: 32 characters -> 24 bytes per iteration
+        //      (32-byte store, 24 valid bytes) ----
         if (Avx2.IsSupported && srcLength >= 32)
         {
             byte* srcMax = srcEnd - 32;
@@ -713,7 +861,7 @@ public static unsafe class FastBase64
                 Vector256<sbyte> str = Avx.LoadVector256(src).AsSByte();
                 if (!DecodeVector256(str, out Vector256<sbyte> decoded))
                 {
-                    break; // 不正文字はスカラーで正確に検出させる
+                    break; // Let the scalar path detect invalid characters precisely.
                 }
 
                 Avx.Store((sbyte*)dest, decoded);
@@ -722,7 +870,8 @@ public static unsafe class FastBase64
             }
         }
 
-        // ---- SSSE3: 16 文字 → 12 バイト / ループ (ストアは 16B、有効 12B) ----
+        // ---- SSSE3: 16 characters -> 12 bytes per iteration
+        //      (16-byte store, 12 valid bytes) ----
         if (Ssse3.IsSupported && srcEnd - src >= 16)
         {
             byte* srcMax = srcEnd - 16;
@@ -740,7 +889,7 @@ public static unsafe class FastBase64
             }
         }
 
-        // ---- スカラー: 4 文字 → 3 バイト ----
+        // ---- Scalar: 4 characters -> 3 bytes ----
         ref sbyte map = ref MemoryMarshal.GetReference(DecodingMap);
         while (srcEnd - src >= 4)
         {
@@ -761,7 +910,7 @@ public static unsafe class FastBase64
             dest += 3;
         }
 
-        // ---- 端数 (0, 2, 3 文字) ----
+        // ---- Remainder: 0, 2, or 3 characters ----
         long rem = srcEnd - src;
         if (rem == 2)
         {
@@ -787,13 +936,15 @@ public static unsafe class FastBase64
             dest[0] = (byte)(i0 << 2 | i1 >> 4);
             dest[1] = (byte)(i1 << 4 | i2 >> 2);
         }
+
         return true;
     }
 
     // ------------------------------------------------------------------
-    // デコード コア: UTF-16 chars → bytes
-    //   packus (飽和ナロー) で char → byte に落とす。非 ASCII 文字は
-    //   0 または 255 に飽和し、LUT 検証で必ず不正と判定される。
+    // Decoding core: UTF-16 chars -> bytes
+    //   Narrows chars to bytes using packus (saturating narrowing).
+    //   Non-ASCII characters saturate to either 0 or 255 and are therefore
+    //   guaranteed to be rejected by the lookup-table validation.
     // ------------------------------------------------------------------
 
     private static bool DecodeFromCharsCore(char* srcStart, int srcLength, byte* destStart, byte* destEnd)
@@ -802,7 +953,7 @@ public static unsafe class FastBase64
         byte* dest = destStart;
         char* srcEnd = srcStart + (uint)srcLength;
 
-        // ---- AVX2: 32 文字 (64B ロード ×2) → 24 バイト / ループ ----
+        // ---- AVX2: 32 characters (two 64-byte loads) -> 24 bytes per iteration ----
         if (Avx2.IsSupported && srcLength >= 32)
         {
             char* srcMax = srcEnd - 32;
@@ -811,7 +962,9 @@ public static unsafe class FastBase64
                 Vector256<short> c0 = Avx.LoadVector256((short*)src);
                 Vector256<short> c1 = Avx.LoadVector256((short*)(src + 16));
                 Vector256<byte> packed = Avx2.PackUnsignedSaturate(c0, c1);
-                // packus はレーン内で詰めるため 64bit 単位で並べ直す
+
+                // packus packs independently within each lane, so reorder
+                // the result in 64-bit units to restore sequential character order.
                 Vector256<sbyte> str = Avx2.Permute4x64(packed.AsInt64(), 0b_11_01_10_00).AsSByte();
                 if (!DecodeVector256(str, out Vector256<sbyte> decoded))
                 {
@@ -824,7 +977,7 @@ public static unsafe class FastBase64
             }
         }
 
-        // ---- SSSE3: 16 文字 → 12 バイト / ループ ----
+        // ---- SSSE3: 16 characters -> 12 bytes per iteration ----
         if (Ssse3.IsSupported && srcEnd - src >= 16)
         {
             char* srcMax = srcEnd - 16;
@@ -844,7 +997,7 @@ public static unsafe class FastBase64
             }
         }
 
-        // ---- スカラー ----
+        // ---- Scalar ----
         ref sbyte map = ref MemoryMarshal.GetReference(DecodingMap);
         while (srcEnd - src >= 4)
         {
@@ -908,6 +1061,7 @@ public static unsafe class FastBase64
             dest[0] = (byte)(i0 << 2 | i1 >> 4);
             dest[1] = (byte)(i1 << 4 | i2 >> 2);
         }
+
         return true;
     }
 }

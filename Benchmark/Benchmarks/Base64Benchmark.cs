@@ -16,8 +16,8 @@ public class Base64Benchmark
     private readonly string testString;
     // private readonly byte[] testUtf8B;
     private readonly string testStringB;
-    private char[] encoded;
-    private byte[] decoded;
+    private char[] encoded = [];
+    private byte[] decoded = [];
 
     // [Params(10, 32, MaxLength)]
     [Params(20, 200)]
@@ -74,6 +74,12 @@ public class Base64Benchmark
     }
 
     [Benchmark]
+    public int Base64_ByteArrayToSpan3()
+    {
+        return FastBase64.Encode(this.TestArray, this.encoded);
+    }
+
+    [Benchmark]
     public int Base64_SpanToByteArray()
     {
         Base64.Default.FromStringToSpan(this.encoded, this.decoded, out var written);
@@ -85,6 +91,12 @@ public class Base64Benchmark
     {
         Benchmark.Design.Base64.FromCharsToByteArray(this.encoded, this.decoded, out var written);
         return written;
+    }
+
+    [Benchmark]
+    public int Base64_SpanToByteArray3()
+    {
+        return FastBase64.Decode(this.encoded, this.decoded);
     }
 
     /*[Benchmark]
