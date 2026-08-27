@@ -17,6 +17,7 @@ public class Base64Benchmark
     // private readonly byte[] testUtf8B;
     private readonly string testStringB;
     private char[] encoded = [];
+    private char[] encodedUrl = [];
     private byte[] decoded = [];
 
     // [Params(10, 32, MaxLength)]
@@ -48,9 +49,14 @@ public class Base64Benchmark
     public void Setup()
     {
         this.encoded = new char[Base64.Default.GetEncodedLength(this.TestArray.Length)];
+        this.encodedUrl = new char[Base64.Url.GetEncodedLength(this.TestArray.Length)];
         this.decoded = new byte[this.TestArray.Length];
         Base64.Default.FromByteArrayToSpan(this.TestArray, this.encoded, out var written);
         Base64.Default.FromStringToSpan(this.encoded, this.decoded, out written);
+        Debug.Assert(this.TestArray.SequenceEqual(this.decoded));
+
+        Base64.Url.FromByteArrayToSpan(this.TestArray, this.encodedUrl, out written);
+        Base64.Url.FromStringToSpan(this.encodedUrl, this.decoded, out written);
         Debug.Assert(this.TestArray.SequenceEqual(this.decoded));
     }
 
@@ -66,7 +72,7 @@ public class Base64Benchmark
         return written;
     }
 
-    [Benchmark]
+    // [Benchmark]
     public int Base64_ByteArrayToSpan2()
     {
         Benchmark.Design.Base64.FromByteArrayToChars(this.TestArray, this.encoded, out var written);
@@ -86,7 +92,7 @@ public class Base64Benchmark
         return written;
     }
 
-    [Benchmark]
+    // [Benchmark]
     public int Base64_SpanToByteArray2()
     {
         Benchmark.Design.Base64.FromCharsToByteArray(this.encoded, this.decoded, out var written);
@@ -95,6 +101,32 @@ public class Base64Benchmark
 
     [Benchmark]
     public int Base64_SpanToByteArray3()
+    {
+        return FastBase64.Decode(this.encoded, this.decoded);
+    }
+
+    [Benchmark]
+    public int Base64_ByteArrayToSpanUrl()
+    {
+        Base64.Url.FromByteArrayToSpan(this.TestArray, this.encodedUrl, out var written);
+        return written;
+    }
+
+    [Benchmark]
+    public int Base64_ByteArrayToSpan3Url()
+    {
+        return FastBase64.Encode(this.TestArray, this.encoded);
+    }
+
+    [Benchmark]
+    public int Base64_SpanToByteArrayUrl()
+    {
+        Base64.Url.FromStringToSpan(this.encodedUrl, this.decoded, out var written);
+        return written;
+    }
+
+    [Benchmark]
+    public int Base64_SpanToByteArray3Url()
     {
         return FastBase64.Decode(this.encoded, this.decoded);
     }
