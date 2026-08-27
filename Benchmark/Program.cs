@@ -20,11 +20,12 @@ public class Program
         Console.WriteLine("Arc.Crypto Benchmark.");
 
         // RandomVaultBenchmark.Test1();
-        DebugRun<StringHashBenchmark>();
+        DebugRun<Base64Benchmark>();
 
         // var summary = BenchmarkRunner.Run<SpeedBenchmark>();
         var switcher = new BenchmarkSwitcher(new[]
         {
+            typeof(Base64Benchmark),
             typeof(GetEncodedLengthBenchmark),
             typeof(Utf16HashtableBenchmark),
             typeof(PasswordHashBenchmark),
@@ -39,7 +40,6 @@ public class Program
             typeof(AesBenchmark),
             typeof(StandardHashBenchmark),
             typeof(Base32ImplBenchmark),
-            typeof(Base64Benchmark),
             typeof(HexStringBenchmark),
             typeof(RandomVaultBenchmark),
             typeof(CryptoRandom_NextBytes),

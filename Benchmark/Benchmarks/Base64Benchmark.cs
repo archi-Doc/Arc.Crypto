@@ -1,6 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Diagnostics;
 using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
 
@@ -15,6 +16,8 @@ public class Base64Benchmark
     private readonly string testString;
     // private readonly byte[] testUtf8B;
     private readonly string testStringB;
+    private char[] encoded;
+    private byte[] decoded;
 
     // [Params(10, 32, MaxLength)]
     [Params(MaxLength)]
@@ -44,6 +47,11 @@ public class Base64Benchmark
     [GlobalSetup]
     public void Setup()
     {
+        this.encoded = new char[Base64.Default.GetEncodedLength(this.TestArray.Length)];
+        this.decoded = new byte[this.TestArray.Length];
+        Base64.Default.FromByteArrayToSpan(this.TestArray, this.encoded, out var written);
+        Base64.Default.FromStringToSpan(this.encoded, this.decoded, out written);
+        Debug.Assert(this.TestArray.SequenceEqual(this.decoded));
     }
 
     [GlobalCleanup]
@@ -51,23 +59,51 @@ public class Base64Benchmark
     {
     }
 
-    // [Benchmark]
+    [Benchmark]
+    public int Base64_ByteArrayToSpan()
+    {
+        Base64.Default.FromByteArrayToSpan(this.TestArray, this.encoded, out var written);
+        return written;
+    }
+
+    [Benchmark]
+    public int Base64_ByteArrayToSpan2()
+    {
+        Benchmark.Design.Base64.FromByteArrayToChars(this.TestArray, this.encoded, out var written);
+        return written;
+    }
+
+    [Benchmark]
+    public int Base64_SpanToByteArray()
+    {
+        Base64.Default.FromStringToSpan(this.encoded, this.decoded, out var written);
+        return written;
+    }
+
+    [Benchmark]
+    public int Base64_SpanToByteArray2()
+    {
+        Benchmark.Design.Base64.FromCharsToByteArray(this.encoded, this.decoded, out var written);
+        return written;
+    }
+
+    /*[Benchmark]
     public string Base64_ByteArrayToString()
         => Base64.Default.FromByteArrayToString(this.TestArray);
 
-    /*[Benchmark]
+    [Benchmark]
     public string gfoidl_ByteArrayToString()
         => gfoidl.Base64.Base64.Default.Encode(this.TestArray);
 
     [Benchmark]
     public string Convert_ByteArrayToString()
-        => Convert.ToBase64String(this.TestArray);*/
+        => Convert.ToBase64String(this.TestArray);
 
     // [Benchmark]
     public string Base64Obsolete_ByteArrayToString()
-       => Benchmark.Design.Base64.FromByteArrayToString(this.TestArray);
+       => Benchmark.Design.Base64.FromByteArrayToString(this.TestArray);*/
 
-    [Benchmark]
+    /*[Benchmark]
     public string Base32Reference_ByteArrayToString()
         => Base32Sort.Reference.FromByteArrayToString(this.TestArray);
 
@@ -85,7 +121,7 @@ public class Base64Benchmark
 
     [Benchmark]
     public byte[] Convert_StringToByteArray()
-        => Convert.FromBase64String(this.testString);*/
+        => Convert.FromBase64String(this.testString);
 
     // [Benchmark]
     public byte[]? Base64Obsolete_StringToByteArray()
@@ -97,5 +133,5 @@ public class Base64Benchmark
 
     [Benchmark]
     public byte[] Base32Table_StringToByteArray()
-        => Base32Sort.Table.FromStringToByteArray(this.testStringB);
+        => Base32Sort.Table.FromStringToByteArray(this.testStringB);*/
 }
