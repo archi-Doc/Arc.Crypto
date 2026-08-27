@@ -1,5 +1,32 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+// ============================================================================
+//  FastBase64.cs
+//
+//  High-performance Base64 / Base64Url encoding and decoding for x86/x64
+//  using SIMD intrinsics (SSE2 / SSSE3 / SSE4.1 / AVX / AVX2).
+//
+//  The algorithm is based on the SIMD Base64 technique by Wojciech Muła et al.
+//  ("Base64 encoding and decoding at almost the speed of a memory copy"),
+//  as proven in aklomp/base64 and the .NET runtime:
+//
+//      Encode: 24 bytes -> 32 chars per loop (AVX2), 12 -> 16 (SSSE3)
+//      Decode: 32 chars -> 24 bytes per loop (AVX2), 16 -> 12 (SSSE3)
+//
+//  - The fastest available path (AVX2 / SSSE3+SSE4.1 / SSSE3 / scalar) is
+//    selected at run time. SSE4.2 string instructions offer no benefit for
+//    Base64, so validation uses the SSE4.1 `ptest` instruction, falling back
+//    to SSE2 `pmovmskb` on older CPUs.
+//  - Both alphabets are implemented through zero-cost generic specialization
+//    (a value-type parameter with static abstract members): the JIT compiles
+//    a dedicated body per alphabet, so there is no per-call branching.
+//  - FastBase64:    standard alphabet (A-Z a-z 0-9 + /), '=' padded output.
+//  - FastBase64Url: URL-safe alphabet (A-Z a-z 0-9 - _), unpadded output
+//    (RFC 4648 section 5); decoding accepts both padded and unpadded input.
+//  - Decoding is strict: whitespace is not accepted.
+//  - Requires .NET 7+ (static abstract interface members); .NET 8 recommended.
+// ============================================================================
+
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -10,21 +37,22 @@ namespace Arc.Crypto;
 
 #pragma warning disable SA1117
 #pragma warning disable SA1519 // Braces should not be omitted from multi-line child statement
+#pragma warning disable SA1202 // Elements should be ordered by access
 
+/// <summary>
+/// High-performance Base64 codec using the standard alphabet
+/// (<c>A-Z a-z 0-9 + /</c>) with <c>'='</c> padding (RFC 4648 section 4).
+/// </summary>
 public static unsafe class FastBase64
 {
-    // ------------------------------------------------------------------
-    // Length calculation
-    // ------------------------------------------------------------------
-
     /// <summary>
-    /// Gets the exact number of Base64 characters required to encode the specified number of bytes,
-    /// including padding characters.
+    /// Returns the exact number of characters produced by encoding
+    /// <paramref name="byteCount"/> bytes, including padding.
     /// </summary>
-    /// <param name="byteCount">The number of bytes to encode.</param>
-    /// <returns>The exact number of Base64 characters required.</returns>
+    /// <param name="byteCount">Number of input bytes.</param>
+    /// <returns>Encoded length in characters (always a multiple of 4).</returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// <paramref name="byteCount"/> is negative, or the encoded length exceeds <see cref="int.MaxValue"/>.
+    /// <paramref name="byteCount"/> is negative, or the result exceeds <see cref="int.MaxValue"/>.
     /// </exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetEncodedLength(int byteCount)
@@ -44,14 +72,13 @@ public static unsafe class FastBase64
     }
 
     /// <summary>
-    /// Gets the maximum number of decoded bytes for a Base64 sequence of the specified length.
-    /// This value can be used as a safe destination buffer size regardless of padding.
+    /// Returns an upper bound for the number of bytes produced by decoding an
+    /// encoded sequence of <paramref name="encodedLength"/> characters.
+    /// Safe to use as a destination buffer size for padded or unpadded input.
     /// </summary>
-    /// <param name="encodedLength">The length of the Base64-encoded sequence.</param>
-    /// <returns>The maximum number of decoded bytes.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// <paramref name="encodedLength"/> is negative.
-    /// </exception>
+    /// <param name="encodedLength">Length of the encoded input in characters.</param>
+    /// <returns>Maximum decoded length in bytes.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="encodedLength"/> is negative.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetMaxDecodedLength(int encodedLength)
     {
@@ -64,317 +91,313 @@ public static unsafe class FastBase64
     }
 
     /// <summary>
-    /// Gets the exact number of bytes produced by decoding the specified UTF-8 Base64 sequence.
-    /// Trailing padding characters are taken into account.
+    /// Returns the exact number of bytes produced by decoding
+    /// <paramref name="utf8"/> (trailing <c>'='</c> padding is inspected).
     /// </summary>
-    /// <param name="utf8">The Base64 sequence represented as UTF-8 (ASCII) bytes.</param>
-    /// <returns>The exact number of decoded bytes.</returns>
-    /// <exception cref="FormatException">
-    /// The Base64 sequence has an invalid length.
-    /// </exception>
-    public static int GetDecodedLength(ReadOnlySpan<byte> utf8)
-    {
-        int len = TrimPadding(utf8, out _);
-        return DecodedLengthFromTrimmed(len);
-    }
+    /// <param name="utf8">Encoded input as UTF-8/ASCII bytes.</param>
+    /// <returns>Exact decoded length in bytes.</returns>
+    /// <exception cref="FormatException">The input length is not a valid Base64 length.</exception>
+    public static int GetDecodedLength(ReadOnlySpan<byte> utf8) =>
+        B64.ExactDecodedLength(B64.TrimPadding(utf8, out _));
+
+    /// <inheritdoc cref="GetDecodedLength(ReadOnlySpan{byte})"/>
+    /// <param name="chars">Encoded input as UTF-16 characters.</param>
+    public static int GetDecodedLength(ReadOnlySpan<char> chars) =>
+        B64.ExactDecodedLength(B64.TrimPadding(chars, out _));
 
     /// <summary>
-    /// Gets the exact number of bytes produced by decoding the specified Base64 character sequence.
-    /// Trailing padding characters are taken into account.
+    /// Encodes <paramref name="bytes"/> into UTF-8/ASCII Base64 text.
     /// </summary>
-    /// <param name="chars">The Base64 character sequence.</param>  
-    /// <returns>The exact number of decoded bytes.</returns>
-    /// <exception cref="FormatException">
-    /// The Base64 sequence has an invalid length.
-    /// </exception>
-    public static int GetDecodedLength(ReadOnlySpan<char> chars)
-    {
-        int len = TrimPadding(chars, out _);
-        return DecodedLengthFromTrimmed(len);
-    }
-
-    // ------------------------------------------------------------------
-    // Encoding (public API)
-    // ------------------------------------------------------------------
+    /// <param name="bytes">Input data.</param>
+    /// <param name="utf8Destination">Destination buffer; must hold at least
+    /// <see cref="GetEncodedLength(int)"/> bytes.</param>
+    /// <returns>The number of bytes written.</returns>
+    /// <exception cref="ArgumentException">The destination buffer is too small.</exception>
+    public static int Encode(ReadOnlySpan<byte> bytes, Span<byte> utf8Destination) =>
+        B64.EncodeToUtf8<B64.Std>(bytes, utf8Destination, GetEncodedLength(bytes.Length));
 
     /// <summary>
-    /// Encodes the specified bytes as Base64 into a UTF-8 (ASCII) byte destination.
+    /// Encodes <paramref name="bytes"/> into UTF-16 Base64 text.
     /// </summary>
-    /// <param name="bytes">The bytes to encode.</param>
-    /// <param name="utf8Destination">The destination buffer that receives the Base64 UTF-8 bytes.</param>
-    /// <returns>The number of bytes written to <paramref name="utf8Destination"/>.</returns>
-    /// <exception cref="ArgumentException">
-    /// <paramref name="utf8Destination"/> is too small to contain the encoded data.
-    /// </exception>
-    public static int Encode(ReadOnlySpan<byte> bytes, Span<byte> utf8Destination)
-    {
-        int encodedLength = GetEncodedLength(bytes.Length);
-        if (utf8Destination.Length < encodedLength)
-        {
-            throw new ArgumentException("Destination is too small.", nameof(utf8Destination));
-        }
-
-        if (bytes.IsEmpty)
-        {
-            return 0;
-        }
-
-        fixed (byte* src = &MemoryMarshal.GetReference(bytes))
-        fixed (byte* dest = &MemoryMarshal.GetReference(utf8Destination))
-        {
-            EncodeBytesCore(src, bytes.Length, dest);
-        }
-
-        return encodedLength;
-    }
+    /// <param name="bytes">Input data.</param>
+    /// <param name="charsDestination">Destination buffer; must hold at least
+    /// <see cref="GetEncodedLength(int)"/> characters.</param>
+    /// <returns>The number of characters written.</returns>
+    /// <exception cref="ArgumentException">The destination buffer is too small.</exception>
+    public static int Encode(ReadOnlySpan<byte> bytes, Span<char> charsDestination) =>
+        B64.EncodeToChars<B64.Std>(bytes, charsDestination, GetEncodedLength(bytes.Length));
 
     /// <summary>
-    /// Encodes the specified bytes as Base64 into a UTF-16 character destination.
+    /// Encodes <paramref name="bytes"/> into a new Base64 <see cref="string"/>.
     /// </summary>
-    /// <param name="bytes">The bytes to encode.</param>
-    /// <param name="charsDestination">The destination buffer that receives the Base64 characters.</param>
-    /// <returns>The number of characters written to <paramref name="charsDestination"/>.</returns>
-    /// <exception cref="ArgumentException">
-    /// <paramref name="charsDestination"/> is too small to contain the encoded data.
-    /// </exception>
-    public static int Encode(ReadOnlySpan<byte> bytes, Span<char> charsDestination)
-    {
-        int encodedLength = GetEncodedLength(bytes.Length);
-        if (charsDestination.Length < encodedLength)
-        {
-            throw new ArgumentException("Destination is too small.", nameof(charsDestination));
-        }
-
-        if (bytes.IsEmpty)
-        {
-            return 0;
-        }
-
-        fixed (byte* src = &MemoryMarshal.GetReference(bytes))
-        fixed (char* dest = &MemoryMarshal.GetReference(charsDestination))
-        {
-            EncodeCharsCore(src, bytes.Length, dest);
-        }
-
-        return encodedLength;
-    }
+    /// <param name="bytes">Input data.</param>
+    /// <returns>The encoded string.</returns>
+    public static string EncodeToString(ReadOnlySpan<byte> bytes) =>
+        B64.EncodeToString<B64.Std>(bytes, GetEncodedLength(bytes.Length));
 
     /// <summary>
-    /// Encodes the specified bytes as Base64 and returns the result as a string.
+    /// Attempts to decode Base64 text given as UTF-8/ASCII bytes.
     /// </summary>
-    /// <param name="bytes">The bytes to encode.</param>
-    /// <returns>A Base64 string representing the input bytes.</returns>
-    public static string EncodeToString(ReadOnlySpan<byte> bytes)
-    {
-        if (bytes.IsEmpty)
-        {
-            return string.Empty;
-        }
-
-        int encodedLength = GetEncodedLength(bytes.Length);
-
-        // Write directly into the newly allocated string through a fixed pointer.
-        // This follows the same general pattern as string.Create and is safe because
-        // the string has just been allocated and is not yet referenced elsewhere.
-        string result = new string('\0', encodedLength);
-        fixed (char* dest = result)
-        fixed (byte* src = &MemoryMarshal.GetReference(bytes))
-        {
-            EncodeCharsCore(src, bytes.Length, dest);
-        }
-
-        return result;
-    }
-
-    // ------------------------------------------------------------------
-    // Decoding (public API)
-    // ------------------------------------------------------------------
+    /// <param name="utf8">Encoded input (padded or unpadded).</param>
+    /// <param name="bytesDestination">Destination buffer for the decoded bytes.</param>
+    /// <param name="bytesWritten">Receives the number of bytes written.</param>
+    /// <returns><see langword="false"/> if the input is invalid or the destination is too small.</returns>
+    public static bool TryDecode(ReadOnlySpan<byte> utf8, Span<byte> bytesDestination, out int bytesWritten) =>
+        B64.TryDecodeUtf8<B64.Std>(utf8, bytesDestination, out bytesWritten);
 
     /// <summary>
-    /// Attempts to decode a UTF-8 (ASCII) Base64 sequence into the specified byte destination.
+    /// Attempts to decode Base64 text given as UTF-16 characters.
     /// </summary>
-    /// <param name="utf8">The Base64 sequence represented as UTF-8 (ASCII) bytes.</param>
-    /// <param name="bytesDestination">The destination buffer that receives the decoded bytes.</param>
-    /// <param name="bytesWritten">
-    /// When this method returns, contains the number of bytes written to
-    /// <paramref name="bytesDestination"/>.
-    /// </param>
-    /// <returns>
-    /// <see langword="true"/> if decoding succeeds; otherwise, <see langword="false"/>
-    /// if the input is invalid or the destination buffer is too small.
-    /// </returns>
-    public static bool TryDecode(ReadOnlySpan<byte> utf8, Span<byte> bytesDestination, out int bytesWritten)
-    {
-        bytesWritten = 0;
-        int len = TrimPadding(utf8, out bool ok);
-        if (!ok)
-        {
-            return false;
-        }
-
-        int required = DecodedLengthFromTrimmedNoThrow(len);
-        if (required < 0 || bytesDestination.Length < required)
-        {
-            return false;
-        }
-
-        if (len == 0)
-        {
-            return true;
-        }
-
-        fixed (byte* src = &MemoryMarshal.GetReference(utf8))
-        fixed (byte* dest = &MemoryMarshal.GetReference(bytesDestination))
-        {
-            if (!DecodeFromUtf8Core(src, len, dest, dest + bytesDestination.Length))
-            {
-                return false;
-            }
-        }
-
-        bytesWritten = required;
-        return true;
-    }
+    /// <param name="chars">Encoded input (padded or unpadded).</param>
+    /// <param name="bytesDestination">Destination buffer for the decoded bytes.</param>
+    /// <param name="bytesWritten">Receives the number of bytes written.</param>
+    /// <returns><see langword="false"/> if the input is invalid or the destination is too small.</returns>
+    public static bool TryDecode(ReadOnlySpan<char> chars, Span<byte> bytesDestination, out int bytesWritten) =>
+        B64.TryDecodeChars<B64.Std>(chars, bytesDestination, out bytesWritten);
 
     /// <summary>
-    /// Attempts to decode a UTF-16 Base64 character sequence into the specified byte destination.
+    /// Decodes Base64 text given as UTF-8/ASCII bytes.
     /// </summary>
-    /// <param name="chars">The Base64 character sequence.</param>
-    /// <param name="bytesDestination">The destination buffer that receives the decoded bytes.</param>
-    /// <param name="bytesWritten">
-    /// When this method returns, contains the number of bytes written to
-    /// <paramref name="bytesDestination"/>.
-    /// </param>
-    /// <returns>
-    /// <see langword="true"/> if decoding succeeds; otherwise, <see langword="false"/>
-    /// if the input is invalid or the destination buffer is too small.
-    /// </returns>
-    public static bool TryDecode(ReadOnlySpan<char> chars, Span<byte> bytesDestination, out int bytesWritten)
-    {
-        bytesWritten = 0;
-        int len = TrimPadding(chars, out bool ok);
-        if (!ok)
-        {
-            return false;
-        }
-
-        int required = DecodedLengthFromTrimmedNoThrow(len);
-        if (required < 0 || bytesDestination.Length < required)
-        {
-            return false;
-        }
-
-        if (len == 0)
-        {
-            return true;
-        }
-
-        fixed (char* src = &MemoryMarshal.GetReference(chars))
-        fixed (byte* dest = &MemoryMarshal.GetReference(bytesDestination))
-        {
-            if (!DecodeFromCharsCore(src, len, dest, dest + bytesDestination.Length))
-            {
-                return false;
-            }
-        }
-
-        bytesWritten = required;
-        return true;
-    }
-
-    /// <summary>
-    /// Decodes a UTF-8 (ASCII) Base64 sequence into the specified byte destination.
-    /// </summary>
-    /// <param name="utf8">The Base64 sequence represented as UTF-8 (ASCII) bytes.</param>
-    /// <param name="bytesDestination">The destination buffer that receives the decoded bytes.</param>
-    /// <returns>The number of bytes written to <paramref name="bytesDestination"/>.</returns>
-    /// <exception cref="ArgumentException">
-    /// <paramref name="bytesDestination"/> may be too small to contain the decoded data.
-    /// </exception>
-    /// <exception cref="FormatException">
-    /// The input is not a valid Base64 sequence.
-    /// </exception>
+    /// <param name="utf8">Encoded input (padded or unpadded).</param>
+    /// <param name="bytesDestination">Destination buffer for the decoded bytes.</param>
+    /// <returns>The number of bytes written.</returns>
+    /// <exception cref="FormatException">The input is not valid Base64, or the destination is too small.</exception>
     public static int Decode(ReadOnlySpan<byte> utf8, Span<byte> bytesDestination)
     {
         if (!TryDecode(utf8, bytesDestination, out int written))
         {
-            ThrowInvalidBase64(bytesDestination.Length, utf8.Length);
+            B64.ThrowInvalidBase64();
         }
 
         return written;
     }
 
     /// <summary>
-    /// Decodes a UTF-16 Base64 character sequence into the specified byte destination.
+    /// Decodes Base64 text given as UTF-16 characters.
     /// </summary>
-    /// <param name="chars">The Base64 character sequence.</param>
-    /// <param name="bytesDestination">The destination buffer that receives the decoded bytes.</param>
-    /// <returns>The number of bytes written to <paramref name="bytesDestination"/>.</returns>
-    /// <exception cref="ArgumentException">
-    /// <paramref name="bytesDestination"/> may be too small to contain the decoded data.
-    /// </exception>
-    /// <exception cref="FormatException">
-    /// The input is not a valid Base64 sequence.
-    /// </exception>
+    /// <param name="chars">Encoded input (padded or unpadded).</param>
+    /// <param name="bytesDestination">Destination buffer for the decoded bytes.</param>
+    /// <returns>The number of bytes written.</returns>
+    /// <exception cref="FormatException">The input is not valid Base64, or the destination is too small.</exception>
     public static int Decode(ReadOnlySpan<char> chars, Span<byte> bytesDestination)
     {
         if (!TryDecode(chars, bytesDestination, out int written))
         {
-            ThrowInvalidBase64(bytesDestination.Length, chars.Length);
+            B64.ThrowInvalidBase64();
         }
 
         return written;
     }
 
     /// <summary>
-    /// Decodes the specified Base64 string and returns the decoded bytes in a new array.
+    /// Decodes a Base64 <see cref="string"/> into a new byte array.
     /// </summary>
-    /// <param name="base64">The Base64 string to decode.</param>
-    /// <returns>A byte array containing the decoded data.</returns>
-    /// <exception cref="ArgumentNullException">
-    /// <paramref name="base64"/> is <see langword="null"/>.
-    /// </exception>
-    /// <exception cref="FormatException">
-    /// <paramref name="base64"/> is not a valid Base64 string.
-    /// </exception>
+    /// <param name="base64">Encoded input (padded or unpadded).</param>
+    /// <returns>The decoded bytes.</returns>
+    /// <exception cref="FormatException">The input is not valid Base64.</exception>
     public static byte[] Decode(string base64)
     {
         ArgumentNullException.ThrowIfNull(base64);
-        ReadOnlySpan<char> chars = base64;
-        int required = GetDecodedLength(chars); // Throws FormatException here if the length is invalid.
-        if (required == 0)
+        return B64.DecodeToArray<B64.Std>(base64);
+    }
+}
+
+/// <summary>
+/// High-performance Base64 codec using the URL- and filename-safe alphabet
+/// (<c>A-Z a-z 0-9 - _</c>, RFC 4648 section 5). Encoding emits no padding;
+/// decoding accepts both padded and unpadded input.
+/// </summary>
+public static unsafe class FastBase64Url
+{
+    /// <summary>
+    /// Returns the exact number of characters produced by encoding
+    /// <paramref name="byteCount"/> bytes (no padding is emitted).
+    /// </summary>
+    /// <param name="byteCount">Number of input bytes.</param>
+    /// <returns>Encoded length in characters.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="byteCount"/> is negative, or the result exceeds <see cref="int.MaxValue"/>.
+    /// </exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int GetEncodedLength(int byteCount)
+    {
+        if (byteCount < 0)
         {
-            return Array.Empty<byte>();
+            throw new ArgumentOutOfRangeException(nameof(byteCount));
         }
 
-        byte[] result = new byte[required];
-        if (!TryDecode(chars, result, out _))
+        long len = (((long)byteCount * 4) + 2) / 3; // ceil(4n/3)
+        if (len > int.MaxValue)
         {
-            throw new FormatException("The input is not a valid Base64 string.");
+            throw new ArgumentOutOfRangeException(nameof(byteCount), "Encoded length exceeds Int32.MaxValue.");
         }
 
-        return result;
+        return (int)len;
+    }
+
+    /// <summary>
+    /// Returns an upper bound for the number of bytes produced by decoding an
+    /// encoded sequence of <paramref name="encodedLength"/> characters.
+    /// Safe to use as a destination buffer size for padded or unpadded input.
+    /// </summary>
+    /// <param name="encodedLength">Length of the encoded input in characters.</param>
+    /// <returns>Maximum decoded length in bytes.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="encodedLength"/> is negative.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int GetMaxDecodedLength(int encodedLength)
+    {
+        if (encodedLength < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(encodedLength));
+        }
+
+        return (int)((long)encodedLength * 3 / 4);
+    }
+
+    /// <summary>
+    /// Returns the exact number of bytes produced by decoding
+    /// <paramref name="utf8"/> (trailing <c>'='</c> padding is inspected).
+    /// </summary>
+    /// <param name="utf8">Encoded input as UTF-8/ASCII bytes.</param>
+    /// <returns>Exact decoded length in bytes.</returns>
+    /// <exception cref="FormatException">The input length is not a valid Base64Url length.</exception>
+    public static int GetDecodedLength(ReadOnlySpan<byte> utf8) =>
+        B64.ExactDecodedLength(B64.TrimPadding(utf8, out _));
+
+    /// <inheritdoc cref="GetDecodedLength(ReadOnlySpan{byte})"/>
+    /// <param name="chars">Encoded input as UTF-16 characters.</param>
+    public static int GetDecodedLength(ReadOnlySpan<char> chars) =>
+        B64.ExactDecodedLength(B64.TrimPadding(chars, out _));
+
+    /// <summary>
+    /// Encodes <paramref name="bytes"/> into UTF-8/ASCII Base64Url text (unpadded).
+    /// </summary>
+    /// <param name="bytes">Input data.</param>
+    /// <param name="utf8Destination">Destination buffer; must hold at least
+    /// <see cref="GetEncodedLength(int)"/> bytes.</param>
+    /// <returns>The number of bytes written.</returns>
+    /// <exception cref="ArgumentException">The destination buffer is too small.</exception>
+    public static int Encode(ReadOnlySpan<byte> bytes, Span<byte> utf8Destination) =>
+        B64.EncodeToUtf8<B64.Url>(bytes, utf8Destination, GetEncodedLength(bytes.Length));
+
+    /// <summary>
+    /// Encodes <paramref name="bytes"/> into UTF-16 Base64Url text (unpadded).
+    /// </summary>
+    /// <param name="bytes">Input data.</param>
+    /// <param name="charsDestination">Destination buffer; must hold at least
+    /// <see cref="GetEncodedLength(int)"/> characters.</param>
+    /// <returns>The number of characters written.</returns>
+    /// <exception cref="ArgumentException">The destination buffer is too small.</exception>
+    public static int Encode(ReadOnlySpan<byte> bytes, Span<char> charsDestination) =>
+        B64.EncodeToChars<B64.Url>(bytes, charsDestination, GetEncodedLength(bytes.Length));
+
+    /// <summary>
+    /// Encodes <paramref name="bytes"/> into a new Base64Url <see cref="string"/> (unpadded).
+    /// </summary>
+    /// <param name="bytes">Input data.</param>
+    /// <returns>The encoded string.</returns>
+    public static string EncodeToString(ReadOnlySpan<byte> bytes) =>
+        B64.EncodeToString<B64.Url>(bytes, GetEncodedLength(bytes.Length));
+
+    /// <summary>
+    /// Attempts to decode Base64Url text given as UTF-8/ASCII bytes.
+    /// </summary>
+    /// <param name="utf8">Encoded input (padded or unpadded).</param>
+    /// <param name="bytesDestination">Destination buffer for the decoded bytes.</param>
+    /// <param name="bytesWritten">Receives the number of bytes written.</param>
+    /// <returns><see langword="false"/> if the input is invalid or the destination is too small.</returns>
+    public static bool TryDecode(ReadOnlySpan<byte> utf8, Span<byte> bytesDestination, out int bytesWritten) =>
+        B64.TryDecodeUtf8<B64.Url>(utf8, bytesDestination, out bytesWritten);
+
+    /// <summary>
+    /// Attempts to decode Base64Url text given as UTF-16 characters.
+    /// </summary>
+    /// <param name="chars">Encoded input (padded or unpadded).</param>
+    /// <param name="bytesDestination">Destination buffer for the decoded bytes.</param>
+    /// <param name="bytesWritten">Receives the number of bytes written.</param>
+    /// <returns><see langword="false"/> if the input is invalid or the destination is too small.</returns>
+    public static bool TryDecode(ReadOnlySpan<char> chars, Span<byte> bytesDestination, out int bytesWritten) =>
+        B64.TryDecodeChars<B64.Url>(chars, bytesDestination, out bytesWritten);
+
+    /// <summary>
+    /// Decodes Base64Url text given as UTF-8/ASCII bytes.
+    /// </summary>
+    /// <param name="utf8">Encoded input (padded or unpadded).</param>
+    /// <param name="bytesDestination">Destination buffer for the decoded bytes.</param>
+    /// <returns>The number of bytes written.</returns>
+    /// <exception cref="FormatException">The input is not valid Base64Url, or the destination is too small.</exception>
+    public static int Decode(ReadOnlySpan<byte> utf8, Span<byte> bytesDestination)
+    {
+        if (!TryDecode(utf8, bytesDestination, out int written))
+        {
+            B64.ThrowInvalidBase64();
+        }
+
+        return written;
+    }
+
+    /// <summary>
+    /// Decodes Base64Url text given as UTF-16 characters.
+    /// </summary>
+    /// <param name="chars">Encoded input (padded or unpadded).</param>
+    /// <param name="bytesDestination">Destination buffer for the decoded bytes.</param>
+    /// <returns>The number of bytes written.</returns>
+    /// <exception cref="FormatException">The input is not valid Base64Url, or the destination is too small.</exception>
+    public static int Decode(ReadOnlySpan<char> chars, Span<byte> bytesDestination)
+    {
+        if (!TryDecode(chars, bytesDestination, out int written))
+        {
+            B64.ThrowInvalidBase64();
+        }
+
+        return written;
+    }
+
+    /// <summary>
+    /// Decodes a Base64Url <see cref="string"/> into a new byte array.
+    /// </summary>
+    /// <param name="base64Url">Encoded input (padded or unpadded).</param>
+    /// <returns>The decoded bytes.</returns>
+    /// <exception cref="FormatException">The input is not valid Base64Url.</exception>
+    public static byte[] Decode(string base64Url)
+    {
+        ArgumentNullException.ThrowIfNull(base64Url);
+        return B64.DecodeToArray<B64.Url>(base64Url);
+    }
+}
+
+// ============================================================================
+//  Shared implementation core.
+//
+//  The alphabet is a value-type generic parameter with a static abstract
+//  member, so `T.IsUrl` is a JIT-time constant: each alphabet gets its own
+//  fully specialized native code with the unused branches eliminated.
+// ============================================================================
+internal static unsafe class B64
+{
+    internal interface IAlphabet
+    {
+        static abstract bool IsUrl { get; }
+    }
+
+    internal struct Std : IAlphabet
+    {
+        public static bool IsUrl => false;
+    }
+
+    internal struct Url : IAlphabet
+    {
+        public static bool IsUrl => true;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowInvalidBase64(int destLength, int srcLength)
-    {
-        if (destLength < GetMaxDecodedLength(srcLength))
-        {
-            throw new ArgumentException("Destination may be too small.", "bytesDestination");
-        }
+    internal static void ThrowInvalidBase64() =>
+        throw new FormatException("The input is not a valid Base64 sequence, or the destination buffer is too small.");
 
-        throw new FormatException("The input is not a valid Base64 sequence.");
-    }
-
-    // ------------------------------------------------------------------
-    // Length and padding helpers
-    // ------------------------------------------------------------------
-
-    // Returns the length excluding up to two trailing '=' padding characters.
-    // Sets ok to false if the padding layout is invalid.
+    // Returns the length without trailing '=' (at most 2). If padding is
+    // present but the total length is not a multiple of 4, ok = false.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int TrimPadding(ReadOnlySpan<byte> s, out bool ok)
+    internal static int TrimPadding(ReadOnlySpan<byte> s, out bool ok)
     {
         int len = s.Length;
         int trimmed = len;
@@ -387,13 +410,12 @@ public static unsafe class FastBase64
             }
         }
 
-        // When padding is present, the total encoded length must be a multiple of four.
         ok = trimmed == len || (len & 3) == 0;
         return trimmed;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int TrimPadding(ReadOnlySpan<char> s, out bool ok)
+    internal static int TrimPadding(ReadOnlySpan<char> s, out bool ok)
     {
         int len = s.Length;
         int trimmed = len;
@@ -410,10 +432,10 @@ public static unsafe class FastBase64
         return trimmed;
     }
 
-    // Converts the length after removing padding to the exact decoded byte count.
-    // A length where length % 4 == 1 is invalid and returns -1.
+    // Unpadded length -> exact decoded byte count; -1 if the length is invalid
+    // (length % 4 == 1 can never occur in valid Base64).
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int DecodedLengthFromTrimmedNoThrow(int trimmedLength)
+    internal static int DecodedLength(int trimmedLength)
     {
         int rem = trimmedLength & 3;
         if (rem == 1)
@@ -424,9 +446,9 @@ public static unsafe class FastBase64
         return ((trimmedLength >> 2) * 3) + (rem == 0 ? 0 : rem - 1);
     }
 
-    private static int DecodedLengthFromTrimmed(int trimmedLength)
+    internal static int ExactDecodedLength(int trimmedLength)
     {
-        int r = DecodedLengthFromTrimmedNoThrow(trimmedLength);
+        int r = DecodedLength(trimmedLength);
         if (r < 0)
         {
             throw new FormatException("Invalid Base64 length.");
@@ -436,14 +458,16 @@ public static unsafe class FastBase64
     }
 
     // ------------------------------------------------------------------
-    // Conversion tables
+    // Lookup tables (embedded as RVA static data; no allocation)
     // ------------------------------------------------------------------
 
     private static ReadOnlySpan<byte> EncodingMap =>
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"u8;
 
-    // ASCII to 6-bit value. Invalid characters map to -1.
-    // The table is embedded as static RVA data and does not allocate.
+    private static ReadOnlySpan<byte> UrlEncodingMap =>
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"u8;
+
+    // ASCII -> 6-bit value; -1 marks an invalid character.
     private static ReadOnlySpan<sbyte> DecodingMap => new sbyte[256]
     {
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 0- 15
@@ -464,33 +488,217 @@ public static unsafe class FastBase64
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     };
 
+    private static ReadOnlySpan<sbyte> UrlDecodingMap => new sbyte[256]
+    {
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 0- 15
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 16- 31
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, // 32- 47  '-'
+        52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, // 48- 63  '0'-'9'
+        -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, // 64- 79  'A'-'O'
+        15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, 63, // 80- 95  'P'-'Z' '_'
+        -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, // 96-111  'a'-'o'
+        41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1, // 112-127  'p'-'z'
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    };
+
     // ------------------------------------------------------------------
-    // Encoding core: common SIMD transformation
+    // Public-API plumbing (pin spans, dispatch to the pointer cores)
+    // ------------------------------------------------------------------
+
+    internal static int EncodeToUtf8<T>(ReadOnlySpan<byte> bytes, Span<byte> dest, int encodedLength)
+        where T : struct, IAlphabet
+    {
+        if (dest.Length < encodedLength)
+        {
+            throw new ArgumentException("Destination is too small.", nameof(dest));
+        }
+
+        if (bytes.IsEmpty)
+        {
+            return 0;
+        }
+
+        fixed (byte* src = &MemoryMarshal.GetReference(bytes))
+        fixed (byte* dst = &MemoryMarshal.GetReference(dest))
+        {
+            EncodeBytes<T>(src, bytes.Length, dst);
+        }
+
+        return encodedLength;
+    }
+
+    internal static int EncodeToChars<T>(ReadOnlySpan<byte> bytes, Span<char> dest, int encodedLength)
+        where T : struct, IAlphabet
+    {
+        if (dest.Length < encodedLength)
+        {
+            throw new ArgumentException("Destination is too small.", nameof(dest));
+        }
+
+        if (bytes.IsEmpty)
+        {
+            return 0;
+        }
+
+        fixed (byte* src = &MemoryMarshal.GetReference(bytes))
+        fixed (char* dst = &MemoryMarshal.GetReference(dest))
+        {
+            EncodeChars<T>(src, bytes.Length, dst);
+        }
+
+        return encodedLength;
+    }
+
+    internal static string EncodeToString<T>(ReadOnlySpan<byte> bytes, int encodedLength)
+        where T : struct, IAlphabet
+    {
+        if (bytes.IsEmpty)
+        {
+            return string.Empty;
+        }
+
+        // Write directly into a freshly allocated string (equivalent to the
+        // string.Create idiom; the string is not yet visible to anyone else).
+        string result = new string('\0', encodedLength);
+        fixed (char* dst = result)
+        fixed (byte* src = &MemoryMarshal.GetReference(bytes))
+        {
+            EncodeChars<T>(src, bytes.Length, dst);
+        }
+
+        return result;
+    }
+
+    internal static bool TryDecodeUtf8<T>(ReadOnlySpan<byte> utf8, Span<byte> dest, out int bytesWritten)
+        where T : struct, IAlphabet
+    {
+        bytesWritten = 0;
+        int len = TrimPadding(utf8, out bool ok);
+        if (!ok)
+        {
+            return false;
+        }
+
+        int required = DecodedLength(len);
+        if (required < 0 || dest.Length < required)
+        {
+            return false;
+        }
+
+        if (len == 0)
+        {
+            return true;
+        }
+
+        fixed (byte* src = &MemoryMarshal.GetReference(utf8))
+        fixed (byte* dst = &MemoryMarshal.GetReference(dest))
+        {
+            if (!DecodeUtf8<T>(src, len, dst, dst + dest.Length))
+            {
+                return false;
+            }
+        }
+
+        bytesWritten = required;
+        return true;
+    }
+
+    internal static bool TryDecodeChars<T>(ReadOnlySpan<char> chars, Span<byte> dest, out int bytesWritten)
+        where T : struct, IAlphabet
+    {
+        bytesWritten = 0;
+        int len = TrimPadding(chars, out bool ok);
+        if (!ok)
+        {
+            return false;
+        }
+
+        int required = DecodedLength(len);
+        if (required < 0 || dest.Length < required)
+        {
+            return false;
+        }
+
+        if (len == 0)
+        {
+            return true;
+        }
+
+        fixed (char* src = &MemoryMarshal.GetReference(chars))
+        fixed (byte* dst = &MemoryMarshal.GetReference(dest))
+        {
+            if (!DecodeChars<T>(src, len, dst, dst + dest.Length))
+            {
+                return false;
+            }
+        }
+
+        bytesWritten = required;
+        return true;
+    }
+
+    internal static byte[] DecodeToArray<T>(string s)
+        where T : struct, IAlphabet
+    {
+        ReadOnlySpan<char> chars = s;
+        int required = ExactDecodedLength(TrimPadding(chars, out bool ok));
+        if (!ok)
+        {
+            throw new FormatException("Invalid Base64 padding.");
+        }
+
+        if (required == 0)
+        {
+            return Array.Empty<byte>();
+        }
+
+        byte[] result = new byte[required];
+        if (!TryDecodeChars<T>(chars, result, out _))
+        {
+            ThrowInvalidBase64();
+        }
+
+        return result;
+    }
+
+    // ------------------------------------------------------------------
+    // Encode core: shared SIMD transform (Muła's method)
     //
-    // For each 32-bit lane of the input vector, the three source bytes are
-    // arranged as [b1, b0, b2, b1] in little-endian order. AND operations
-    // and multiply-shifts then split them into four 6-bit indices, which are
-    // converted to ASCII using saturated subtraction and a pshufb lookup table
-    // (Muła's technique).
+    //   Place 3 input bytes into each 32-bit lane as [b1, b0, b2, b1] (LE),
+    //   split them into four 6-bit indices with AND + multiply-shift tricks,
+    //   then map the indices to ASCII with saturating-subtract + pshufb LUT.
     // ------------------------------------------------------------------
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Vector256<sbyte> EncodeVector256(Vector256<sbyte> str)
+    private static Vector256<sbyte> EncodeVector256<T>(Vector256<sbyte> str)
+        where T : struct, IAlphabet
     {
-        // Shuffle mask that arranges three input bytes as [b1,b0,b2,b1] in each lane.
+        // Shuffle that places 3 source bytes into each lane as [b1,b0,b2,b1].
         Vector256<sbyte> shuffleVec = Vector256.Create(
-             5, 4, 6, 5, 8, 7, 9, 8, 11, 10, 12, 11, 14, 13, 15, 14,
-             1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10);
+            (sbyte)5, 4, 6, 5, 8, 7, 9, 8, 11, 10, 12, 11, 14, 13, 15, 14,
+            1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10);
 
         Vector256<sbyte> maskAC = Vector256.Create(0x0FC0FC00).AsSByte();
         Vector256<sbyte> maskBB = Vector256.Create(0x003F03F0).AsSByte();
         Vector256<ushort> shiftAC = Vector256.Create(0x04000040).AsUInt16();
         Vector256<short> shiftBB = Vector256.Create(0x01000010).AsInt16();
 
-        // 6-bit value to ASCII adjustment lookup table.
-        Vector256<sbyte> lut = Vector256.Create(
-            65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0,
-            65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0);
+        // 6-bit value -> ASCII delta LUT. Entry 12 maps value 62, entry 13
+        // maps value 63; only those two differ between the alphabets.
+        Vector256<sbyte> lut = T.IsUrl
+            ? Vector256.Create(
+                (sbyte)65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -17, 32, 0, 0,
+                65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -17, 32, 0, 0)
+            : Vector256.Create(
+                (sbyte)65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0,
+                65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0);
         Vector256<sbyte> const51 = Vector256.Create((sbyte)51);
         Vector256<sbyte> const25 = Vector256.Create((sbyte)25);
 
@@ -500,10 +708,9 @@ public static unsafe class FastBase64
         Vector256<sbyte> t2 = Avx2.And(str, maskBB);
         Vector256<ushort> t1 = Avx2.MultiplyHigh(t0.AsUInt16(), shiftAC);
         Vector256<short> t3 = Avx2.MultiplyLow(t2.AsInt16(), shiftBB);
-        str = Avx2.Or(t1.AsSByte(), t3.AsSByte()); // Each byte is a 6-bit index in the range 0..63.
+        str = Avx2.Or(t1.AsSByte(), t3.AsSByte()); // every byte = 6-bit index (0..63)
 
-        // Convert indices: <=25 -> +'A', 26..51 -> +('a'-26),
-        // 52..61 -> +('0'-52), 62 -> '+', 63 -> '/'.
+        // LUT index: 0 for 0..25, 1 for 26..51, 2..11 for 52..61, 12 for 62, 13 for 63.
         Vector256<byte> indices = Avx2.SubtractSaturate(str.AsByte(), const51.AsByte());
         Vector256<sbyte> mask = Avx2.CompareGreaterThan(str, const25);
         Vector256<sbyte> lutIdx = Avx2.Subtract(indices.AsSByte(), mask);
@@ -511,7 +718,8 @@ public static unsafe class FastBase64
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Vector128<sbyte> EncodeVector128(Vector128<sbyte> str)
+    private static Vector128<sbyte> EncodeVector128<T>(Vector128<sbyte> str)
+        where T : struct, IAlphabet
     {
         Vector128<sbyte> shuffleVec = Vector128.Create(
             (sbyte)1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10);
@@ -521,8 +729,9 @@ public static unsafe class FastBase64
         Vector128<ushort> shiftAC = Vector128.Create(0x04000040).AsUInt16();
         Vector128<short> shiftBB = Vector128.Create(0x01000010).AsInt16();
 
-        Vector128<sbyte> lut = Vector128.Create(
-            (sbyte)65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0);
+        Vector128<sbyte> lut = T.IsUrl
+            ? Vector128.Create((sbyte)65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -17, 32, 0, 0)
+            : Vector128.Create((sbyte)65, 71, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -19, -16, 0, 0);
         Vector128<sbyte> const51 = Vector128.Create((sbyte)51);
         Vector128<sbyte> const25 = Vector128.Create((sbyte)25);
 
@@ -541,30 +750,30 @@ public static unsafe class FastBase64
     }
 
     // ------------------------------------------------------------------
-    // Encoding core: bytes -> UTF-8 bytes
+    // Encode core: bytes -> UTF-8 bytes
     // ------------------------------------------------------------------
 
-    private static void EncodeBytesCore(byte* srcStart, int srcLength, byte* destStart)
+    internal static void EncodeBytes<T>(byte* srcStart, int srcLength, byte* destStart)
+        where T : struct, IAlphabet
     {
         byte* src = srcStart;
         byte* dest = destStart;
         byte* srcEnd = srcStart + (uint)srcLength;
 
-        // ---- AVX2: 24 bytes -> 32 characters per iteration ----
+        // ---- AVX2: 24 bytes -> 32 chars per loop ----
         if (Avx2.IsSupported && srcLength >= 32)
         {
             byte* srcMax = srcEnd - 32;
 
-            // The first iteration cannot read from src - 4, so load 32 bytes from src
-            // and align the data using a lane permutation equivalent to a logical
-            // four-byte right shift.
+            // The first block cannot read at src-4, so load 32 bytes at src and
+            // realign with a 4-byte lane rotation (permutevar8x32).
             Vector256<int> permute = Vector256.Create(0, 0, 1, 2, 3, 4, 5, 6);
             Vector256<sbyte> str = Avx.LoadVector256(src).AsSByte();
             str = Avx2.PermuteVar8x32(str.AsInt32(), permute).AsSByte();
 
             while (true)
             {
-                Avx.Store((sbyte*)dest, EncodeVector256(str));
+                Avx.Store((sbyte*)dest, EncodeVector256<T>(str));
                 src += 24;
                 dest += 32;
                 if (src > srcMax)
@@ -572,28 +781,28 @@ public static unsafe class FastBase64
                     break;
                 }
 
-                // From the second iteration onward, load from src - 4 so that
-                // the lower lane overlaps the preceding input by four bytes.
+                // Subsequent blocks: overlapping load at src-4 puts the 12
+                // payload bytes of each 128-bit lane where the shuffle expects.
                 str = Avx.LoadVector256(src - 4).AsSByte();
             }
         }
 
-        // ---- SSSE3: 12 bytes -> 16 characters per iteration ----
+        // ---- SSSE3: 12 bytes -> 16 chars per loop ----
         if (Ssse3.IsSupported && srcEnd - src >= 16)
         {
             byte* srcMax = srcEnd - 16;
             do
             {
                 Vector128<sbyte> str = Sse2.LoadVector128(src).AsSByte();
-                Sse2.Store((sbyte*)dest, EncodeVector128(str));
+                Sse2.Store((sbyte*)dest, EncodeVector128<T>(str));
                 src += 12;
                 dest += 16;
             }
             while (src <= srcMax);
         }
 
-        // ---- Scalar ----
-        ref byte map = ref MemoryMarshal.GetReference(EncodingMap);
+        // ---- Scalar tail ----
+        ref byte map = ref MemoryMarshal.GetReference(T.IsUrl ? UrlEncodingMap : EncodingMap);
         while (srcEnd - src >= 3)
         {
             uint t = (uint)(src[0] << 16 | src[1] << 8 | src[2]);
@@ -605,14 +814,17 @@ public static unsafe class FastBase64
             dest += 4;
         }
 
-        long remaining = srcEnd - src; // 0, 1, or 2 bytes.
+        long remaining = srcEnd - src; // 0, 1 or 2
         if (remaining == 1)
         {
             uint t = (uint)(src[0] << 16);
             dest[0] = Unsafe.Add(ref map, (nint)(t >> 18));
             dest[1] = Unsafe.Add(ref map, (nint)((t >> 12) & 0x3F));
-            dest[2] = (byte)'=';
-            dest[3] = (byte)'=';
+            if (!T.IsUrl)
+            {
+                dest[2] = (byte)'=';
+                dest[3] = (byte)'=';
+            }
         }
         else if (remaining == 2)
         {
@@ -620,23 +832,26 @@ public static unsafe class FastBase64
             dest[0] = Unsafe.Add(ref map, (nint)(t >> 18));
             dest[1] = Unsafe.Add(ref map, (nint)((t >> 12) & 0x3F));
             dest[2] = Unsafe.Add(ref map, (nint)((t >> 6) & 0x3F));
-            dest[3] = (byte)'=';
+            if (!T.IsUrl)
+            {
+                dest[3] = (byte)'=';
+            }
         }
     }
 
     // ------------------------------------------------------------------
-    // Encoding core: bytes -> UTF-16 chars
-    //   Zero-extends ASCII vectors using vpmovzxbw / punpcklbw and stores
-    //   them directly as UTF-16 characters.
+    // Encode core: bytes -> UTF-16 chars
+    //   (widen the ASCII vector directly with vpmovzxbw / punpcklbw)
     // ------------------------------------------------------------------
 
-    private static void EncodeCharsCore(byte* srcStart, int srcLength, char* destStart)
+    internal static void EncodeChars<T>(byte* srcStart, int srcLength, char* destStart)
+        where T : struct, IAlphabet
     {
         byte* src = srcStart;
         char* dest = destStart;
         byte* srcEnd = srcStart + (uint)srcLength;
 
-        // ---- AVX2: 24 bytes -> 32 characters (64-byte store) per iteration ----
+        // ---- AVX2: 24 bytes -> 32 chars (two 32-byte stores) per loop ----
         if (Avx2.IsSupported && srcLength >= 32)
         {
             byte* srcMax = srcEnd - 32;
@@ -647,7 +862,7 @@ public static unsafe class FastBase64
 
             while (true)
             {
-                Vector256<sbyte> ascii = EncodeVector256(str);
+                Vector256<sbyte> ascii = EncodeVector256<T>(str);
                 Avx.Store((short*)dest, Avx2.ConvertToVector256Int16(ascii.GetLower().AsByte()));
                 Avx.Store((short*)(dest + 16), Avx2.ConvertToVector256Int16(ascii.GetUpper().AsByte()));
                 src += 24;
@@ -661,14 +876,14 @@ public static unsafe class FastBase64
             }
         }
 
-        // ---- SSSE3: 12 bytes -> 16 characters per iteration ----
+        // ---- SSSE3: 12 bytes -> 16 chars per loop ----
         if (Ssse3.IsSupported && srcEnd - src >= 16)
         {
             byte* srcMax = srcEnd - 16;
             Vector128<byte> zero = Vector128<byte>.Zero;
             do
             {
-                Vector128<byte> ascii = EncodeVector128(Sse2.LoadVector128(src).AsSByte()).AsByte();
+                Vector128<byte> ascii = EncodeVector128<T>(Sse2.LoadVector128(src).AsSByte()).AsByte();
                 Sse2.Store((byte*)dest, Sse2.UnpackLow(ascii, zero));
                 Sse2.Store((byte*)(dest + 8), Sse2.UnpackHigh(ascii, zero));
                 src += 12;
@@ -677,8 +892,8 @@ public static unsafe class FastBase64
             while (src <= srcMax);
         }
 
-        // ---- Scalar ----
-        ref byte map = ref MemoryMarshal.GetReference(EncodingMap);
+        // ---- Scalar tail ----
+        ref byte map = ref MemoryMarshal.GetReference(T.IsUrl ? UrlEncodingMap : EncodingMap);
         while (srcEnd - src >= 3)
         {
             uint t = (uint)(src[0] << 16 | src[1] << 8 | src[2]);
@@ -696,8 +911,11 @@ public static unsafe class FastBase64
             uint t = (uint)(src[0] << 16);
             dest[0] = (char)Unsafe.Add(ref map, (nint)(t >> 18));
             dest[1] = (char)Unsafe.Add(ref map, (nint)((t >> 12) & 0x3F));
-            dest[2] = '=';
-            dest[3] = '=';
+            if (!T.IsUrl)
+            {
+                dest[2] = '=';
+                dest[3] = '=';
+            }
         }
         else if (remaining == 2)
         {
@@ -705,47 +923,61 @@ public static unsafe class FastBase64
             dest[0] = (char)Unsafe.Add(ref map, (nint)(t >> 18));
             dest[1] = (char)Unsafe.Add(ref map, (nint)((t >> 12) & 0x3F));
             dest[2] = (char)Unsafe.Add(ref map, (nint)((t >> 6) & 0x3F));
-            dest[3] = '=';
+            if (!T.IsUrl)
+            {
+                dest[3] = '=';
+            }
         }
     }
 
     // ------------------------------------------------------------------
-    // Decoding core: common SIMD transformation
+    // Decode core: shared SIMD transform
     //
-    // Uses pshufb lookup tables indexed by the high and low nibbles to
-    // derive validation bitmasks. A nonzero AND result indicates an invalid
-    // character and is checked collectively with ptest. Valid characters
-    // are converted to 6-bit values using an adjustment lookup table, then
-    // packed into three-byte groups using pmaddubsw, pmaddwd, and pshufb.
+    //   pshufb LUTs indexed by the high/low nibble produce bitmasks whose
+    //   AND is non-zero for any invalid character (verified in bulk with
+    //   ptest). Valid characters are mapped to their 6-bit values with a
+    //   delta LUT, then packed 4 -> 3 bytes with pmaddubsw + pmaddwd + pshufb.
+    //
+    //   Standard: '/' (0x2F) shares its high nibble with '+', so its delta is
+    //   selected by adding cmpeq(str,0x2F) to the LUT index (Muła's trick).
+    //   Url: '_' (0x5F) shares its high nibble with 'P'..'Z', so its delta is
+    //   selected with a byte blend on cmpeq(str,0x5F) instead.
     // ------------------------------------------------------------------
 
-    /// <summary>
-    /// Decodes 32 Base64 characters into 24 bytes.
-    /// </summary>
-    /// <param name="str">The vector containing 32 Base64 characters.</param>
-    /// <param name="result">
-    /// When successful, receives the decoded bytes. The result is undefined if invalid characters are present.
-    /// </param>
-    /// <returns>
-    /// <see langword="true"/> if all characters are valid Base64 characters;
-    /// otherwise, <see langword="false"/>.
-    /// </returns>
+    /// <summary>Decodes 32 chars into 24 bytes; false if any char is invalid.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool DecodeVector256(Vector256<sbyte> str, out Vector256<sbyte> result)
+    private static bool DecodeVector256<T>(Vector256<sbyte> str, out Vector256<sbyte> result)
+        where T : struct, IAlphabet
     {
-        Vector256<sbyte> lutHi = Vector256.Create(
-            0x10, 0x10, 0x01, 0x02, 0x04, 0x08, 0x04, 0x08,
-            0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
-            0x10, 0x10, 0x01, 0x02, 0x04, 0x08, 0x04, 0x08,
-            0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10).AsSByte();
-        Vector256<sbyte> lutLo = Vector256.Create(
-            0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
-            0x11, 0x11, 0x13, 0x1A, 0x1B, 0x1B, 0x1B, 0x1A,
-            0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
-            0x11, 0x11, 0x13, 0x1A, 0x1B, 0x1B, 0x1B, 0x1A).AsSByte();
-        Vector256<sbyte> lutShift = Vector256.Create(
-            (sbyte)0, 16, 19, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 16, 19, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0);
+        Vector256<sbyte> lutHi = T.IsUrl
+            ? Vector256.Create(
+                (sbyte)0x10, 0x10, 0x01, 0x02, 0x04, 0x08, 0x04, 0x20,
+                0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
+                0x10, 0x10, 0x01, 0x02, 0x04, 0x08, 0x04, 0x20,
+                0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10)
+            : Vector256.Create(
+                (sbyte)0x10, 0x10, 0x01, 0x02, 0x04, 0x08, 0x04, 0x08,
+                0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
+                0x10, 0x10, 0x01, 0x02, 0x04, 0x08, 0x04, 0x08,
+                0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10);
+        Vector256<sbyte> lutLo = T.IsUrl
+            ? Vector256.Create(
+                (sbyte)0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+                0x11, 0x11, 0x13, 0x3B, 0x3B, 0x3A, 0x3B, 0x33,
+                0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+                0x11, 0x11, 0x13, 0x3B, 0x3B, 0x3A, 0x3B, 0x33)
+            : Vector256.Create(
+                (sbyte)0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+                0x11, 0x11, 0x13, 0x1A, 0x1B, 0x1B, 0x1B, 0x1A,
+                0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+                0x11, 0x11, 0x13, 0x1A, 0x1B, 0x1B, 0x1B, 0x1A);
+        Vector256<sbyte> lutShift = T.IsUrl
+            ? Vector256.Create(
+                (sbyte)0, 0, 17, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 17, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0)
+            : Vector256.Create(
+                (sbyte)0, 16, 19, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 16, 19, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0);
         Vector256<sbyte> mask2F = Vector256.Create((sbyte)0x2F);
         Vector256<sbyte> mergeConst0 = Vector256.Create(0x01400140).AsSByte();
         Vector256<short> mergeConst1 = Vector256.Create(0x00011000).AsInt16();
@@ -754,6 +986,8 @@ public static unsafe class FastBase64
             2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, -1, -1, -1, -1);
         Vector256<int> packLanesControl = Vector256.Create(0, 1, 2, 4, 5, 6, -1, -1);
 
+        // pshufb only reads bits 0-3 (and bit 7) of each index, so masking the
+        // shifted value with 0x2F instead of 0x0F is harmless and saves a constant.
         Vector256<sbyte> hiNibbles = Avx2.And(Avx2.ShiftRightLogical(str.AsInt32(), 4).AsSByte(), mask2F);
         Vector256<sbyte> loNibbles = Avx2.And(str, mask2F);
         Vector256<sbyte> hi = Avx2.Shuffle(lutHi, hiNibbles);
@@ -762,14 +996,26 @@ public static unsafe class FastBase64
         if (!Avx.TestZ(lo, hi))
         {
             result = default;
-            return false; // Contains an invalid character.
+            return false; // contains an invalid character
         }
 
-        Vector256<sbyte> eq2F = Avx2.CompareEqual(str, mask2F);
-        Vector256<sbyte> shift = Avx2.Shuffle(lutShift, Avx2.Add(eq2F, hiNibbles));
-        str = Avx2.Add(str, shift); // Each byte is now a 6-bit value.
+        Vector256<sbyte> shift;
+        if (T.IsUrl)
+        {
+            Vector256<sbyte> eq5F = Avx2.CompareEqual(str, Vector256.Create((sbyte)0x5F));
+            shift = Avx2.Shuffle(lutShift, hiNibbles);
+            shift = Avx2.BlendVariable(shift, Vector256.Create((sbyte)-32), eq5F); // '_' -> 63
+        }
+        else
+        {
+            Vector256<sbyte> eq2F = Avx2.CompareEqual(str, mask2F);
+            shift = Avx2.Shuffle(lutShift, Avx2.Add(eq2F, hiNibbles)); // '/' -> 63
+        }
 
-        // (a<<6|b), (c<<6|d) -> (a<<18|b<<12|c<<6|d), then pack the lower three bytes.
+        str = Avx2.Add(str, shift); // every byte = 6-bit value
+
+        // (a,b),(c,d) -> (a<<6|b),(c<<6|d) -> a<<18|b<<12|c<<6|d, then pack the
+        // low 3 bytes of each dword.
         Vector256<short> mergeAbBc = Avx2.MultiplyAddAdjacent(str.AsByte(), mergeConst0);
         Vector256<int> merged = Avx2.MultiplyAddAdjacent(mergeAbBc, mergeConst1);
         Vector256<sbyte> packed = Avx2.Shuffle(merged.AsSByte(), packBytesInLaneMask);
@@ -777,26 +1023,28 @@ public static unsafe class FastBase64
         return true;
     }
 
-    /// <summary>
-    /// Decodes 16 Base64 characters into 12 bytes.
-    /// </summary>
-    /// <param name="str">The vector containing 16 Base64 characters.</param>
-    /// <param name="result">When successful, receives the decoded bytes.</param>
-    /// <returns>
-    /// <see langword="true"/> if all characters are valid Base64 characters;
-    /// otherwise, <see langword="false"/>.
-    /// </returns>
+    /// <summary>Decodes 16 chars into 12 bytes; false if any char is invalid.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool DecodeVector128(Vector128<sbyte> str, out Vector128<sbyte> result)
+    private static bool DecodeVector128<T>(Vector128<sbyte> str, out Vector128<sbyte> result)
+        where T : struct, IAlphabet
     {
-        Vector128<sbyte> lutHi = Vector128.Create(
-            0x10, 0x10, 0x01, 0x02, 0x04, 0x08, 0x04, 0x08,
-            0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10).AsSByte();
-        Vector128<sbyte> lutLo = Vector128.Create(
-            0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
-            0x11, 0x11, 0x13, 0x1A, 0x1B, 0x1B, 0x1B, 0x1A).AsSByte();
-        Vector128<sbyte> lutShift = Vector128.Create(
-            (sbyte)0, 16, 19, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0);
+        Vector128<sbyte> lutHi = T.IsUrl
+            ? Vector128.Create(
+                (sbyte)0x10, 0x10, 0x01, 0x02, 0x04, 0x08, 0x04, 0x20,
+                0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10)
+            : Vector128.Create(
+                (sbyte)0x10, 0x10, 0x01, 0x02, 0x04, 0x08, 0x04, 0x08,
+                0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10);
+        Vector128<sbyte> lutLo = T.IsUrl
+            ? Vector128.Create(
+                (sbyte)0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+                0x11, 0x11, 0x13, 0x3B, 0x3B, 0x3A, 0x3B, 0x33)
+            : Vector128.Create(
+                (sbyte)0x15, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+                0x11, 0x11, 0x13, 0x1A, 0x1B, 0x1B, 0x1B, 0x1A);
+        Vector128<sbyte> lutShift = T.IsUrl
+            ? Vector128.Create((sbyte)0, 0, 17, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0)
+            : Vector128.Create((sbyte)0, 16, 19, 4, -65, -65, -71, -71, 0, 0, 0, 0, 0, 0, 0, 0);
         Vector128<sbyte> mask2F = Vector128.Create((sbyte)0x2F);
         Vector128<sbyte> mergeConst0 = Vector128.Create(0x01400140).AsSByte();
         Vector128<short> mergeConst1 = Vector128.Create(0x00011000).AsInt16();
@@ -808,8 +1056,7 @@ public static unsafe class FastBase64
         Vector128<sbyte> hi = Ssse3.Shuffle(lutHi, hiNibbles);
         Vector128<sbyte> lo = Ssse3.Shuffle(lutLo, loNibbles);
 
-        // Validation uses the SSE4.1 ptest instruction when available;
-        // otherwise, it falls back to SSE2 pmovmskb.
+        // Validation: one ptest on SSE4.1, otherwise SSE2 pmovmskb fallback.
         if (Sse41.IsSupported)
         {
             if (!Sse41.TestZ(lo, hi))
@@ -828,8 +1075,22 @@ public static unsafe class FastBase64
             }
         }
 
-        Vector128<sbyte> eq2F = Sse2.CompareEqual(str, mask2F);
-        Vector128<sbyte> shift = Ssse3.Shuffle(lutShift, Sse2.Add(eq2F, hiNibbles));
+        Vector128<sbyte> shift;
+        if (T.IsUrl)
+        {
+            Vector128<sbyte> eq5F = Sse2.CompareEqual(str, Vector128.Create((sbyte)0x5F));
+            Vector128<sbyte> neg32 = Vector128.Create((sbyte)-32);
+            shift = Ssse3.Shuffle(lutShift, hiNibbles);
+            shift = Sse41.IsSupported
+                ? Sse41.BlendVariable(shift, neg32, eq5F)
+                : Sse2.Or(Sse2.And(eq5F, neg32), Sse2.AndNot(eq5F, shift)); // '_' -> 63
+        }
+        else
+        {
+            Vector128<sbyte> eq2F = Sse2.CompareEqual(str, mask2F);
+            shift = Ssse3.Shuffle(lutShift, Sse2.Add(eq2F, hiNibbles)); // '/' -> 63
+        }
+
         str = Sse2.Add(str, shift);
 
         Vector128<short> mergeAbBc = Ssse3.MultiplyAddAdjacent(str.AsByte(), mergeConst0);
@@ -839,29 +1100,27 @@ public static unsafe class FastBase64
     }
 
     // ------------------------------------------------------------------
-    // Decoding core: UTF-8 bytes -> bytes
-    //   srcLength is the length after removing padding. destEnd points to
-    //   the end of the destination buffer and is used to prevent SIMD stores
-    //   from writing beyond the buffer.
+    // Decode core: UTF-8 bytes -> bytes
+    //   srcLength is the length with padding already trimmed. destEnd is the
+    //   end of the destination buffer (guards the over-length SIMD stores).
     // ------------------------------------------------------------------
-
-    private static bool DecodeFromUtf8Core(byte* srcStart, int srcLength, byte* destStart, byte* destEnd)
+    internal static bool DecodeUtf8<T>(byte* srcStart, int srcLength, byte* destStart, byte* destEnd)
+        where T : struct, IAlphabet
     {
         byte* src = srcStart;
         byte* dest = destStart;
         byte* srcEnd = srcStart + (uint)srcLength;
 
-        // ---- AVX2: 32 characters -> 24 bytes per iteration
-        //      (32-byte store, 24 valid bytes) ----
+        // ---- AVX2: 32 chars -> 24 bytes per loop (32-byte store, 24 valid) ----
         if (Avx2.IsSupported && srcLength >= 32)
         {
             byte* srcMax = srcEnd - 32;
             while (src <= srcMax && dest + 32 <= destEnd)
             {
                 Vector256<sbyte> str = Avx.LoadVector256(src).AsSByte();
-                if (!DecodeVector256(str, out Vector256<sbyte> decoded))
+                if (!DecodeVector256<T>(str, out Vector256<sbyte> decoded))
                 {
-                    break; // Let the scalar path detect invalid characters precisely.
+                    break; // let the scalar tail pinpoint the invalid character
                 }
 
                 Avx.Store((sbyte*)dest, decoded);
@@ -870,15 +1129,14 @@ public static unsafe class FastBase64
             }
         }
 
-        // ---- SSSE3: 16 characters -> 12 bytes per iteration
-        //      (16-byte store, 12 valid bytes) ----
+        // ---- SSSE3: 16 chars -> 12 bytes per loop (16-byte store, 12 valid) ----
         if (Ssse3.IsSupported && srcEnd - src >= 16)
         {
             byte* srcMax = srcEnd - 16;
             while (src <= srcMax && dest + 16 <= destEnd)
             {
                 Vector128<sbyte> str = Sse2.LoadVector128(src).AsSByte();
-                if (!DecodeVector128(str, out Vector128<sbyte> decoded))
+                if (!DecodeVector128<T>(str, out Vector128<sbyte> decoded))
                 {
                     break;
                 }
@@ -889,8 +1147,8 @@ public static unsafe class FastBase64
             }
         }
 
-        // ---- Scalar: 4 characters -> 3 bytes ----
-        ref sbyte map = ref MemoryMarshal.GetReference(DecodingMap);
+        // ---- Scalar: 4 chars -> 3 bytes ----
+        ref sbyte map = ref MemoryMarshal.GetReference(T.IsUrl ? UrlDecodingMap : DecodingMap);
         while (srcEnd - src >= 4)
         {
             int i0 = Unsafe.Add(ref map, (nint)src[0]);
@@ -910,7 +1168,7 @@ public static unsafe class FastBase64
             dest += 3;
         }
 
-        // ---- Remainder: 0, 2, or 3 characters ----
+        // ---- Remainder (0, 2 or 3 chars) ----
         long rem = srcEnd - src;
         if (rem == 2)
         {
@@ -941,19 +1199,19 @@ public static unsafe class FastBase64
     }
 
     // ------------------------------------------------------------------
-    // Decoding core: UTF-16 chars -> bytes
-    //   Narrows chars to bytes using packus (saturating narrowing).
-    //   Non-ASCII characters saturate to either 0 or 255 and are therefore
-    //   guaranteed to be rejected by the lookup-table validation.
+    // Decode core: UTF-16 chars -> bytes
+    //   Chars are narrowed with packus (saturating). Non-ASCII characters
+    //   saturate to 0 or 255, which the LUT validation always rejects.
     // ------------------------------------------------------------------
 
-    private static bool DecodeFromCharsCore(char* srcStart, int srcLength, byte* destStart, byte* destEnd)
+    internal static bool DecodeChars<T>(char* srcStart, int srcLength, byte* destStart, byte* destEnd)
+        where T : struct, IAlphabet
     {
         char* src = srcStart;
         byte* dest = destStart;
         char* srcEnd = srcStart + (uint)srcLength;
 
-        // ---- AVX2: 32 characters (two 64-byte loads) -> 24 bytes per iteration ----
+        // ---- AVX2: 32 chars (two 32-byte loads) -> 24 bytes per loop ----
         if (Avx2.IsSupported && srcLength >= 32)
         {
             char* srcMax = srcEnd - 32;
@@ -962,11 +1220,9 @@ public static unsafe class FastBase64
                 Vector256<short> c0 = Avx.LoadVector256((short*)src);
                 Vector256<short> c1 = Avx.LoadVector256((short*)(src + 16));
                 Vector256<byte> packed = Avx2.PackUnsignedSaturate(c0, c1);
-
-                // packus packs independently within each lane, so reorder
-                // the result in 64-bit units to restore sequential character order.
+                // packus interleaves 128-bit lanes; restore order per 64 bits.
                 Vector256<sbyte> str = Avx2.Permute4x64(packed.AsInt64(), 0b_11_01_10_00).AsSByte();
-                if (!DecodeVector256(str, out Vector256<sbyte> decoded))
+                if (!DecodeVector256<T>(str, out Vector256<sbyte> decoded))
                 {
                     break;
                 }
@@ -977,7 +1233,7 @@ public static unsafe class FastBase64
             }
         }
 
-        // ---- SSSE3: 16 characters -> 12 bytes per iteration ----
+        // ---- SSSE3: 16 chars -> 12 bytes per loop ----
         if (Ssse3.IsSupported && srcEnd - src >= 16)
         {
             char* srcMax = srcEnd - 16;
@@ -986,7 +1242,7 @@ public static unsafe class FastBase64
                 Vector128<short> c0 = Sse2.LoadVector128((short*)src);
                 Vector128<short> c1 = Sse2.LoadVector128((short*)(src + 8));
                 Vector128<sbyte> str = Sse2.PackUnsignedSaturate(c0, c1).AsSByte();
-                if (!DecodeVector128(str, out Vector128<sbyte> decoded))
+                if (!DecodeVector128<T>(str, out Vector128<sbyte> decoded))
                 {
                     break;
                 }
@@ -998,7 +1254,7 @@ public static unsafe class FastBase64
         }
 
         // ---- Scalar ----
-        ref sbyte map = ref MemoryMarshal.GetReference(DecodingMap);
+        ref sbyte map = ref MemoryMarshal.GetReference(T.IsUrl ? UrlDecodingMap : DecodingMap);
         while (srcEnd - src >= 4)
         {
             uint c0 = src[0], c1 = src[1], c2 = src[2], c3 = src[3];

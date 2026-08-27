@@ -115,7 +115,7 @@ public class Base64Benchmark
     [Benchmark]
     public int Base64_ByteArrayToSpan3Url()
     {
-        return FastBase64.Encode(this.TestArray, this.encoded);
+        return FastBase64Url.Encode(this.TestArray, this.encodedUrl);
     }
 
     [Benchmark]
@@ -128,7 +128,7 @@ public class Base64Benchmark
     [Benchmark]
     public int Base64_SpanToByteArray3Url()
     {
-        return FastBase64.Decode(this.encoded, this.decoded);
+        return FastBase64Url.Decode(this.encodedUrl, this.decoded);
     }
 
     /*[Benchmark]
