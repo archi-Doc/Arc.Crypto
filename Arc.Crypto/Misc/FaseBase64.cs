@@ -32,6 +32,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using System.Text.Unicode;
 
 namespace Arc.Crypto;
 
@@ -98,12 +99,12 @@ public static unsafe class FastBase64
     /// <returns>Exact decoded length in bytes.</returns>
     /// <exception cref="FormatException">The input length is not a valid Base64 length.</exception>
     public static int GetDecodedLength(ReadOnlySpan<byte> utf8) =>
-        B64.ExactDecodedLength(B64.TrimPadding(utf8, out _));
+        B64.GetDecodedLength(utf8);
 
     /// <inheritdoc cref="GetDecodedLength(ReadOnlySpan{byte})"/>
     /// <param name="chars">Encoded input as UTF-16 characters.</param>
     public static int GetDecodedLength(ReadOnlySpan<char> chars) =>
-        B64.ExactDecodedLength(B64.TrimPadding(chars, out _));
+        B64.GetDecodedLength(chars);
 
     /// <summary>
     /// Encodes <paramref name="bytes"/> into UTF-8/ASCII Base64 text.
@@ -262,12 +263,12 @@ public static unsafe class FastBase64Url
     /// <returns>Exact decoded length in bytes.</returns>
     /// <exception cref="FormatException">The input length is not a valid Base64Url length.</exception>
     public static int GetDecodedLength(ReadOnlySpan<byte> utf8) =>
-        B64.ExactDecodedLength(B64.TrimPadding(utf8, out _));
+        B64.GetDecodedLength(utf8);
 
     /// <inheritdoc cref="GetDecodedLength(ReadOnlySpan{byte})"/>
     /// <param name="chars">Encoded input as UTF-16 characters.</param>
     public static int GetDecodedLength(ReadOnlySpan<char> chars) =>
-        B64.ExactDecodedLength(B64.TrimPadding(chars, out _));
+         B64.GetDecodedLength(chars);
 
     /// <summary>
     /// Encodes <paramref name="bytes"/> into UTF-8/ASCII Base64Url text (unpadded).
@@ -388,6 +389,28 @@ internal static unsafe class B64
     internal struct Url : IAlphabet
     {
         public static bool IsUrl => true;
+    }
+
+    internal static int GetDecodedLength(ReadOnlySpan<byte> s)
+    {
+        int trimmedLength = TrimPadding(s, out bool ok);
+        if (!ok)
+        {
+            throw new FormatException("Invalid Base64 padding.");
+        }
+
+        return ExactDecodedLength(trimmedLength);
+    }
+
+    internal static int GetDecodedLength(ReadOnlySpan<char> s)
+    {
+        int trimmedLength = TrimPadding(s, out bool ok);
+        if (!ok)
+        {
+            throw new FormatException("Invalid Base64 padding.");
+        }
+
+        return ExactDecodedLength(trimmedLength);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
