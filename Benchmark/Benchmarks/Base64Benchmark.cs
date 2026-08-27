@@ -10,7 +10,7 @@ namespace Benchmark;
 [Config(typeof(BenchmarkConfig))]
 public class Base64Benchmark
 {
-    private const int MaxLength = 20;
+    private const int MaxLength = 200;
     private readonly byte[] testArray;
     private readonly byte[] testUtf8;
     private readonly string testString;
@@ -20,7 +20,7 @@ public class Base64Benchmark
     private byte[] decoded;
 
     // [Params(10, 32, MaxLength)]
-    [Params(MaxLength)]
+    [Params(20, 200)]
     public int Length { get; set; }
 
     public ReadOnlySpan<byte> TestArray => this.testArray.AsSpan(0, this.Length);
