@@ -21,7 +21,7 @@ public class FastBase64Test
     {
         byte[] source = Encoding.ASCII.GetBytes(text);
 
-        string actual = FastBase64.EncodeToString(source);
+        string actual = Base64.EncodeToString(source);
 
         Assert.Equal(expected, actual);
     }
@@ -36,7 +36,7 @@ public class FastBase64Test
     [InlineData("foobar", "Zm9vYmFy")]
     public void Decode_KnownVectors(string expected, string base64)
     {
-        byte[] decoded = FastBase64.Decode(base64);
+        byte[] decoded = Base64.Decode(base64);
 
         Assert.Equal(Encoding.ASCII.GetBytes(expected), decoded);
     }
@@ -53,14 +53,14 @@ public class FastBase64Test
     [InlineData(100, 136)]
     public void GetEncodedLength_ReturnsExpectedValue(int byteCount, int expected)
     {
-        Assert.Equal(expected, FastBase64.GetEncodedLength(byteCount));
+        Assert.Equal(expected, Base64.GetEncodedLength(byteCount));
     }
 
     [Fact]
     public void GetEncodedLength_Negative_Throws()
     {
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => FastBase64.GetEncodedLength(-1));
+            () => Base64.GetEncodedLength(-1));
     }
 
     [Theory]
@@ -70,14 +70,14 @@ public class FastBase64Test
     [InlineData(12, 9)]
     public void GetMaxDecodedLength_ReturnsExpectedValue(int encodedLength, int expected)
     {
-        Assert.Equal(expected, FastBase64.GetMaxDecodedLength(encodedLength));
+        Assert.Equal(expected, Base64.GetMaxDecodedLength(encodedLength));
     }
 
     [Fact]
     public void GetMaxDecodedLength_Negative_Throws()
     {
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => FastBase64.GetMaxDecodedLength(-1));
+            () => Base64.GetMaxDecodedLength(-1));
     }
 
     [Theory]
@@ -90,8 +90,8 @@ public class FastBase64Test
     [InlineData("Zm9vYmFy", 6)]
     public void GetDecodedLength_ReturnsExpectedValue(string base64, int expected)
     {
-        Assert.Equal(expected, FastBase64.GetDecodedLength(base64.AsSpan()));
-        Assert.Equal(expected, FastBase64.GetDecodedLength(Encoding.ASCII.GetBytes(base64)));
+        Assert.Equal(expected, Base64.GetDecodedLength(base64.AsSpan()));
+        Assert.Equal(expected, Base64.GetDecodedLength(Encoding.ASCII.GetBytes(base64)));
     }
 
     [Theory]
@@ -101,16 +101,16 @@ public class FastBase64Test
     public void GetDecodedLength_InvalidLengthOrPadding_Throws(string base64)
     {
         Assert.Throws<FormatException>(
-            () => FastBase64.GetDecodedLength(base64.AsSpan()));
+            () => Base64.GetDecodedLength(base64.AsSpan()));
     }
 
     [Fact]
     public void Encode_Utf8Destination_ReturnsExpectedResult()
     {
         byte[] source = Encoding.ASCII.GetBytes("foobar");
-        byte[] destination = new byte[FastBase64.GetEncodedLength(source.Length)];
+        byte[] destination = new byte[Base64.GetEncodedLength(source.Length)];
 
-        int written = FastBase64.Encode(source, destination);
+        int written = Base64.Encode(source, destination);
 
         Assert.Equal(destination.Length, written);
         Assert.Equal("Zm9vYmFy", Encoding.ASCII.GetString(destination));
@@ -120,9 +120,9 @@ public class FastBase64Test
     public void Encode_CharDestination_ReturnsExpectedResult()
     {
         byte[] source = Encoding.ASCII.GetBytes("foobar");
-        char[] destination = new char[FastBase64.GetEncodedLength(source.Length)];
+        char[] destination = new char[Base64.GetEncodedLength(source.Length)];
 
-        int written = FastBase64.Encode(source, destination);
+        int written = Base64.Encode(source, destination);
 
         Assert.Equal(destination.Length, written);
         Assert.Equal("Zm9vYmFy", new string(destination));
@@ -135,7 +135,7 @@ public class FastBase64Test
         byte[] destination = new byte[3];
 
         Assert.Throws<ArgumentException>(
-            () => FastBase64.Encode(source, destination));
+            () => Base64.Encode(source, destination));
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public class FastBase64Test
         char[] destination = new char[3];
 
         Assert.Throws<ArgumentException>(
-            () => FastBase64.Encode(source, destination));
+            () => Base64.Encode(source, destination));
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public class FastBase64Test
         byte[] source = "Zm9vYmFy"u8.ToArray();
         byte[] destination = new byte[6];
 
-        bool result = FastBase64.TryDecode(source, destination, out int written);
+        bool result = Base64.TryDecode(source, destination, out int written);
 
         Assert.True(result);
         Assert.Equal(6, written);
@@ -167,7 +167,7 @@ public class FastBase64Test
         const string Source = "Zm9vYmFy";
         byte[] destination = new byte[6];
 
-        bool result = FastBase64.TryDecode(Source, destination, out int written);
+        bool result = Base64.TryDecode(Source, destination, out int written);
 
         Assert.True(result);
         Assert.Equal(6, written);
@@ -179,7 +179,7 @@ public class FastBase64Test
     {
         byte[] destination = new byte[5];
 
-        bool result = FastBase64.TryDecode("Zm9vYmFy", destination, out int written);
+        bool result = Base64.TryDecode("Zm9vYmFy", destination, out int written);
 
         Assert.False(result);
         Assert.Equal(0, written);
@@ -196,7 +196,7 @@ public class FastBase64Test
     {
         byte[] destination = new byte[128];
 
-        bool result = FastBase64.TryDecode(base64, destination, out int written);
+        bool result = Base64.TryDecode(base64, destination, out int written);
 
         Assert.False(result);
         Assert.Equal(0, written);
@@ -206,25 +206,25 @@ public class FastBase64Test
     public void Decode_InvalidInput_Throws()
     {
         Assert.Throws<FormatException>(
-            () => FastBase64.Decode("!!!!"));
+            () => Base64.Decode("!!!!"));
     }
 
     [Fact]
     public void Decode_Null_Throws()
     {
         Assert.Throws<ArgumentNullException>(
-            () => FastBase64.Decode(null!));
+            () => Base64.Decode(null!));
     }
 
     [Fact]
     public void EmptyInput_RoundTrips()
     {
-        Assert.Equal(string.Empty, FastBase64.EncodeToString([]));
-        Assert.Empty(FastBase64.Decode(string.Empty));
+        Assert.Equal(string.Empty, Base64.EncodeToString([]));
+        Assert.Empty(Base64.Decode(string.Empty));
 
         byte[] destination = new byte[1];
 
-        Assert.True(FastBase64.TryDecode(ReadOnlySpan<char>.Empty, destination, out int written));
+        Assert.True(Base64.TryDecode(ReadOnlySpan<char>.Empty, destination, out int written));
         Assert.Equal(0, written);
     }
 
@@ -239,11 +239,11 @@ public class FastBase64Test
             random.NextBytes(source);
 
             string expected = Convert.ToBase64String(source);
-            string actual = FastBase64.EncodeToString(source);
+            string actual = Base64.EncodeToString(source);
 
             Assert.Equal(expected, actual);
 
-            byte[] decoded = FastBase64.Decode(actual);
+            byte[] decoded = Base64.Decode(actual);
 
             Assert.Equal(source, decoded);
         }
@@ -259,10 +259,10 @@ public class FastBase64Test
             byte[] source = new byte[length];
             random.NextBytes(source);
 
-            int encodedLength = FastBase64.GetEncodedLength(length);
+            int encodedLength = Base64.GetEncodedLength(length);
             byte[] destination = new byte[encodedLength];
 
-            int written = FastBase64.Encode(source, destination);
+            int written = Base64.Encode(source, destination);
 
             Assert.Equal(encodedLength, written);
             Assert.Equal(
@@ -281,10 +281,10 @@ public class FastBase64Test
             byte[] source = new byte[length];
             random.NextBytes(source);
 
-            int encodedLength = FastBase64.GetEncodedLength(length);
+            int encodedLength = Base64.GetEncodedLength(length);
             char[] destination = new char[encodedLength];
 
-            int written = FastBase64.Encode(source, destination);
+            int written = Base64.Encode(source, destination);
 
             Assert.Equal(encodedLength, written);
             Assert.Equal(
@@ -335,8 +335,8 @@ public class FastBase64Test
             byte[] source = new byte[length];
             random.NextBytes(source);
 
-            string encoded = FastBase64.EncodeToString(source);
-            byte[] decoded = FastBase64.Decode(encoded);
+            string encoded = Base64.EncodeToString(source);
+            byte[] decoded = Base64.Decode(encoded);
 
             Assert.Equal(Convert.ToBase64String(source), encoded);
             Assert.Equal(source, decoded);
@@ -358,7 +358,7 @@ public class FastBase64UrlTest
     {
         byte[] source = Encoding.ASCII.GetBytes(text);
 
-        string actual = FastBase64Url.EncodeToString(source);
+        string actual = Base64Url.EncodeToString(source);
 
         Assert.Equal(expected, actual);
     }
@@ -374,7 +374,7 @@ public class FastBase64UrlTest
     [InlineData(7, 10)]
     public void GetEncodedLength_ReturnsExpectedValue(int byteCount, int expected)
     {
-        Assert.Equal(expected, FastBase64Url.GetEncodedLength(byteCount));
+        Assert.Equal(expected, Base64Url.GetEncodedLength(byteCount));
     }
 
     [Theory]
@@ -385,7 +385,7 @@ public class FastBase64UrlTest
     [InlineData("Zm9v", "foo")]
     public void Decode_AcceptsPaddedAndUnpaddedInput(string encoded, string expected)
     {
-        byte[] decoded = FastBase64Url.Decode(encoded);
+        byte[] decoded = Base64Url.Decode(encoded);
 
         Assert.Equal(Encoding.ASCII.GetBytes(expected), decoded);
     }
@@ -396,7 +396,7 @@ public class FastBase64UrlTest
         byte[] source = [0xFB, 0xFF, 0xFF];
 
         string standard = Convert.ToBase64String(source);
-        string url = FastBase64Url.EncodeToString(source);
+        string url = Base64Url.EncodeToString(source);
 
         Assert.Equal("+///", standard);
         Assert.Equal("-___", url);
@@ -407,8 +407,8 @@ public class FastBase64UrlTest
     {
         byte[] destination = new byte[16];
 
-        Assert.False(FastBase64Url.TryDecode("+///", destination, out _));
-        Assert.False(FastBase64Url.TryDecode("////", destination, out _));
+        Assert.False(Base64Url.TryDecode("+///", destination, out _));
+        Assert.False(Base64Url.TryDecode("////", destination, out _));
     }
 
     [Fact]
@@ -416,7 +416,7 @@ public class FastBase64UrlTest
     {
         byte[] destination = new byte[16];
 
-        Assert.False(FastBase64.TryDecode("-___", destination, out _));
+        Assert.False(Base64.TryDecode("-___", destination, out _));
     }
 
     [Theory]
@@ -429,7 +429,7 @@ public class FastBase64UrlTest
     {
         byte[] destination = new byte[128];
 
-        bool result = FastBase64Url.TryDecode(encoded, destination, out int written);
+        bool result = Base64Url.TryDecode(encoded, destination, out int written);
 
         Assert.False(result);
         Assert.Equal(0, written);
@@ -445,14 +445,14 @@ public class FastBase64UrlTest
             byte[] source = new byte[length];
             random.NextBytes(source);
 
-            string encoded = FastBase64Url.EncodeToString(source);
+            string encoded = Base64Url.EncodeToString(source);
 
             // Base64Url must not contain standard Base64 symbols or padding.
             Assert.DoesNotContain('+', encoded);
             Assert.DoesNotContain('/', encoded);
             Assert.DoesNotContain('=', encoded);
 
-            byte[] decoded = FastBase64Url.Decode(encoded);
+            byte[] decoded = Base64Url.Decode(encoded);
 
             Assert.Equal(source, decoded);
         }
@@ -473,7 +473,7 @@ public class FastBase64UrlTest
                 .Replace('+', '-')
                 .Replace('/', '_');
 
-            string actual = FastBase64Url.EncodeToString(source);
+            string actual = Base64Url.EncodeToString(source);
 
             Assert.Equal(expected, actual);
         }
@@ -521,8 +521,8 @@ public class FastBase64UrlTest
             byte[] source = new byte[length];
             random.NextBytes(source);
 
-            string encoded = FastBase64Url.EncodeToString(source);
-            byte[] decoded = FastBase64Url.Decode(encoded);
+            string encoded = Base64Url.EncodeToString(source);
+            byte[] decoded = Base64Url.Decode(encoded);
 
             Assert.Equal(source, decoded);
         }
@@ -538,13 +538,13 @@ public class FastBase64UrlTest
             byte[] source = new byte[length];
             random.NextBytes(source);
 
-            int encodedLength = FastBase64Url.GetEncodedLength(length);
+            int encodedLength = Base64Url.GetEncodedLength(length);
 
             byte[] utf8 = new byte[encodedLength];
             char[] chars = new char[encodedLength];
 
-            int utf8Written = FastBase64Url.Encode(source, utf8);
-            int charsWritten = FastBase64Url.Encode(source, chars);
+            int utf8Written = Base64Url.Encode(source, utf8);
+            int charsWritten = Base64Url.Encode(source, chars);
 
             Assert.Equal(encodedLength, utf8Written);
             Assert.Equal(encodedLength, charsWritten);
