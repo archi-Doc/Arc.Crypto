@@ -31,6 +31,7 @@ public class Program
             typeof(PasswordHashBenchmark),
             typeof(CipherBenchmark),
             typeof(Curve25519Benchmark),
+            typeof(EcCompressYBenchmark),
             // typeof(SerializeHashBenchmark),
             typeof(Avx2Benchmark),
             typeof(DsaBenchmark),
