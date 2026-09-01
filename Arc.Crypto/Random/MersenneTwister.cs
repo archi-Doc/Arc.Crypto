@@ -15,6 +15,9 @@ namespace Arc.Crypto;
 /// </summary>
 public class MersenneTwister : RandomUInt64
 {
+    /// <summary>
+    /// The size in bytes of the internal state buffer.
+    /// </summary>
     public const int BufferSize = NN * sizeof(ulong);
     private const int NN = 312;
     private const int MM = 156;

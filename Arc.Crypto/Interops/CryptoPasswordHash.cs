@@ -1,5 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Arc.Crypto;
@@ -11,23 +12,62 @@ namespace Arc.Crypto;
 /// </summary>
 public static class CryptoPasswordHash
 {
+    /// <summary>
+    /// The minimum size of a derived key in bytes.
+    /// </summary>
     public const int MinimumKeySize = 16; // crypto_pwhash_BYTES_MIN crypto_pwhash_argon2id_BYTES_MIN
+
+    /// <summary>
+    /// The size of the salt in bytes.
+    /// </summary>
     public const int SaltSize = 16; // crypto_pwhash_SALTBYTES crypto_pwhash_argon2id_SALTBYTES
+
+    /// <summary>
+    /// The buffer size in bytes required for a hash string, including the terminating null character.
+    /// </summary>
     public const int HashStringLength = 128; // crypto_pwhash_STRBYTES crypto_pwhash_argon2id_STRBYTES
 
     private const int DefaultAlgorithm = 2; // crypto_pwhash_ALG_DEFAULT crypto_pwhash_ALG_ARGON2ID13 crypto_pwhash_argon2id_ALG_ARGON2ID13
 
+    /// <summary>
+    /// The computational cost of the Argon2id hash. A higher value increases the number of passes over memory.
+    /// </summary>
     public enum OpsLimit
     {
+        /// <summary>
+        /// Suitable for interactive use, such as login.
+        /// </summary>
         Interactive = 2, // crypto_pwhash_argon2id_OPSLIMIT_INTERACTIVE 2U
+
+        /// <summary>
+        /// A balance between <see cref="Interactive"/> and <see cref="Sensitive"/>.
+        /// </summary>
         Moderate = 3, // crypto_pwhash_argon2id_OPSLIMIT_MODERATE 3U
+
+        /// <summary>
+        /// Suitable for highly sensitive data, at the cost of a noticeably longer computation.
+        /// </summary>
         Sensitive = 4, // crypto_pwhash_argon2id_OPSLIMIT_SENSITIVE 4U
     }
 
+    /// <summary>
+    /// The amount of memory the Argon2id hash is allowed to use, in bytes.
+    /// </summary>
     public enum MemLimit
     {
+        /// <summary>
+        /// 64 MiB, suitable for interactive use.
+        /// </summary>
         Interactive = 67108864, // 64 MiB
+
+        /// <summary>
+        /// 256 MiB, a balance between <see cref="Interactive"/> and <see cref="Sensitive"/>.
+        /// </summary>
         Moderate = 268435456, // 256 MiB
+
+        /// <summary>
+        /// 1024 MiB, suitable for highly sensitive data.
+        /// </summary>
         Sensitive = 1073741824, // 1024 MiB
     }
 
@@ -57,6 +97,7 @@ public static class CryptoPasswordHash
     /// <param name="opsLimit">The computational cost parameter.</param>
     /// <param name="memLimit">The memory cost parameter.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the key length is less than the minimum key size.</exception>
+    /// <exception cref="CryptographicException">Thrown when key derivation fails, typically because the requested memory could not be allocated.</exception>
     public static void DeriveKey(ReadOnlySpan<byte> utf8Password, ReadOnlySpan<byte> salt16, Span<byte> key, OpsLimit opsLimit = OpsLimit.Interactive, MemLimit memLimit = MemLimit.Interactive)
     {
         if (salt16.Length != SaltSize)
@@ -66,10 +107,14 @@ public static class CryptoPasswordHash
 
         if (key.Length < MinimumKeySize)
         {
-            throw new ArgumentOutOfRangeException($"The {nameof(key)} length must be at least {MinimumKeySize} bytes.");
+            throw new ArgumentOutOfRangeException(nameof(key), key.Length, $"The {nameof(key)} length must be at least {MinimumKeySize} bytes.");
         }
 
-        var success = LibsodiumInterops.crypto_pwhash(key, (ulong)key.Length, utf8Password, (ulong)utf8Password.Length, salt16, (ulong)opsLimit, (UIntPtr)memLimit, DefaultAlgorithm) >= 0;
+        if (LibsodiumInterops.crypto_pwhash(key, (ulong)key.Length, utf8Password, (ulong)utf8Password.Length, salt16, (ulong)opsLimit, (UIntPtr)memLimit, DefaultAlgorithm) != 0)
+        {// Do not leave a partially written key behind; a caller that ignores the failure must not receive a usable key.
+            CryptographicOperations.ZeroMemory(key);
+            throw new CryptographicException("Key derivation failed. The requested memory limit may not be available.");
+        }
     }
 
     /// <summary>
@@ -115,8 +160,8 @@ public static class CryptoPasswordHash
     /// <param name="hashString">The hash string to verify against.<br/>
     ///  The length must be less than or equal to <see cref="HashStringLength"/>(128).</param>
     /// <param name="password">The password to verify.</param>
-    /// <param name="opsLimit">The computational cost parameter.</param>
-    /// <param name="memLimit">The memory cost parameter.</param>
+    /// <param name="opsLimit">Unused; the computational cost is encoded in the hash string.</param>
+    /// <param name="memLimit">Unused; the memory cost is encoded in the hash string.</param>
     /// <returns>True if the password matches the hash string; otherwise, false.</returns>
     public static bool VerifyHashString(string hashString, string password, OpsLimit opsLimit = OpsLimit.Interactive, MemLimit memLimit = MemLimit.Interactive)
     {
@@ -140,11 +185,16 @@ public static class CryptoPasswordHash
     /// <param name="utf8HashString">The utf8 hash string to verify against.<br/>
     ///  The length must be less than or equal to <see cref="HashStringLength"/>(128).</param>
     /// <param name="utf8Password">The utf8 password to verify.</param>
-    /// <param name="opsLimit">The computational cost parameter.</param>
-    /// <param name="memLimit">The memory cost parameter.</param>
+    /// <param name="opsLimit">Unused; the computational cost is encoded in the hash string.</param>
+    /// <param name="memLimit">Unused; the memory cost is encoded in the hash string.</param>
     /// <returns>True if the password matches the hash string; otherwise, false.</returns>
     public static bool VerifyHashString(ReadOnlySpan<byte> utf8HashString, ReadOnlySpan<byte> utf8Password, OpsLimit opsLimit = OpsLimit.Interactive, MemLimit memLimit = MemLimit.Interactive)
     {
+        if (utf8HashString.Length > HashStringLength)
+        {
+            return false;
+        }
+
         ReadOnlySpan<byte> b;
         if (utf8HashString.Length == HashStringLength)
         {

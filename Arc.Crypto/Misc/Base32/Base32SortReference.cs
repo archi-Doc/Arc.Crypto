@@ -55,7 +55,7 @@ internal class Base32SortReference : IBase32Converter
 
         Span<char> destination = encodedLength <= 1024 ?
             stackalloc char[encodedLength] :
-            (pooledName = ArrayPool<char>.Shared.Rent(encodedLength));
+            (pooledName = ArrayPool<char>.Shared.Rent(encodedLength)).AsSpan(0, encodedLength);
 
         this.ByteSpanToCharSpan(source, destination, encodedLength);
         var result = new string(destination);
@@ -175,14 +175,8 @@ internal class Base32SortReference : IBase32Converter
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal nint ByteToValue(byte c)
     {
-        if (c > byte.MaxValue)
-        {
-            return -1;
-        }
-        else
-        {
-            return this.decodeTable[c];
-        }
+        // A byte always indexes the table directly; invalid characters map to byte.MaxValue.
+        return this.decodeTable[c];
 
         /*var value = (nint)c;
 

@@ -70,7 +70,7 @@ internal class Base32SortTable : IBase32Converter
 
         Span<char> span = length <= 1024 ?
             stackalloc char[length] :
-            (pooledName = ArrayPool<char>.Shared.Rent(length));
+            (pooledName = ArrayPool<char>.Shared.Rent(length)).AsSpan(0, length);
 
         fixed (byte* data = &MemoryMarshal.GetReference(source))
         {

@@ -1,6 +1,5 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
@@ -9,95 +8,106 @@ using Aes = System.Runtime.Intrinsics.X86.Aes;
 
 namespace Arc.Crypto;
 
-#pragma warning disable SA1132 // Do not combine fields
-#pragma warning disable SA1306 // Field names should begin with lower-case letter
-
 [SkipLocalsInit]
-internal ref struct Aegis128Lx86
+internal static class Aegis128Lx86
 {
-    private Vector128<byte> S0, S1, S2, S3, S4, S5, S6, S7;
-
     internal static bool IsSupported() => Aes.IsSupported;
 
-    internal void Encrypt(Span<byte> ciphertext, ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData = default, int tagSize = Aegis128L.MinTagSize)
+    internal static void Encrypt(Span<byte> ciphertext, ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData, int tagSize)
     {
-        this.Init(key, nonce);
+        Init(key, nonce, out var s0, out var s1, out var s2, out var s3, out var s4, out var s5, out var s6, out var s7);
 
-        int i = 0;
+        var adLength = associatedData.Length;
+        var adFull = adLength & ~31;
+        ref byte adRef = ref MemoryMarshal.GetReference(associatedData);
+        for (nint i = 0; i < adFull; i += 32)
+        {
+            var ad0 = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.Add(ref adRef, i));
+            var ad1 = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.Add(ref adRef, i + 16));
+            Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ad0, ad1);
+        }
+
         Span<byte> pad = stackalloc byte[32];
-        while (i + 32 <= associatedData.Length)
-        {
-            this.Absorb(associatedData.Slice(i, 32));
-            i += 32;
-        }
-
-        if (associatedData.Length % 32 != 0)
+        if (adLength != adFull)
         {
             pad.Clear();
-            associatedData[i..].CopyTo(pad);
-            this.Absorb(pad);
+            associatedData[adFull..].CopyTo(pad);
+            ref byte padRef = ref MemoryMarshal.GetReference(pad);
+            var ad0 = Unsafe.ReadUnaligned<Vector128<byte>>(ref padRef);
+            var ad1 = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.Add(ref padRef, 16));
+            Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ad0, ad1);
         }
 
-        i = 0;
-        while (i + 32 <= plaintext.Length)
+        var length = plaintext.Length;
+        var full = length & ~31;
+        ref byte source = ref MemoryMarshal.GetReference(plaintext);
+        ref byte destination = ref MemoryMarshal.GetReference(ciphertext);
+        for (nint i = 0; i < full; i += 32)
         {
-            this.Enc(ciphertext.Slice(i, 32), plaintext.Slice(i, 32));
-            i += 32;
+            Enc(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ref Unsafe.Add(ref destination, i), ref Unsafe.Add(ref source, i));
         }
 
-        if (plaintext.Length % 32 != 0)
+        if (length != full)
         {
-            Span<byte> tmp = stackalloc byte[32];
             pad.Clear();
-            plaintext[i..].CopyTo(pad);
-            this.Enc(tmp, pad);
-            tmp[..(plaintext.Length % 32)].CopyTo(ciphertext[i..^tagSize]);
-        }
-
-        CryptographicOperations.ZeroMemory(pad);
-
-        if (tagSize > 0)
-        {
-            this.Finalize(ciphertext[^tagSize..], (ulong)associatedData.Length, (ulong)plaintext.Length);
-        }
-    }
-
-    internal bool Decrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData = default, int tagSize = Aegis128L.MinTagSize)
-    {
-        this.Init(key, nonce);
-
-        int i = 0;
-        while (i + 32 <= associatedData.Length)
-        {
-            this.Absorb(associatedData.Slice(i, 32));
-            i += 32;
-        }
-
-        if (associatedData.Length % 32 != 0)
-        {
-            Span<byte> pad = stackalloc byte[32];
-            pad.Clear();
-            associatedData[i..].CopyTo(pad);
-            this.Absorb(pad);
+            plaintext[full..].CopyTo(pad);
+            ref byte padRef = ref MemoryMarshal.GetReference(pad);
+            Enc(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ref padRef, ref padRef);
+            pad[..(length - full)].CopyTo(ciphertext[full..]);
             CryptographicOperations.ZeroMemory(pad);
         }
 
-        i = 0;
-        while (i + 32 <= ciphertext.Length - tagSize)
+        if (tagSize > 0)
         {
-            this.Dec(plaintext.Slice(i, 32), ciphertext.Slice(i, 32));
-            i += 32;
+            Finalize(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ciphertext[^tagSize..], (ulong)adLength, (ulong)length);
+        }
+    }
+
+    internal static bool Decrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData, int tagSize)
+    {
+        Init(key, nonce, out var s0, out var s1, out var s2, out var s3, out var s4, out var s5, out var s6, out var s7);
+
+        var adLength = associatedData.Length;
+        var adFull = adLength & ~31;
+        ref byte adRef = ref MemoryMarshal.GetReference(associatedData);
+        for (nint i = 0; i < adFull; i += 32)
+        {
+            var ad0 = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.Add(ref adRef, i));
+            var ad1 = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.Add(ref adRef, i + 16));
+            Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ad0, ad1);
         }
 
-        if ((ciphertext.Length - tagSize) % 32 != 0)
+        if (adLength != adFull)
         {
-            this.DecPartial(plaintext[i..], ciphertext[i..^tagSize]);
+            Span<byte> pad = stackalloc byte[32];
+            pad.Clear();
+            associatedData[adFull..].CopyTo(pad);
+            ref byte padRef = ref MemoryMarshal.GetReference(pad);
+            var ad0 = Unsafe.ReadUnaligned<Vector128<byte>>(ref padRef);
+            var ad1 = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.Add(ref padRef, 16));
+            Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ad0, ad1);
+            CryptographicOperations.ZeroMemory(pad);
+        }
+
+        var length = plaintext.Length;
+        var full = length & ~31;
+        ref byte source = ref MemoryMarshal.GetReference(ciphertext);
+        ref byte destination = ref MemoryMarshal.GetReference(plaintext);
+        for (nint i = 0; i < full; i += 32)
+        {
+            Dec(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ref Unsafe.Add(ref destination, i), ref Unsafe.Add(ref source, i));
+        }
+
+        if (length != full)
+        {
+            DecPartial(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, plaintext[full..], ciphertext.Slice(full, length - full));
         }
 
         if (tagSize > 0)
         {
-            Span<byte> tag = stackalloc byte[tagSize];
-            this.Finalize(tag, (ulong)associatedData.Length, (ulong)plaintext.Length);
+            Span<byte> tag = stackalloc byte[Aegis128L.MaxTagSize];
+            tag = tag[..tagSize];
+            Finalize(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, tag, (ulong)adLength, (ulong)length);
 
             if (!CryptographicOperations.FixedTimeEquals(tag, ciphertext[^tagSize..]))
             {
@@ -110,144 +120,115 @@ internal ref struct Aegis128Lx86
         return true;
     }
 
-    private void Init(ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void Init(ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce, out Vector128<byte> s0, out Vector128<byte> s1, out Vector128<byte> s2, out Vector128<byte> s3, out Vector128<byte> s4, out Vector128<byte> s5, out Vector128<byte> s6, out Vector128<byte> s7)
     {
-        ReadOnlySpan<byte> c = stackalloc byte[]
-        {
-            0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x0d, 0x15, 0x22, 0x37, 0x59, 0x90, 0xe9, 0x79, 0x62,
-            0xdb, 0x3d, 0x18, 0x55, 0x6d, 0xc2, 0x2f, 0xf1, 0x20, 0x11, 0x31, 0x42, 0x73, 0xb5, 0x28, 0xdd,
-        };
-        Vector128<byte> c0 = Vector128.Create(c[..16]);
-        Vector128<byte> c1 = Vector128.Create(c[16..]);
-        Vector128<byte> k = Vector128.Create(key);
-        Vector128<byte> n = Vector128.Create(nonce);
+        var c0 = Vector128.Create(AES.C0);
+        var c1 = Vector128.Create(AES.C1);
+        var k = Vector128.Create(key);
+        var n = Vector128.Create(nonce);
 
-        this.S0 = k ^ n;
-        this.S1 = c1;
-        this.S2 = c0;
-        this.S3 = c1;
-        this.S4 = k ^ n;
-        this.S5 = k ^ c0;
-        this.S6 = k ^ c1;
-        this.S7 = k ^ c0;
+        s0 = k ^ n;
+        s1 = c1;
+        s2 = c0;
+        s3 = c1;
+        s4 = k ^ n;
+        s5 = k ^ c0;
+        s6 = k ^ c1;
+        s7 = k ^ c0;
 
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
-            this.Update(n, k);
+            Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, n, k);
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Update(Vector128<byte> m0, Vector128<byte> m1)
+    private static void Update(ref Vector128<byte> s0, ref Vector128<byte> s1, ref Vector128<byte> s2, ref Vector128<byte> s3, ref Vector128<byte> s4, ref Vector128<byte> s5, ref Vector128<byte> s6, ref Vector128<byte> s7, Vector128<byte> m0, Vector128<byte> m1)
     {
-        Vector128<byte> s0 = Aes.Encrypt(this.S7, this.S0 ^ m0);
-        Vector128<byte> s1 = Aes.Encrypt(this.S0, this.S1);
-        Vector128<byte> s2 = Aes.Encrypt(this.S1, this.S2);
-        Vector128<byte> s3 = Aes.Encrypt(this.S2, this.S3);
-        Vector128<byte> s4 = Aes.Encrypt(this.S3, this.S4 ^ m1);
-        Vector128<byte> s5 = Aes.Encrypt(this.S4, this.S5);
-        Vector128<byte> s6 = Aes.Encrypt(this.S5, this.S6);
-        Vector128<byte> s7 = Aes.Encrypt(this.S6, this.S7);
-
-        this.S0 = s0;
-        this.S1 = s1;
-        this.S2 = s2;
-        this.S3 = s3;
-        this.S4 = s4;
-        this.S5 = s5;
-        this.S6 = s6;
-        this.S7 = s7;
+        // Written in reverse order so that each line reads only not-yet-overwritten state,
+        // keeping a single temporary and minimizing register pressure (all eight AES rounds stay independent).
+        var t = s7;
+        s7 = Aes.Encrypt(s6, s7);
+        s6 = Aes.Encrypt(s5, s6);
+        s5 = Aes.Encrypt(s4, s5);
+        s4 = Aes.Encrypt(s3, s4 ^ m1);
+        s3 = Aes.Encrypt(s2, s3);
+        s2 = Aes.Encrypt(s1, s2);
+        s1 = Aes.Encrypt(s0, s1);
+        s0 = Aes.Encrypt(t, s0 ^ m0);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Absorb(scoped ReadOnlySpan<byte> associatedData)
+    private static void Enc(ref Vector128<byte> s0, ref Vector128<byte> s1, ref Vector128<byte> s2, ref Vector128<byte> s3, ref Vector128<byte> s4, ref Vector128<byte> s5, ref Vector128<byte> s6, ref Vector128<byte> s7, ref byte ciphertext, ref byte plaintext)
     {
-        Vector128<byte> ad0 = Vector128.Create(associatedData[..16]);
-        Vector128<byte> ad1 = Vector128.Create(associatedData[16..]);
-        this.Update(ad0, ad1);
+        var z0 = s6 ^ s1 ^ (s2 & s3);
+        var z1 = s2 ^ s5 ^ (s6 & s7);
+
+        var t0 = Unsafe.ReadUnaligned<Vector128<byte>>(ref plaintext);
+        var t1 = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.Add(ref plaintext, 16));
+        Unsafe.WriteUnaligned(ref ciphertext, t0 ^ z0);
+        Unsafe.WriteUnaligned(ref Unsafe.Add(ref ciphertext, 16), t1 ^ z1);
+
+        Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, t0, t1);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Enc(scoped Span<byte> ciphertext, scoped ReadOnlySpan<byte> plaintext)
+    private static void Dec(ref Vector128<byte> s0, ref Vector128<byte> s1, ref Vector128<byte> s2, ref Vector128<byte> s3, ref Vector128<byte> s4, ref Vector128<byte> s5, ref Vector128<byte> s6, ref Vector128<byte> s7, ref byte plaintext, ref byte ciphertext)
     {
-        Vector128<byte> z0 = this.S6 ^ this.S1 ^ (this.S2 & this.S3);
-        Vector128<byte> z1 = this.S2 ^ this.S5 ^ (this.S6 & this.S7);
+        var z0 = s6 ^ s1 ^ (s2 & s3);
+        var z1 = s2 ^ s5 ^ (s6 & s7);
 
-        Vector128<byte> t0 = Vector128.Create(plaintext[..16]);
-        Vector128<byte> t1 = Vector128.Create(plaintext[16..]);
-        Vector128<byte> out0 = t0 ^ z0;
-        Vector128<byte> out1 = t1 ^ z1;
+        var t0 = Unsafe.ReadUnaligned<Vector128<byte>>(ref ciphertext) ^ z0;
+        var t1 = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.Add(ref ciphertext, 16)) ^ z1;
+        Unsafe.WriteUnaligned(ref plaintext, t0);
+        Unsafe.WriteUnaligned(ref Unsafe.Add(ref plaintext, 16), t1);
 
-        this.Update(t0, t1);
-        out0.CopyTo(ciphertext[..16]);
-        out1.CopyTo(ciphertext[16..]);
+        Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, t0, t1);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Dec(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext)
+    private static void DecPartial(ref Vector128<byte> s0, ref Vector128<byte> s1, ref Vector128<byte> s2, ref Vector128<byte> s3, ref Vector128<byte> s4, ref Vector128<byte> s5, ref Vector128<byte> s6, ref Vector128<byte> s7, Span<byte> plaintext, ReadOnlySpan<byte> ciphertext)
     {
-        Vector128<byte> z0 = this.S6 ^ this.S1 ^ (this.S2 & this.S3);
-        Vector128<byte> z1 = this.S2 ^ this.S5 ^ (this.S6 & this.S7);
-
-        Vector128<byte> t0 = Vector128.Create(ciphertext[..16]);
-        Vector128<byte> t1 = Vector128.Create(ciphertext[16..]);
-        Vector128<byte> out0 = t0 ^ z0;
-        Vector128<byte> out1 = t1 ^ z1;
-
-        this.Update(out0, out1);
-        out0.CopyTo(plaintext[..16]);
-        out1.CopyTo(plaintext[16..]);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private void DecPartial(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext)
-    {
-        Vector128<byte> z0 = this.S6 ^ this.S1 ^ (this.S2 & this.S3);
-        Vector128<byte> z1 = this.S2 ^ this.S5 ^ (this.S6 & this.S7);
+        var z0 = s6 ^ s1 ^ (s2 & s3);
+        var z1 = s2 ^ s5 ^ (s6 & s7);
 
         Span<byte> pad = stackalloc byte[32];
+        pad.Clear();
         ciphertext.CopyTo(pad);
-        Vector128<byte> t0 = Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(pad)); // Vector128.Create(pad[..16]);
-        Vector128<byte> t1 = Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(pad.Slice(16))); // Vector128.Create(pad[16..]);
-        Vector128<byte> out0 = t0 ^ z0;
-        Vector128<byte> out1 = t1 ^ z1;
+        ref byte padRef = ref MemoryMarshal.GetReference(pad);
+        var t0 = Unsafe.ReadUnaligned<Vector128<byte>>(ref padRef);
+        var t1 = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.Add(ref padRef, 16));
+        Unsafe.WriteUnaligned(ref padRef, t0 ^ z0);
+        Unsafe.WriteUnaligned(ref Unsafe.Add(ref padRef, 16), t1 ^ z1);
+        pad[..ciphertext.Length].CopyTo(plaintext);
 
-        Span<byte> p = pad;
-        out0.CopyTo(p[..16]);
-        out1.CopyTo(p[16..]);
-        p[..ciphertext.Length].CopyTo(plaintext);
-
-        p[ciphertext.Length..].Clear();
-        Vector128<byte> v0 = Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(pad)); // Vector128.Create(pad[..16]);
-        Vector128<byte> v1 = Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(pad.Slice(16))); // Vector128.Create(pad[16..]);
-        this.Update(v0, v1);
+        pad[ciphertext.Length..].Clear();
+        var v0 = Unsafe.ReadUnaligned<Vector128<byte>>(ref padRef);
+        var v1 = Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.Add(ref padRef, 16));
+        Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, v0, v1);
+        CryptographicOperations.ZeroMemory(pad);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private void Finalize(scoped Span<byte> tag, ulong associatedDataLength, ulong plaintextLength)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void Finalize(ref Vector128<byte> s0, ref Vector128<byte> s1, ref Vector128<byte> s2, ref Vector128<byte> s3, ref Vector128<byte> s4, ref Vector128<byte> s5, ref Vector128<byte> s6, ref Vector128<byte> s7, Span<byte> tag, ulong associatedDataLength, ulong plaintextLength)
     {
-        Span<byte> b = stackalloc byte[16];
-        BinaryPrimitives.WriteUInt64LittleEndian(b[..8], associatedDataLength * 8);
-        BinaryPrimitives.WriteUInt64LittleEndian(b[8..], plaintextLength * 8);
+        var t = s2 ^ Vector128.Create(associatedDataLength * 8, plaintextLength * 8).AsByte();
 
-        Vector128<byte> t = this.S2 ^ Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(b)); // Vector128.Create(b);
-
-        for (int i = 0; i < 7; i++)
+        for (var i = 0; i < 7; i++)
         {
-            this.Update(t, t);
+            Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, t, t);
         }
 
+        ref byte tagRef = ref MemoryMarshal.GetReference(tag);
         if (tag.Length == 16)
         {
-            Vector128<byte> a = this.S0 ^ this.S1 ^ this.S2 ^ this.S3 ^ this.S4 ^ this.S5 ^ this.S6;
-            a.CopyTo(tag);
+            Unsafe.WriteUnaligned(ref tagRef, s0 ^ s1 ^ s2 ^ s3 ^ s4 ^ s5 ^ s6);
         }
         else
         {
-            Vector128<byte> a1 = this.S0 ^ this.S1 ^ this.S2 ^ this.S3;
-            Vector128<byte> a2 = this.S4 ^ this.S5 ^ this.S6 ^ this.S7;
-            a1.CopyTo(tag[..16]);
-            a2.CopyTo(tag[16..]);
+            Unsafe.WriteUnaligned(ref tagRef, s0 ^ s1 ^ s2 ^ s3);
+            Unsafe.WriteUnaligned(ref Unsafe.Add(ref tagRef, 16), s4 ^ s5 ^ s6 ^ s7);
         }
     }
 }

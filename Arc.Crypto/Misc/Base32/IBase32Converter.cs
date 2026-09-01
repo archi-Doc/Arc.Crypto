@@ -4,6 +4,9 @@ using System;
 
 namespace Arc.Crypto;
 
+/// <summary>
+/// Converts between byte sequences and Base32 representations in utf-8 or utf-16.
+/// </summary>
 public interface IBase32Converter
 {
     /// <summary>

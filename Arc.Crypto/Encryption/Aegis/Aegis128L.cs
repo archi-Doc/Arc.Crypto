@@ -66,15 +66,15 @@ public static class Aegis128L
 
         if (Aegis128Lx86.IsSupported())
         {
-            default(Aegis128Lx86).Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
+            Aegis128Lx86.Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
         }
-        else if (AES.EnableArmIntrinsics && Aegis128LArm.IsSupported())
+        else if (Aegis128LArm.IsSupported())
         {
-            default(Aegis128LArm).Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
+            Aegis128LArm.Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
         }
         else
         {
-            default(Aegis128LSoft).Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
+            Aegis128LSoft.Encrypt(ciphertext, plaintext, nonce16, key16, associatedData, tagSize);
         }
     }
 
@@ -123,15 +123,15 @@ public static class Aegis128L
 
         if (Aegis128Lx86.IsSupported())
         {
-            return default(Aegis128Lx86).Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
+            return Aegis128Lx86.Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
         }
-        else if (AES.EnableArmIntrinsics && Aegis128LArm.IsSupported())
+        else if (Aegis128LArm.IsSupported())
         {
-            return default(Aegis128LArm).Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
+            return Aegis128LArm.Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
         }
         else
         {
-            return default(Aegis128LSoft).Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
+            return Aegis128LSoft.Decrypt(plaintext, ciphertext, nonce16, key16, associatedData, tagSize);
         }
     }
 }

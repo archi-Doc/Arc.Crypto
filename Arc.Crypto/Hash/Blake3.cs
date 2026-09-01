@@ -14,6 +14,9 @@ namespace Arc.Crypto;
 /// </remarks>
 public static class Blake3
 {
+    /// <summary>
+    /// The size of the BLAKE3 hash in bytes.
+    /// </summary>
     public const int Size = 32;
     internal const int LimitPreemptive = 1024;
 

@@ -26,6 +26,11 @@ public class Sha3_256 : Sha3
         this.Sponge = new KeccakSponge(256);
     }
 
+    /// <summary>
+    /// Calculates a hash from the given data and returns it as four 64-bit unsigned integers.
+    /// </summary>
+    /// <param name="input">The read-only span that contains input data.</param>
+    /// <returns>The 256-bit hash as four 64-bit unsigned integers.</returns>
     public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) GetHashUInt64(ReadOnlySpan<byte> input)
     {
         this.HashInitialize();
@@ -33,6 +38,13 @@ public class Sha3_256 : Sha3
         return this.Sponge!.SqueezeToUInt64_4();
     }
 
+    /// <summary>
+    /// Calculates a hash from the given data and returns it as four 64-bit unsigned integers.
+    /// </summary>
+    /// <param name="input">The byte array that contains input data.</param>
+    /// <param name="inputOffset">The offset into the input byte array from which to begin using data.</param>
+    /// <param name="inputCount">The number of bytes in the input byte array to use as data.</param>
+    /// <returns>The 256-bit hash as four 64-bit unsigned integers.</returns>
     public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) GetHashUInt64(byte[] input, int inputOffset, int inputCount)
     {
         this.HashInitialize();
@@ -40,6 +52,10 @@ public class Sha3_256 : Sha3
         return this.Sponge!.SqueezeToUInt64_4();
     }
 
+    /// <summary>
+    /// Completes the hash calculation and returns the result as four 64-bit unsigned integers.
+    /// </summary>
+    /// <returns>The 256-bit hash as four 64-bit unsigned integers.</returns>
     public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) HashFinalUInt64()
     {
         return this.Sponge!.SqueezeToUInt64_4();
@@ -151,6 +167,11 @@ public abstract class Sha3 : IHash
         return this.HashFinal();
     }
 
+    /// <summary>
+    /// Calculates a hash from the given data and writes it to <paramref name="output"/>.
+    /// </summary>
+    /// <param name="input">The read-only span that contains input data.</param>
+    /// <param name="output">The span that receives the hash. Its length must be at least <see cref="HashBits"/> / 8.</param>
     public void GetHash(ReadOnlySpan<byte> input, Span<byte> output)
     {
         this.HashInitialize();
@@ -161,6 +182,10 @@ public abstract class Sha3 : IHash
     /// <inheritdoc/>
     public byte[] HashFinal() => this.Sponge!.Squeeze();
 
+    /// <summary>
+    /// Completes the hash calculation and writes the result to <paramref name="output"/>.
+    /// </summary>
+    /// <param name="output">The span that receives the hash. Its length must be at least <see cref="HashBits"/> / 8.</param>
     public void HashFinal(Span<byte> output) => this.Sponge!.SqueezeTo(output);
 
     /// <inheritdoc/>

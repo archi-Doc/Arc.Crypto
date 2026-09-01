@@ -2,6 +2,9 @@
 
 namespace Arc.Crypto;
 
+/// <summary>
+/// Provides cryptographically secure random bytes using the Libsodium random generator.
+/// </summary>
 public static class CryptoRandom
 {
     /// <summary>

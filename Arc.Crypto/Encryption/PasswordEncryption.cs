@@ -12,7 +12,14 @@ namespace Arc.Crypto;
 /// </summary>
 public static class PasswordEncryption
 {
+    /// <summary>
+    /// The size of the salt in bytes, which is also used as the AEGIS-256 nonce.
+    /// </summary>
     public const int SaltSize = 32;
+
+    /// <summary>
+    /// The size of the authentication tag in bytes.
+    /// </summary>
     public const int TagSize = 16;
 
     /// <summary>

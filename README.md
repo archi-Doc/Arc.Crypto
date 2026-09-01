@@ -1,12 +1,18 @@
 ﻿## Arc.Crypto
 **Arc.Crypto** is a library equipped with various features related to cryptography.
 
-- Encryption (AEGIS-256, AEGIS-128L)
-- Hash functions (Blake2B, Blake3, FarmHash, XxHash3, SHA3)
-- Hashtables
-- Pseudo-random generator (xoshiro256**, Mersenne Twister)
-- Random number pool (RandomVault)
-- Password-encryption class (PasswordEncryption)
+- Authenticated encryption (AEGIS-256, AEGIS-128L, XSalsa20-Poly1305)
+- Password-based encryption and key derivation (PasswordEncryption, Argon2id)
+- Public-key signatures and key exchange (Ed25519, Ed25519ph, X25519, secp256k1, secp256r1)
+- Cryptographic hash functions (BLAKE3, BLAKE2b, SHA-2, SHA-3)
+- Non-cryptographic hash functions (FarmHash, xxHash3, xxHash, Adler-32, CRC-32)
+- Pseudo-random generators (xoshiro256\*\*, xoroshiro128\*\*, Xorshift, Mersenne Twister)
+- Cryptographically secure random generator (AegisRandom)
+- Thread-safe random number pool (RandomVault)
+- Encoding (Hex, Base64, url-safe Base64, sortable Base32)
+- String comparers for hashtables (Utf8StringEqualityComparer, Utf16StringEqualityComparer)
+
+The library targets .NET 10 and uses [Libsodium](https://doc.libsodium.org/) and [BLAKE3](https://github.com/BLAKE3-team/BLAKE3) through native interop.
 
 
 
@@ -16,81 +22,102 @@
 Install-Package Arc.Crypto
 ```
 
-
-
-### xoshiro256**
-
 ```csharp
-public void QuickStart_Xoshiro256StarStar()
-{
-    // xoshiro256** is a pseudo-random number generator.
-    var xo = new Xoshiro256StarStar(42);
-    var ul = xo.NextULong(); // [0, 2^64-1]
-    var d = xo.NextDouble(); // [0,1)
-    var bytes = new byte[10];
-    xo.NextBytes(bytes);
-}
+using Arc.Crypto;
 ```
 
-
-
-### Mersenne Twister
-
-```csharp
-public void QuickStart_MersenneTwister()
-{
-    var mt = new MersenneTwister(42);
-    var ul = mt.NextULong(); // [0, 2^64-1]
-    var d = mt.NextDouble(); // [0,1)
-    var bytes = new byte[10];
-    mt.NextBytes(bytes);
-}
-```
+Types that take a fixed-size key or nonce carry the size in the parameter name (`key32`, `nonce24`), and the corresponding `KeySize` / `NonceSize` constants are exposed on each class. Spans of the wrong length are rejected with an exception rather than being silently truncated.
 
 
 
-### RandomVault
+### Encryption
 
 ```csharp
-public static void QuickStart_RandomVault()
-{
-    // RandomVault is a random number pool.
-    // It's thread-safe and faster than lock in most cases.
-    var mt = new MersenneTwister(); // Create a random generator.
-    var rv = new RandomVault(() => mt.NextULong(), x => mt.NextBytes(x)); // Specify NextULong() or NextBytes() or both delegates, and forget about mt.
-    Console.WriteLine("RandomVault:");
-    Console.WriteLine(rv.NextLong());
-    Console.WriteLine(rv.NextDouble());
-}
+// AEGIS-256 (key 32 bytes, nonce 32 bytes) and AEGIS-128L (key 16, nonce 16)
+// are very fast authenticated ciphers.
+var message = "Message"u8;
+Span<byte> key = stackalloc byte[Aegis256.KeySize];
+Span<byte> nonce = stackalloc byte[Aegis256.NonceSize];
+RandomVault.Default.NextBytes(key);
+RandomVault.Default.NextBytes(nonce);
+
+// The ciphertext holds the message plus the authentication tag.
+var cipher = new byte[message.Length + Aegis256.MinTagSize];
+Aegis256.Encrypt(cipher, message, nonce, key);
+
+var decrypted = new byte[message.Length];
+var result = Aegis256.TryDecrypt(decrypted, cipher, nonce, key); // true
+
+// XSalsa20-Poly1305 via Libsodium.
+Span<byte> secretBoxKey = stackalloc byte[CryptoSecretBox.KeySize];
+Span<byte> secretBoxNonce = stackalloc byte[CryptoSecretBox.NonceSize];
+CryptoSecretBox.CreateKey(secretBoxKey);
+RandomVault.Default.NextBytes(secretBoxNonce);
+var box = new byte[message.Length + CryptoSecretBox.MacSize];
+CryptoSecretBox.Encrypt(message, secretBoxNonce, secretBoxKey, box);
+var opened = new byte[message.Length];
+CryptoSecretBox.TryDecrypt(box, secretBoxNonce, secretBoxKey, opened);
 ```
 
+A nonce must never be reused with the same key. `Aegis128L` and `Aegis256` accept a tag size of 16 or 32 bytes, or 0 to encrypt without authentication.
 
 
-### PasswordEncrypt
+
+### PasswordEncryption
 
 ```csharp
-public static void QuickStart_PasswordEncrypt()
-{
-    // PasswordEncrypt encrypts data with the specified password.
-    var data = new byte[] { 0, 1, 2, };
-    var encrypted = PasswordEncrypt.Encrypt(data, "correct");
-    Console.WriteLine("PasswordEncrypt:");
-    Console.WriteLine($"Encrypted: byte[{encrypted.Length}]");
+// PasswordEncryption derives a key with Argon2id and encrypts with AEGIS-256.
+var data = new byte[] { 0, 1, 2, };
+PasswordEncryption.Encrypt(data, "correct", out var encrypted);
 
-    // Decrypt with the correct password.
-    var result = PasswordEncrypt.TryDecrypt(encrypted, "correct", out var data2);
-    Console.WriteLine($"Password: correct, Result: {result}, {BitConverter.ToString(data2.ToArray())}");
+var result = PasswordEncryption.TryDecrypt(encrypted, "correct", out var decrypted); // true
+var failure = PasswordEncryption.TryDecrypt(encrypted, "incorrect", out _); // false
 
-    // Incorrect password.
-    result = PasswordEncrypt.TryDecrypt(encrypted, "incorrect", out data2);
-    Console.WriteLine($"Password: incorrect, Result: {result}, {BitConverter.ToString(data2.ToArray())}");
-    Console.WriteLine();
-
-    // Calculates the deterministic number from a password.
-    var password = "pass";
-    Console.WriteLine($"Password hint for \"{password}\": {PasswordEncrypt.GetPasswordHint(password)}");
-}
+// Argon2id can also be used directly for key derivation and password storage.
+var hashString = CryptoPasswordHash.GetHashString("password");
+var verified = CryptoPasswordHash.VerifyHashString(hashString, "password"); // true
 ```
+
+The encrypted data is the plaintext size plus `PasswordEncryption.SaltSize` (32) and `PasswordEncryption.TagSize` (16). Argon2id deliberately consumes CPU and memory; `OpsLimit` and `MemLimit` select the cost, which defaults to `Interactive` (64 MiB).
+
+
+
+### Public key
+
+```csharp
+// Ed25519 signature.
+Span<byte> secretKey = stackalloc byte[CryptoSign.SecretKeySize];
+Span<byte> publicKey = stackalloc byte[CryptoSign.PublicKeySize];
+CryptoSign.CreateKey(secretKey, publicKey);
+
+var message = "Message"u8;
+Span<byte> signature = stackalloc byte[CryptoSign.SignatureSize];
+CryptoSign.Sign(message, secretKey, signature);
+var valid = CryptoSign.Verify(message, publicKey, signature); // true
+
+// Ed25519ph signs a message supplied in several parts.
+var ph = Ed25519ph.New();
+ph.Update("Mes"u8);
+ph.Update("sage"u8);
+ph.FinalizeAndSign(secretKey, signature);
+
+// X25519 key exchange (crypto_box).
+Span<byte> boxSecretKey = stackalloc byte[CryptoBox.SecretKeySize];
+Span<byte> boxPublicKey = stackalloc byte[CryptoBox.PublicKeySize];
+CryptoBox.CreateKey(boxSecretKey, boxPublicKey);
+
+// CryptoDual makes a single seed usable for both signing and encryption.
+CryptoDual.CreateKey(secretKey, publicKey, boxSecretKey, boxPublicKey);
+CryptoDual.PublicKey_SignToBox(publicKey, boxPublicKey);
+
+// Elliptic curves (secp256k1, secp256r1) provide point compression and seed validation.
+var curve = P256K1Curve.Instance; // Arc.Crypto.EC
+Span<byte> seed = stackalloc byte[curve.ByteLength];
+RandomVault.Default.NextBytes(seed);
+var validSeed = curve.IsValidSeed(seed);
+```
+
+An Ed25519 public key can be converted to a Curve25519 key, but the reverse is normally not possible. `CryptoDual` adds the sign bit to the Curve25519 key so that both directions work; keys produced this way do not follow the standard Curve25519 format.
 
 
 
@@ -98,38 +125,102 @@ public static void QuickStart_PasswordEncrypt()
 
 ```csharp
 var data = new byte[100];
-ulong hash64;
-uint hash32;
-byte[] array;
 
-hash64 = Arc.Crypto.FarmHash.Hash64(data.AsSpan()); // The fastest and best algorithm.
-hash64 = Arc.Crypto.XXHash64.Hash64(data.AsSpan()); // As fast as FarmHash.
-hash32 = Arc.Crypto.FarmHash.Hash32(data.AsSpan()); // 32 bit version is slower than 64 bit version.
-hash32 = Arc.Crypto.XXHash32.Hash32(data.AsSpan()); // Same as above.
-hash32 = unchecked((uint)Arc.Crypto.FarmHash.Hash64(data.AsSpan())); // I recommend getting 64 bit and discarding half.
-hash32 = Arc.Crypto.Adler32.Hash32(data.AsSpan()); // Slow
-hash32 = Arc.Crypto.CRC32.Hash32(data.AsSpan()); // Slowest
+// Non-cryptographic hashes. FarmHash and xxHash are the fastest.
+ulong hash64 = FarmHash.Hash64(data);
+hash64 = XxHash3.Hash64(data); // Recommended for new code.
+hash64 = XxHash64.Hash64(data);
+uint hash32 = XXHash32.Hash32(data);
+hash32 = Adler32.Hash32(data);
+hash32 = Crc32.Hash32(data);
 
-// IHash is an interface to get a hash of large data.
-// For XXHash64, IHash version is a bit slower than static method version.
-// For FarmHash64, IHash version is twice as slow. XXHash64 is recommended.
-var ihash = new Arc.Crypto.XXHash64();
+// Cryptographic hashes.
+var blake3 = Blake3.Get256_ByteArray(data);
+var blake2b = Blake2B.Get256_ByteArray(data);
+var sha3 = Sha3Helper.Get256_ByteArray(data);
+var sha2 = Sha2Helper.Get256_ByteArray(data);
+
+// The Get256_Span overloads write into a caller-supplied buffer and do not allocate.
+Span<byte> hash = stackalloc byte[32];
+Blake3.Get256_Span(data, hash);
+
+// Blake3Hasher processes data incrementally.
+using var hasher = Blake3Hasher.New();
+hasher.Update(data);
+hasher.Finalize(hash);
+
+// IHash is a common interface for the incremental hash classes.
+IHash ihash = new Sha3_256();
 ihash.HashInitialize();
 ihash.HashUpdate(data);
-Assert.True(ihash.HashFinal().SequenceEqual(ihash.GetHash(data)));
-
-// Secure Hash Algorithm (SHA1, SHA2, SHA3 supported)
-var sha3_512 = new Arc.Crypto.SHA3_512();
-array = sha3_512.GetHash(data.AsSpan());
-
-sha3_512.HashInitialize(); // Another way
-sha3_512.HashUpdate(data.AsSpan());
-Assert.True(sha3_512.HashFinal().SequenceEqual(array));
+var equal = ihash.HashFinal().SequenceEqual(ihash.GetHash(data)); // true
 ```
+
+A 32-bit hash is slower than a 64-bit one; if you need 32 bits, take a 64-bit hash and discard half. The `IHash` implementations can process data of any size sequentially, but they are slower and allocate, so prefer the static methods when the whole input is available.
+
+
+
+### Random
+
+```csharp
+// Pseudo-random generators. They are fast but not thread-safe.
+var xo = new Xoshiro256StarStar(42);
+var ul = xo.NextUInt64(); // [0, 2^64-1]
+var d = xo.NextDouble(); // [0,1)
+var i = xo.NextInt32(0, 100); // [0,100)
+var bytes = new byte[10];
+xo.NextBytes(bytes);
+
+var mt = new MersenneTwister(42);
+ul = mt.NextUInt64();
+
+// AegisRandom is a cryptographically secure generator. It is not thread-safe.
+var aegis = new Arc.Crypto.Random.AegisRandom();
+aegis.NextBytes(bytes);
+
+// RandomVault is a thread-safe pool built on top of a generator.
+// The predefined instances cover the common cases.
+ul = RandomVault.Default.NextUInt64(); // Cryptographically secure (AegisRandom).
+ul = RandomVault.Xoshiro.NextUInt64(); // Fast, not cryptographically secure.
+RandomVault.Default.NextBytes(bytes);
+
+// A vault can also wrap any generator of your own.
+var vault = new RandomVault(x => mt.NextBytes(x));
+ul = vault.NextUInt64();
+```
+
+All generators derive from `RandomUInt64`, so implementing `NextUInt64()` is enough to get the whole `NextInt32`/`NextDouble`/`NextBytes` surface. `RandomVault` fills a buffer under a lock and serves values from it, which is faster than locking a generator directly. Besides `Default` and `Xoshiro`, `RandomVault.Libsodium` and `RandomVault.RandomNumberGenerator` wrap the corresponding system generators.
+
+
+
+### Encoding
+
+```csharp
+var data = new byte[] { 0, 1, 2, 3, };
+
+// Hexadecimal.
+var hex = Hex.FromByteArrayToString(data); // "00010203"
+var fromHex = Hex.FromStringToByteArray(hex);
+
+// Base64 and its url-safe variant.
+var base64 = Base64.EncodeToString(data); // "AAECAw=="
+var fromBase64 = Base64.Decode(base64);
+var base64Url = Base64Url.EncodeToString(data); // "AAECAw"
+
+// Base32Sort keeps the sort order of the encoded data and omits ambiguous characters.
+var base32 = Base32Sort.Default.FromByteArrayToString(data); // "000H40S"
+var fromBase32 = Base32Sort.Default.FromStringToByteArray(base32);
+```
+
+`Base32Sort` encodes to an alphabet that preserves the ordering of the underlying bytes, which makes the encoded strings sortable. It omits `D`, `I`, `L` and `O`; when decoding, `I`/`l` map to `1`, `O` maps to `0`, and lower-case input is accepted.
+
+For performance, `Hex.FromStringToByteArray` does not validate its input; characters outside `0-9`, `a-f` and `A-F` produce unspecified bytes.
 
 
 
 ## Benchmark
+
+The measurements below were taken on an older machine and are kept for relative comparison; the absolute numbers no longer reflect current hardware. The AEGIS, BLAKE3 and xxHash3 implementations added since are not included.
 
 ### PseudoRandomBenchmark
 

@@ -6,8 +6,17 @@ using System.Runtime.CompilerServices;
 
 namespace Arc.Crypto;
 
+/// <summary>
+/// Base class for random number generators that produce 64-bit unsigned integers.<br/>
+/// Derived classes only need to implement <see cref="NextUInt64"/>; every other method is built on it.
+/// </summary>
 public abstract class RandomUInt64
 {
+    /// <summary>
+    /// Returns the number of bits required to represent <paramref name="value"/>, rounded up.
+    /// </summary>
+    /// <param name="value">The value to measure.</param>
+    /// <returns>The ceiling of log2(<paramref name="value"/>).</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int Log2Ceiling(ulong value)
     {
@@ -20,6 +29,12 @@ public abstract class RandomUInt64
         return result;
     }
 
+    /// <summary>
+    /// Advances a SplitMix64 state and returns the generated value.<br/>
+    /// It is typically used to expand a single seed into the state of another generator.
+    /// </summary>
+    /// <param name="state">The state to advance.</param>
+    /// <returns>A random 64-bit unsigned integer.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong SplitMix64(ref ulong state)
     {

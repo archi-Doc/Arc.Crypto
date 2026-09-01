@@ -2,97 +2,105 @@
 
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
 namespace Arc.Crypto;
 
-#pragma warning disable SA1132 // Do not combine fields
-#pragma warning disable SA1306 // Field names should begin with lower-case letter
-
 [SkipLocalsInit]
-internal ref struct Aegis128LSoft
+internal static class Aegis128LSoft
 {
-    private UInt128 S0, S1, S2, S3, S4, S5, S6, S7;
-
-    internal void Encrypt(Span<byte> ciphertext, ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData = default, int tagSize = Aegis128L.MinTagSize)
+    internal static void Encrypt(Span<byte> ciphertext, ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData, int tagSize)
     {
-        this.Init(key, nonce);
+        Init(key, nonce, out var s0, out var s1, out var s2, out var s3, out var s4, out var s5, out var s6, out var s7);
 
-        int i = 0;
+        var adLength = associatedData.Length;
+        var adFull = adLength & ~31;
+        ref byte adRef = ref MemoryMarshal.GetReference(associatedData);
+        for (nint i = 0; i < adFull; i += 32)
+        {
+            var ad0 = ReadBigEndian(ref Unsafe.Add(ref adRef, i));
+            var ad1 = ReadBigEndian(ref Unsafe.Add(ref adRef, i + 16));
+            Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ad0, ad1);
+        }
+
         Span<byte> pad = stackalloc byte[32];
-        while (i + 32 <= associatedData.Length)
-        {
-            this.Absorb(associatedData.Slice(i, 32));
-            i += 32;
-        }
-
-        if (associatedData.Length % 32 != 0)
+        if (adLength != adFull)
         {
             pad.Clear();
-            associatedData[i..].CopyTo(pad);
-            this.Absorb(pad);
+            associatedData[adFull..].CopyTo(pad);
+            ref byte padRef = ref MemoryMarshal.GetReference(pad);
+            Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ReadBigEndian(ref padRef), ReadBigEndian(ref Unsafe.Add(ref padRef, 16)));
         }
 
-        i = 0;
-        while (i + 32 <= plaintext.Length)
+        var length = plaintext.Length;
+        var full = length & ~31;
+        ref byte source = ref MemoryMarshal.GetReference(plaintext);
+        ref byte destination = ref MemoryMarshal.GetReference(ciphertext);
+        for (nint i = 0; i < full; i += 32)
         {
-            this.Enc(ciphertext.Slice(i, 32), plaintext.Slice(i, 32));
-            i += 32;
+            Enc(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ref Unsafe.Add(ref destination, i), ref Unsafe.Add(ref source, i));
         }
 
-        if (plaintext.Length % 32 != 0)
+        if (length != full)
         {
-            Span<byte> tmp = stackalloc byte[32];
             pad.Clear();
-            plaintext[i..].CopyTo(pad);
-            this.Enc(tmp, pad);
-            tmp[..(plaintext.Length % 32)].CopyTo(ciphertext[i..^tagSize]);
-        }
-
-        CryptographicOperations.ZeroMemory(pad);
-
-        if (tagSize > 0)
-        {
-            this.Finalize(ciphertext[^tagSize..], (ulong)associatedData.Length, (ulong)plaintext.Length);
-        }
-    }
-
-    internal bool Decrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData = default, int tagSize = Aegis128L.MinTagSize)
-    {
-        this.Init(key, nonce);
-
-        int i = 0;
-        while (i + 32 <= associatedData.Length)
-        {
-            this.Absorb(associatedData.Slice(i, 32));
-            i += 32;
-        }
-
-        if (associatedData.Length % 32 != 0)
-        {
-            Span<byte> pad = stackalloc byte[32];
-            pad.Clear();
-            associatedData[i..].CopyTo(pad);
-            this.Absorb(pad);
+            plaintext[full..].CopyTo(pad);
+            ref byte padRef = ref MemoryMarshal.GetReference(pad);
+            Enc(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ref padRef, ref padRef);
+            pad[..(length - full)].CopyTo(ciphertext[full..]);
             CryptographicOperations.ZeroMemory(pad);
         }
 
-        i = 0;
-        while (i + 32 <= ciphertext.Length - tagSize)
+        if (tagSize > 0)
         {
-            this.Dec(plaintext.Slice(i, 32), ciphertext.Slice(i, 32));
-            i += 32;
+            Finalize(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ciphertext[^tagSize..], (ulong)adLength, (ulong)length);
+        }
+    }
+
+    internal static bool Decrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData, int tagSize)
+    {
+        Init(key, nonce, out var s0, out var s1, out var s2, out var s3, out var s4, out var s5, out var s6, out var s7);
+
+        var adLength = associatedData.Length;
+        var adFull = adLength & ~31;
+        ref byte adRef = ref MemoryMarshal.GetReference(associatedData);
+        for (nint i = 0; i < adFull; i += 32)
+        {
+            var ad0 = ReadBigEndian(ref Unsafe.Add(ref adRef, i));
+            var ad1 = ReadBigEndian(ref Unsafe.Add(ref adRef, i + 16));
+            Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ad0, ad1);
         }
 
-        if ((ciphertext.Length - tagSize) % 32 != 0)
+        if (adLength != adFull)
         {
-            this.DecPartial(plaintext[i..], ciphertext[i..^tagSize]);
+            Span<byte> pad = stackalloc byte[32];
+            pad.Clear();
+            associatedData[adFull..].CopyTo(pad);
+            ref byte padRef = ref MemoryMarshal.GetReference(pad);
+            Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ReadBigEndian(ref padRef), ReadBigEndian(ref Unsafe.Add(ref padRef, 16)));
+            CryptographicOperations.ZeroMemory(pad);
+        }
+
+        var length = plaintext.Length;
+        var full = length & ~31;
+        ref byte source = ref MemoryMarshal.GetReference(ciphertext);
+        ref byte destination = ref MemoryMarshal.GetReference(plaintext);
+        for (nint i = 0; i < full; i += 32)
+        {
+            Dec(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, ref Unsafe.Add(ref destination, i), ref Unsafe.Add(ref source, i));
+        }
+
+        if (length != full)
+        {
+            DecPartial(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, plaintext[full..], ciphertext.Slice(full, length - full));
         }
 
         if (tagSize > 0)
         {
-            Span<byte> tag = stackalloc byte[tagSize];
-            this.Finalize(tag, (ulong)associatedData.Length, (ulong)plaintext.Length);
+            Span<byte> tag = stackalloc byte[Aegis128L.MaxTagSize];
+            tag = tag[..tagSize];
+            Finalize(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, tag, (ulong)adLength, (ulong)length);
 
             if (!CryptographicOperations.FixedTimeEquals(tag, ciphertext[^tagSize..]))
             {
@@ -105,143 +113,123 @@ internal ref struct Aegis128LSoft
         return true;
     }
 
-    private void Init(ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static UInt128 ReadBigEndian(ref byte source)
     {
-        ReadOnlySpan<byte> c = stackalloc byte[]
-        {
-            0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x0d, 0x15, 0x22, 0x37, 0x59, 0x90, 0xe9, 0x79, 0x62,
-            0xdb, 0x3d, 0x18, 0x55, 0x6d, 0xc2, 0x2f, 0xf1, 0x20, 0x11, 0x31, 0x42, 0x73, 0xb5, 0x28, 0xdd,
-        };
-        UInt128 c0 = BinaryPrimitives.ReadUInt128BigEndian(c[..16]);
-        UInt128 c1 = BinaryPrimitives.ReadUInt128BigEndian(c[16..]);
-        UInt128 k = BinaryPrimitives.ReadUInt128BigEndian(key);
-        UInt128 n = BinaryPrimitives.ReadUInt128BigEndian(nonce);
+        var value = Unsafe.ReadUnaligned<UInt128>(ref source);
+        return BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value;
+    }
 
-        this.S0 = k ^ n;
-        this.S1 = c1;
-        this.S2 = c0;
-        this.S3 = c1;
-        this.S4 = k ^ n;
-        this.S5 = k ^ c0;
-        this.S6 = k ^ c1;
-        this.S7 = k ^ c0;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void WriteBigEndian(ref byte destination, UInt128 value)
+        => Unsafe.WriteUnaligned(ref destination, BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value);
 
-        for (int i = 0; i < 10; i++)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void Init(ReadOnlySpan<byte> key, ReadOnlySpan<byte> nonce, out UInt128 s0, out UInt128 s1, out UInt128 s2, out UInt128 s3, out UInt128 s4, out UInt128 s5, out UInt128 s6, out UInt128 s7)
+    {
+        var c0 = BinaryPrimitives.ReadUInt128BigEndian(AES.C0);
+        var c1 = BinaryPrimitives.ReadUInt128BigEndian(AES.C1);
+        var k = BinaryPrimitives.ReadUInt128BigEndian(key);
+        var n = BinaryPrimitives.ReadUInt128BigEndian(nonce);
+
+        s0 = k ^ n;
+        s1 = c1;
+        s2 = c0;
+        s3 = c1;
+        s4 = k ^ n;
+        s5 = k ^ c0;
+        s6 = k ^ c1;
+        s7 = k ^ c0;
+
+        for (var i = 0; i < 10; i++)
         {
-            this.Update(n, k);
+            Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, n, k);
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Update(UInt128 m0, UInt128 m1)
+    private static void Update(ref UInt128 s0, ref UInt128 s1, ref UInt128 s2, ref UInt128 s3, ref UInt128 s4, ref UInt128 s5, ref UInt128 s6, ref UInt128 s7, UInt128 m0, UInt128 m1)
     {
-        UInt128 s0 = AES.Encrypt(this.S7, this.S0 ^ m0);
-        UInt128 s1 = AES.Encrypt(this.S0, this.S1);
-        UInt128 s2 = AES.Encrypt(this.S1, this.S2);
-        UInt128 s3 = AES.Encrypt(this.S2, this.S3);
-        UInt128 s4 = AES.Encrypt(this.S3, this.S4 ^ m1);
-        UInt128 s5 = AES.Encrypt(this.S4, this.S5);
-        UInt128 s6 = AES.Encrypt(this.S5, this.S6);
-        UInt128 s7 = AES.Encrypt(this.S6, this.S7);
-
-        this.S0 = s0;
-        this.S1 = s1;
-        this.S2 = s2;
-        this.S3 = s3;
-        this.S4 = s4;
-        this.S5 = s5;
-        this.S6 = s6;
-        this.S7 = s7;
+        // Written in reverse order so that each line reads only not-yet-overwritten state, keeping a single temporary.
+        var t = s7;
+        s7 = AES.Encrypt(s6, s7);
+        s6 = AES.Encrypt(s5, s6);
+        s5 = AES.Encrypt(s4, s5);
+        s4 = AES.Encrypt(s3, s4 ^ m1);
+        s3 = AES.Encrypt(s2, s3);
+        s2 = AES.Encrypt(s1, s2);
+        s1 = AES.Encrypt(s0, s1);
+        s0 = AES.Encrypt(t, s0 ^ m0);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Absorb(scoped ReadOnlySpan<byte> associatedData)
+    private static void Enc(ref UInt128 s0, ref UInt128 s1, ref UInt128 s2, ref UInt128 s3, ref UInt128 s4, ref UInt128 s5, ref UInt128 s6, ref UInt128 s7, ref byte ciphertext, ref byte plaintext)
     {
-        UInt128 ad0 = BinaryPrimitives.ReadUInt128BigEndian(associatedData[..16]);
-        UInt128 ad1 = BinaryPrimitives.ReadUInt128BigEndian(associatedData[16..]);
-        this.Update(ad0, ad1);
+        var z0 = s6 ^ s1 ^ (s2 & s3);
+        var z1 = s2 ^ s5 ^ (s6 & s7);
+
+        var t0 = ReadBigEndian(ref plaintext);
+        var t1 = ReadBigEndian(ref Unsafe.Add(ref plaintext, 16));
+        WriteBigEndian(ref ciphertext, t0 ^ z0);
+        WriteBigEndian(ref Unsafe.Add(ref ciphertext, 16), t1 ^ z1);
+
+        Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, t0, t1);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Enc(scoped Span<byte> ciphertext, scoped ReadOnlySpan<byte> plaintext)
+    private static void Dec(ref UInt128 s0, ref UInt128 s1, ref UInt128 s2, ref UInt128 s3, ref UInt128 s4, ref UInt128 s5, ref UInt128 s6, ref UInt128 s7, ref byte plaintext, ref byte ciphertext)
     {
-        UInt128 z0 = this.S6 ^ this.S1 ^ (this.S2 & this.S3);
-        UInt128 z1 = this.S2 ^ this.S5 ^ (this.S6 & this.S7);
+        var z0 = s6 ^ s1 ^ (s2 & s3);
+        var z1 = s2 ^ s5 ^ (s6 & s7);
 
-        UInt128 t0 = BinaryPrimitives.ReadUInt128BigEndian(plaintext[..16]);
-        UInt128 t1 = BinaryPrimitives.ReadUInt128BigEndian(plaintext[16..]);
-        UInt128 out0 = t0 ^ z0;
-        UInt128 out1 = t1 ^ z1;
+        var t0 = ReadBigEndian(ref ciphertext) ^ z0;
+        var t1 = ReadBigEndian(ref Unsafe.Add(ref ciphertext, 16)) ^ z1;
+        WriteBigEndian(ref plaintext, t0);
+        WriteBigEndian(ref Unsafe.Add(ref plaintext, 16), t1);
 
-        this.Update(t0, t1);
-        BinaryPrimitives.WriteUInt128BigEndian(ciphertext[..16], out0);
-        BinaryPrimitives.WriteUInt128BigEndian(ciphertext[16..], out1);
+        Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, t0, t1);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Dec(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext)
+    private static void DecPartial(ref UInt128 s0, ref UInt128 s1, ref UInt128 s2, ref UInt128 s3, ref UInt128 s4, ref UInt128 s5, ref UInt128 s6, ref UInt128 s7, Span<byte> plaintext, ReadOnlySpan<byte> ciphertext)
     {
-        UInt128 z0 = this.S6 ^ this.S1 ^ (this.S2 & this.S3);
-        UInt128 z1 = this.S2 ^ this.S5 ^ (this.S6 & this.S7);
-
-        UInt128 t0 = BinaryPrimitives.ReadUInt128BigEndian(ciphertext[..16]);
-        UInt128 t1 = BinaryPrimitives.ReadUInt128BigEndian(ciphertext[16..]);
-        UInt128 out0 = t0 ^ z0;
-        UInt128 out1 = t1 ^ z1;
-
-        this.Update(out0, out1);
-        BinaryPrimitives.WriteUInt128BigEndian(plaintext[..16], out0);
-        BinaryPrimitives.WriteUInt128BigEndian(plaintext[16..], out1);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private void DecPartial(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext)
-    {
-        UInt128 z0 = this.S6 ^ this.S1 ^ (this.S2 & this.S3);
-        UInt128 z1 = this.S2 ^ this.S5 ^ (this.S6 & this.S7);
+        var z0 = s6 ^ s1 ^ (s2 & s3);
+        var z1 = s2 ^ s5 ^ (s6 & s7);
 
         Span<byte> pad = stackalloc byte[32];
+        pad.Clear();
         ciphertext.CopyTo(pad);
-        UInt128 t0 = BinaryPrimitives.ReadUInt128BigEndian(pad[..16]);
-        UInt128 t1 = BinaryPrimitives.ReadUInt128BigEndian(pad[16..]);
-        UInt128 out0 = t0 ^ z0;
-        UInt128 out1 = t1 ^ z1;
-
-        BinaryPrimitives.WriteUInt128BigEndian(pad[..16], out0);
-        BinaryPrimitives.WriteUInt128BigEndian(pad[16..], out1);
+        ref byte padRef = ref MemoryMarshal.GetReference(pad);
+        var t0 = ReadBigEndian(ref padRef);
+        var t1 = ReadBigEndian(ref Unsafe.Add(ref padRef, 16));
+        WriteBigEndian(ref padRef, t0 ^ z0);
+        WriteBigEndian(ref Unsafe.Add(ref padRef, 16), t1 ^ z1);
         pad[..ciphertext.Length].CopyTo(plaintext);
 
         pad[ciphertext.Length..].Clear();
-        UInt128 v0 = BinaryPrimitives.ReadUInt128BigEndian(pad[..16]);
-        UInt128 v1 = BinaryPrimitives.ReadUInt128BigEndian(pad[16..]);
-        this.Update(v0, v1);
+        var v0 = ReadBigEndian(ref padRef);
+        var v1 = ReadBigEndian(ref Unsafe.Add(ref padRef, 16));
+        Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, v0, v1);
+        CryptographicOperations.ZeroMemory(pad);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private void Finalize(scoped Span<byte> tag, ulong associatedDataLength, ulong plaintextLength)
+    private static void Finalize(ref UInt128 s0, ref UInt128 s1, ref UInt128 s2, ref UInt128 s3, ref UInt128 s4, ref UInt128 s5, ref UInt128 s6, ref UInt128 s7, Span<byte> tag, ulong associatedDataLength, ulong plaintextLength)
     {
-        Span<byte> b = stackalloc byte[16];
-        BinaryPrimitives.WriteUInt64LittleEndian(b[..8], associatedDataLength * 8);
-        BinaryPrimitives.WriteUInt64LittleEndian(b[8..], plaintextLength * 8);
+        var t = s2 ^ new UInt128(BinaryPrimitives.ReverseEndianness(associatedDataLength * 8), BinaryPrimitives.ReverseEndianness(plaintextLength * 8));
 
-        UInt128 t = this.S2 ^ BinaryPrimitives.ReadUInt128BigEndian(b);
-
-        for (int i = 0; i < 7; i++)
+        for (var i = 0; i < 7; i++)
         {
-            this.Update(t, t);
+            Update(ref s0, ref s1, ref s2, ref s3, ref s4, ref s5, ref s6, ref s7, t, t);
         }
 
+        ref byte tagRef = ref MemoryMarshal.GetReference(tag);
         if (tag.Length == 16)
         {
-            UInt128 a = this.S0 ^ this.S1 ^ this.S2 ^ this.S3 ^ this.S4 ^ this.S5 ^ this.S6;
-            BinaryPrimitives.WriteUInt128BigEndian(tag, a);
+            WriteBigEndian(ref tagRef, s0 ^ s1 ^ s2 ^ s3 ^ s4 ^ s5 ^ s6);
         }
         else
         {
-            UInt128 a1 = this.S0 ^ this.S1 ^ this.S2 ^ this.S3;
-            UInt128 a2 = this.S4 ^ this.S5 ^ this.S6 ^ this.S7;
-            BinaryPrimitives.WriteUInt128BigEndian(tag[..16], a1);
-            BinaryPrimitives.WriteUInt128BigEndian(tag[16..], a2);
+            WriteBigEndian(ref tagRef, s0 ^ s1 ^ s2 ^ s3);
+            WriteBigEndian(ref Unsafe.Add(ref tagRef, 16), s4 ^ s5 ^ s6 ^ s7);
         }
     }
 }
