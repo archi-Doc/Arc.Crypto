@@ -30,6 +30,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--Lets the test project reach the per-backend AEGIS implementations, so the portable
+        software path can be cross-checked against the hardware path on a machine where only
+        the hardware path would otherwise ever run.-->
+    <InternalsVisibleTo Include="Test" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="runtimes\**\*">
       <PackagePath>%(Identity)</PackagePath>
       <Pack>true</Pack>

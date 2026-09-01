@@ -1,45 +1,105 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
-/*
+
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Arc.Crypto;
-using Tinyhand;
 using Xunit;
 
 #pragma warning disable SA1202 // Elements should be ordered by access
 #pragma warning disable SA1512 // Single-line comments should not be followed by blank line
 #pragma warning disable SA1601 // Partial elements should be documented
+#pragma warning disable SA1649 // File name should match first type name
 
 namespace Test;
 
-[TinyhandObject]
-public partial class AegisVector
+/// <summary>
+/// A single AEGIS test vector loaded from the embedded <c>*Vectors.tinyhand</c> resources.
+/// </summary>
+public class AegisVector
 {
-    public AegisVector()
-    {
-    }
-
-    [Key("result")]
     public bool Result { get; set; }
 
-    [Key("key")]
     public string Key { get; set; } = string.Empty;
 
-    [Key("nonce")]
     public string Nonce { get; set; } = string.Empty;
 
-    [Key("ad")]
     public string Additional { get; set; } = string.Empty;
 
-    [Key("msg")]
     public string Message { get; set; } = string.Empty;
 
-    [Key("ct")]
     public string Cipher { get; set; } = string.Empty;
 
-    [Key("tag128")]
     public string Tag128 { get; set; } = string.Empty;
 
-    [Key("tag256")]
     public string Tag256 { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Loads the vectors from an embedded resource whose name ends with <paramref name="resourceSuffix"/>.
+    /// </summary>
+    /// <param name="resourceSuffix">The trailing part of the embedded resource name.</param>
+    /// <returns>The parsed test vectors.</returns>
+    /// <remarks>
+    /// The resource files use the tinyhand text format, but the schema here is a flat list of
+    /// hex strings, so it is parsed directly rather than pulling in a serializer dependency.
+    /// </remarks>
+    public static AegisVector[] Load(string resourceSuffix)
+    {
+        var assembly = typeof(AegisVector).Assembly;
+        string? name = null;
+        foreach (var x in assembly.GetManifestResourceNames())
+        {
+            if (x.EndsWith(resourceSuffix, StringComparison.Ordinal))
+            {
+                name = x;
+                break;
+            }
+        }
+
+        Assert.NotNull(name);
+        using var stream = assembly.GetManifestResourceStream(name!);
+        Assert.NotNull(stream);
+        using var reader = new StreamReader(stream!);
+        var vectors = Parse(reader.ReadToEnd());
+        Assert.NotEmpty(vectors);
+        return vectors;
+    }
+
+    internal static AegisVector[] Parse(string text)
+    {
+        var list = new List<AegisVector>();
+        foreach (var block in text.Split('+', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var result = Regex.Match(block, @"result\s*=\s*(true|false)");
+            if (!result.Success)
+            {
+                continue;
+            }
+
+            list.Add(new AegisVector
+            {
+                Result = result.Groups[1].Value == "true",
+                Key = Field(block, "key"),
+                Nonce = Field(block, "nonce"),
+                Additional = Field(block, "ad"),
+                Message = Field(block, "msg"),
+                Cipher = Field(block, "ct"),
+                Tag128 = Field(block, "tag128"),
+                Tag256 = Field(block, "tag256"),
+            });
+        }
+
+        return list.ToArray();
+
+        static string Field(string block, string key)
+        {
+            var m = Regex.Match(block, @"(?:^|\W)" + key + @"\s*=\s*""([0-9a-fA-F]*)""");
+            return m.Success ? m.Groups[1].Value : string.Empty;
+        }
+    }
 
     public void Test128()
     {
@@ -193,10 +253,6 @@ public class AegisTest
             Aegis256.TryDecrypt(decrypted[..i], cipher[..i], nonce256, key256, default, 0);
             decrypted[..i].SequenceEqual(message[..i]).IsTrue();
 
-            // decrypted[..i].Clear();
-            // Aegis256.Encrypt(decrypted[..i], cipher[..i], nonce256, key256, default, 0);
-            // decrypted[..i].SequenceEqual(message[..i]).IsTrue();
-
             Aegis128L.Encrypt(cipher[..i], message[..i], nonce128, key128, default, 0);
             Aegis128L.TryDecrypt(decrypted[..i], cipher[..i], nonce128, key128, default, 0);
             decrypted[..i].SequenceEqual(message[..i]).IsTrue();
@@ -206,11 +262,7 @@ public class AegisTest
     [Fact]
     public void TestVectors_128()
     {
-        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-        Arc.BaseHelper.TryLoadResource(assembly, "Resources.Aegis128Vectors.tinyhand", out var data);
-        var vectors = TinyhandSerializer.DeserializeFromUtf8<AegisVector[]>(data!)!;
-
-        foreach (var x in vectors)
+        foreach (var x in AegisVector.Load("Aegis128Vectors.tinyhand"))
         {
             x.Test128();
         }
@@ -219,13 +271,65 @@ public class AegisTest
     [Fact]
     public void TestVectors_256()
     {
-        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-        Arc.BaseHelper.TryLoadResource(assembly, "Resources.Aegis256Vectors.tinyhand", out var data);
-        var vectors = TinyhandSerializer.DeserializeFromUtf8<AegisVector[]>(data!)!;
-
-        foreach (var x in vectors)
+        foreach (var x in AegisVector.Load("Aegis256Vectors.tinyhand"))
         {
             x.Test256();
+        }
+    }
+
+    /// <summary>
+    /// Cross-checks the managed x86/ARM path against the portable software path over a wide
+    /// range of plaintext, associated-data and tag lengths, so that a regression in one backend
+    /// cannot pass unnoticed on a machine where only the other one runs.
+    /// </summary>
+    [Fact]
+    public void Backends_Agree()
+    {
+        var random = new Xoroshiro128StarStar(31);
+        var key128 = new byte[Aegis128L.KeySize];
+        var nonce128 = new byte[Aegis128L.NonceSize];
+        var key256 = new byte[Aegis256.KeySize];
+        var nonce256 = new byte[Aegis256.NonceSize];
+        random.NextBytes(key128);
+        random.NextBytes(nonce128);
+        random.NextBytes(key256);
+        random.NextBytes(nonce256);
+
+        foreach (var length in new[] { 0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127, 128, 129, 1000 })
+        {
+            foreach (var adLength in new[] { 0, 1, 15, 16, 17, 31, 32, 33, 100 })
+            {
+                foreach (var tagSize in new[] { 0, Aegis128L.MinTagSize, Aegis128L.MaxTagSize })
+                {
+                    var message = new byte[length];
+                    var additional = new byte[adLength];
+                    random.NextBytes(message);
+                    random.NextBytes(additional);
+
+                    var actual = new byte[length + tagSize];
+                    var expected = new byte[length + tagSize];
+                    var decrypted = new byte[length];
+
+                    Aegis128L.Encrypt(actual, message, nonce128, key128, additional, tagSize);
+                    Aegis128LSoft.Encrypt(expected, message, nonce128, key128, additional, tagSize);
+                    actual.SequenceEqual(expected).IsTrue();
+                    Aegis128L.TryDecrypt(decrypted, actual, nonce128, key128, additional, tagSize).IsTrue();
+                    decrypted.SequenceEqual(message).IsTrue();
+
+                    Aegis256.Encrypt(actual, message, nonce256, key256, additional, tagSize);
+                    Aegis256Soft.Encrypt(expected, message, nonce256, key256, additional, tagSize);
+                    actual.SequenceEqual(expected).IsTrue();
+                    Aegis256.TryDecrypt(decrypted, actual, nonce256, key256, additional, tagSize).IsTrue();
+                    decrypted.SequenceEqual(message).IsTrue();
+
+                    if (tagSize > 0 && actual.Length > 0)
+                    {
+                        // A single flipped bit anywhere in the ciphertext or tag must be rejected.
+                        actual[actual.Length - 1] ^= 0x80;
+                        Aegis256.TryDecrypt(decrypted, actual, nonce256, key256, additional, tagSize).IsFalse();
+                    }
+                }
+            }
         }
     }
 
@@ -307,4 +411,4 @@ public class AegisTest
             message.SequenceEqual(message3).IsTrue();
         }
     }
-}*/
+}

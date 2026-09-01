@@ -1,7 +1,8 @@
-// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
+﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -48,11 +49,7 @@ public abstract class ECCurveBase
             var x = new uint[length];
             for (var i = length - 1; i >= 0; i--)
             {
-                var val = BitConverter.ToUInt32(b);
-                val = (val >> 16) | (val << 16);
-                val = ((val & 0xFF00FF00U) >> 8) | ((val & 0x00FF00FFU) << 8);
-                x[i] = val;
-
+                x[i] = BinaryPrimitives.ReadUInt32BigEndian(b);
                 b = b.Slice(sizeof(uint));
             }
 
@@ -278,15 +275,13 @@ public abstract class ECCurveBase
 
     private byte[]? DecompressPoint(uint yTilde, ReadOnlySpan<byte> x1)
     {
+        yTilde &= 1; // Only the least significant bit is meaningful (see CompressY).
+
         var length = x1.Length / 4;
         scoped Span<uint> x = stackalloc uint[length];
         for (var i = length - 1; i >= 0; i--)
         {
-            var val = BitConverter.ToUInt32(x1);
-            val = (val >> 16) | (val << 16);
-            val = ((val & 0xFF00FF00U) >> 8) | ((val & 0x00FF00FFU) << 8);
-            x[i] = val;
-
+            x[i] = BinaryPrimitives.ReadUInt32BigEndian(x1);
             x1 = x1.Slice(sizeof(uint));
         }
 
@@ -319,11 +314,7 @@ public abstract class ECCurveBase
 
         for (var i = src.Length - 1; i >= 0; i--)
         {
-            var val = src[i];
-            val = (val >> 16) | (val << 16);
-            val = ((val & 0xFF00FF00U) >> 8) | ((val & 0x00FF00FFU) << 8);
-
-            BitConverter.TryWriteBytes(span, val);
+            BinaryPrimitives.WriteUInt32BigEndian(span, src[i]);
             span = span.Slice(sizeof(uint));
         }
 

@@ -31,6 +31,7 @@ public class Program
             typeof(PasswordHashBenchmark),
             typeof(CipherBenchmark),
             typeof(Curve25519Benchmark),
+            typeof(EcCompressYBenchmark),
             // typeof(SerializeHashBenchmark),
             typeof(Avx2Benchmark),
             typeof(DsaBenchmark),
@@ -121,6 +122,6 @@ public class BenchmarkConfig : BenchmarkDotNet.Configs.ManualConfig
         this.AddExporter(BenchmarkDotNet.Exporters.MarkdownExporter.GitHub);
         this.AddDiagnoser(BenchmarkDotNet.Diagnosers.MemoryDiagnoser.Default);
 
-        this.AddJob(BenchmarkDotNet.Jobs.Job.ShortRun);
+        // this.AddJob(BenchmarkDotNet.Jobs.Job.ShortRun);
     }
 }
