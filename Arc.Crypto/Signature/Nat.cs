@@ -9,8 +9,6 @@ namespace Arc.Crypto.EC;
 
 internal abstract class Nat
 {
-    private const ulong M = 0xFFFFFFFFUL;
-
     public static uint Add33To(int len, uint x, Span<uint> z)
     {
         ulong c = (ulong)z[0] + x;

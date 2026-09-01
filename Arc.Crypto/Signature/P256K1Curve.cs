@@ -2,9 +2,12 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Arc.Crypto.EC;
 
+#pragma warning disable SA1202 // Elements should be ordered by access (fast paths are kept next to their portable fallbacks)
 #pragma warning disable SA1203
 #pragma warning disable SA1405 // Debug.Assert should provide message text
 
@@ -179,10 +182,112 @@ public class P256K1Curve : ECCurveBase
         }
     }
 
-    private static void ElementSquareN(ReadOnlySpan<uint> x, int n, Span<uint> z)
+    internal static void ElementSquareN(ReadOnlySpan<uint> x, int n, Span<uint> z)
     {
         Debug.Assert(n > 0);
 
+        if (!BitConverter.IsLittleEndian)
+        {
+            ElementSquareNSoft(x, n, z);
+            return;
+        }
+
+        // The value stays in four 64-bit registers across all n square-and-reduce rounds;
+        // memory is touched only on entry and exit. The square body is Nat256.Square64 and the
+        // reduction body is Reduce64, both pasted (see the comment in Reduce64 on why).
+        ReadOnlySpan<ulong> xd = MemoryMarshal.Cast<uint, ulong>(x);
+        ulong r3 = xd[3], r2 = xd[2], r1 = xd[1], r0 = xd[0];
+
+        do
+        {
+            // ---- square: (r0..r3) -> (q0..q7) ----
+            UInt128 c = (UInt128)r0 * r1;
+            ulong q1 = (ulong)c;
+            c >>= 64;
+            c += (UInt128)r0 * r2;
+            ulong q2 = (ulong)c;
+            c >>= 64;
+            c += (UInt128)r0 * r3;
+            ulong q3 = (ulong)c;
+            ulong q4 = (ulong)(c >> 64);
+
+            c = ((UInt128)r1 * r2) + q3;
+            q3 = (ulong)c;
+            c >>= 64;
+            c += ((UInt128)r1 * r3) + q4;
+            q4 = (ulong)c;
+            ulong q5 = (ulong)(c >> 64);
+
+            c = ((UInt128)r2 * r3) + q5;
+            q5 = (ulong)c;
+            ulong q6 = (ulong)(c >> 64);
+
+            ulong q7 = q6 >> 63;
+            q6 = (q6 << 1) | (q5 >> 63);
+            q5 = (q5 << 1) | (q4 >> 63);
+            q4 = (q4 << 1) | (q3 >> 63);
+            q3 = (q3 << 1) | (q2 >> 63);
+            q2 = (q2 << 1) | (q1 >> 63);
+            q1 <<= 1;
+
+            c = (UInt128)r0 * r0;
+            ulong q0 = (ulong)c;
+            c = (c >> 64) + q1;
+            q1 = (ulong)c;
+            c = ((UInt128)r1 * r1) + (ulong)(c >> 64) + q2;
+            q2 = (ulong)c;
+            c = (c >> 64) + q3;
+            q3 = (ulong)c;
+            c = ((UInt128)r2 * r2) + (ulong)(c >> 64) + q4;
+            q4 = (ulong)c;
+            c = (c >> 64) + q5;
+            q5 = (ulong)c;
+            c = ((UInt128)r3 * r3) + (ulong)(c >> 64) + q6;
+            q6 = (ulong)c;
+            q7 += (ulong)(c >> 64);
+
+            // ---- reduce: (q0..q7) -> (r0..r3) ----
+            UInt128 t = ((UInt128)q4 * C) + q0;
+            r0 = (ulong)t;
+            t >>= 64;
+            t += ((UInt128)q5 * C) + q1;
+            r1 = (ulong)t;
+            t >>= 64;
+            t += ((UInt128)q6 * C) + q2;
+            r2 = (ulong)t;
+            t >>= 64;
+            t += ((UInt128)q7 * C) + q3;
+            r3 = (ulong)t;
+            ulong r4 = (ulong)(t >> 64);
+
+            t = ((UInt128)r4 * C) + r0;
+            r0 = (ulong)t;
+            t = (t >> 64) + r1;
+            r1 = (ulong)t;
+            t = (t >> 64) + r2;
+            r2 = (ulong)t;
+            t = (t >> 64) + r3;
+            r3 = (ulong)t;
+
+            if ((t >> 64) != 0 || (r3 == ulong.MaxValue && r2 == ulong.MaxValue && r1 == ulong.MaxValue && r0 >= P0))
+            {
+                SubtractP(ref r0, ref r1, ref r2, ref r3);
+            }
+        }
+        while (--n > 0);
+
+        Span<ulong> zd = MemoryMarshal.Cast<uint, ulong>(z);
+        zd[3] = r3;
+        zd[2] = r2;
+        zd[1] = r1;
+        zd[0] = r0;
+    }
+
+    /// <summary>
+    /// Portable word-based repeated squaring, used on big-endian platforms.
+    /// </summary>
+    private static void ElementSquareNSoft(ReadOnlySpan<uint> x, int n, Span<uint> z)
+    {
         scoped Span<uint> tmp = stackalloc uint[P256UIntLength * 2];
         Nat256.Square(x, tmp);
         Reduce(tmp, z);
@@ -194,7 +299,102 @@ public class P256K1Curve : ECCurveBase
         }
     }
 
-    private static void Reduce(ReadOnlySpan<uint> xx, Span<uint> z)
+    internal static void Reduce(ReadOnlySpan<uint> xx, Span<uint> z)
+    {
+        if (BitConverter.IsLittleEndian)
+        {
+            Reduce64(xx, z);
+        }
+        else
+        {
+            ReduceSoft(xx, z);
+        }
+    }
+
+    /// <summary>
+    /// Reduction on 64-bit limbs. With <c>p = 2^256 - c</c> (<c>c = 0x1000003D1</c>),
+    /// a 512-bit value <c>hi * 2^256 + lo</c> is congruent to <c>hi * c + lo</c>;
+    /// one such fold shrinks the value to 257+ bits, a second fold of the tiny top limb
+    /// and at most one conditional subtraction of <c>p</c> (implemented as adding <c>c</c>)
+    /// bring it into <c>[0, p)</c>. Little-endian only.
+    /// </summary>
+    private static void Reduce64(ReadOnlySpan<uint> xx, Span<uint> z)
+    {
+        ReadOnlySpan<ulong> xd = MemoryMarshal.Cast<uint, ulong>(xx);
+        Span<ulong> zd = MemoryMarshal.Cast<uint, ulong>(z);
+
+        ulong q7 = xd[7], q6 = xd[6], q5 = xd[5], q4 = xd[4];
+        ulong q3 = xd[3], q2 = xd[2], q1 = xd[1], q0 = xd[0];
+
+        // First fold: z = lo + hi * c. No overflow: product + limb + carry stays far below 2^128.
+        // This body is repeated inside ElementSquareN; keep the copies in sync (helper extraction
+        // is avoided because address-taken out parameters defeat register promotion in RyuJIT).
+        UInt128 t = ((UInt128)q4 * C) + q0;
+        ulong z0 = (ulong)t;
+        t >>= 64;
+        t += ((UInt128)q5 * C) + q1;
+        ulong z1 = (ulong)t;
+        t >>= 64;
+        t += ((UInt128)q6 * C) + q2;
+        ulong z2 = (ulong)t;
+        t >>= 64;
+        t += ((UInt128)q7 * C) + q3;
+        ulong z3 = (ulong)t;
+        ulong z4 = (ulong)(t >> 64); // < 2^34
+
+        // Second fold: absorb the small top limb.
+        t = ((UInt128)z4 * C) + z0;
+        z0 = (ulong)t;
+        t = (t >> 64) + z1;
+        z1 = (ulong)t;
+        t = (t >> 64) + z2;
+        z2 = (ulong)t;
+        t = (t >> 64) + z3;
+        z3 = (ulong)t;
+
+        // At most one subtraction of p is needed. When the fold carried out of 2^256 the wrapped
+        // value is tiny, so the two conditions are mutually exclusive and a single correction suffices.
+        if ((t >> 64) != 0 || (z3 == ulong.MaxValue && z2 == ulong.MaxValue && z1 == ulong.MaxValue && z0 >= P0))
+        {
+            SubtractP(ref z0, ref z1, ref z2, ref z3);
+        }
+
+        zd[3] = z3;
+        zd[2] = z2;
+        zd[1] = z1;
+        zd[0] = z0;
+    }
+
+    /// <summary>
+    /// Subtracts <c>p</c> once, implemented as adding <c>2^256 - p</c> and discarding the carry out of 2^256.
+    /// Cold path: reachable only with probability about 2^-32 per reduction, so it is kept out of line
+    /// and shared between the span-based and the fused reductions (which also makes it directly unit-testable).
+    /// </summary>
+    /// <param name="z0">Limb 0 (least significant).</param>
+    /// <param name="z1">Limb 1.</param>
+    /// <param name="z2">Limb 2.</param>
+    /// <param name="z3">Limb 3 (most significant).</param>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void SubtractP(ref ulong z0, ref ulong z1, ref ulong z2, ref ulong z3)
+    {
+        UInt128 t = (UInt128)z0 + C;
+        z0 = (ulong)t;
+        t = (t >> 64) + z1;
+        z1 = (ulong)t;
+        t = (t >> 64) + z2;
+        z2 = (ulong)t;
+        z3 += (ulong)(t >> 64);
+    }
+
+    private const ulong C = 0x1000003D1UL; // 2^256 - p
+    private const ulong P0 = 0xFFFFFFFEFFFFFC2FUL; // lowest 64-bit limb of p; the upper three are all ones.
+
+    /// <summary>
+    /// Portable 32-bit word reduction, used on big-endian platforms.
+    /// </summary>
+    /// <param name="xx">The 512-bit input as sixteen 32-bit words, least significant first.</param>
+    /// <param name="z">Receives the reduced value as eight 32-bit words.</param>
+    internal static void ReduceSoft(ReadOnlySpan<uint> xx, Span<uint> z)
     {
         ulong cc = Nat256.Mul33Add(PInv33, xx, 8, xx, 0, z, 0);
         uint c = Nat256.Mul33DWordAdd(PInv33, cc, z, 0);

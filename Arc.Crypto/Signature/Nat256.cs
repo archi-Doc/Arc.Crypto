@@ -2,9 +2,11 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Arc.Crypto.EC;
 
+#pragma warning disable SA1202 // Elements should be ordered by access (fast paths are kept next to their portable fallbacks)
 #pragma warning disable SA1405 // Debug.Assert should provide message text
 
 internal abstract class Nat256
@@ -107,7 +109,206 @@ internal abstract class Nat256
         return true;
     }
 
+    /// <summary>
+    /// Computes <c>zz = x * y</c> (256 x 256 -> 512 bits). <paramref name="zz"/> must not overlap the inputs.
+    /// </summary>
+    /// <param name="x">The first operand, eight 32-bit words, least significant first.</param>
+    /// <param name="y">The second operand, eight 32-bit words, least significant first.</param>
+    /// <param name="zz">Receives the 512-bit product as sixteen 32-bit words.</param>
     public static void Mul(ReadOnlySpan<uint> x, ReadOnlySpan<uint> y, Span<uint> zz)
+    {
+        if (BitConverter.IsLittleEndian)
+        {
+            Mul64(x, y, zz);
+        }
+        else
+        {
+            MulSoft(x, y, zz);
+        }
+    }
+
+    /// <summary>
+    /// Computes <c>zz = x * x</c> (256 -> 512 bits). <paramref name="zz"/> must not overlap <paramref name="x"/>.
+    /// </summary>
+    /// <param name="x">The operand, eight 32-bit words, least significant first.</param>
+    /// <param name="zz">Receives the 512-bit square as sixteen 32-bit words.</param>
+    public static void Square(ReadOnlySpan<uint> x, Span<uint> zz)
+    {
+        if (BitConverter.IsLittleEndian)
+        {
+            Square64(x, zz);
+        }
+        else
+        {
+            SquareSoft(x, zz);
+        }
+    }
+
+    /// <summary>
+    /// Multiplication on four 64-bit limbs (product scanning by rows, carried in a <see cref="UInt128"/>).<br/>
+    /// On x64 each partial product compiles to a single MULX plus ADD/ADC, replacing the 64 partial
+    /// products of the 32-bit path with 16. Little-endian only: eight little-endian 32-bit words are
+    /// reinterpreted in place as four little-endian 64-bit limbs.
+    /// </summary>
+    private static void Mul64(ReadOnlySpan<uint> x, ReadOnlySpan<uint> y, Span<uint> zz)
+    {
+        ReadOnlySpan<ulong> xd = MemoryMarshal.Cast<uint, ulong>(x);
+        ReadOnlySpan<ulong> yd = MemoryMarshal.Cast<uint, ulong>(y);
+        Span<ulong> zd = MemoryMarshal.Cast<uint, ulong>(zz);
+
+        // Reading the highest index first lets the JIT elide the remaining bounds checks.
+        ulong x3 = xd[3], x2 = xd[2], x1 = xd[1], x0 = xd[0];
+        ulong y3 = yd[3], y2 = yd[2], y1 = yd[1], y0 = yd[0];
+
+        // Row x0: no overflow is possible in any accumulation below;
+        // product + carry + limb <= (2^64-1)^2 + 2*(2^64-1) = 2^128 - 1.
+        UInt128 c = (UInt128)x0 * y0;
+        ulong z0 = (ulong)c;
+        c >>= 64;
+        c += (UInt128)x0 * y1;
+        ulong z1 = (ulong)c;
+        c >>= 64;
+        c += (UInt128)x0 * y2;
+        ulong z2 = (ulong)c;
+        c >>= 64;
+        c += (UInt128)x0 * y3;
+        ulong z3 = (ulong)c;
+        ulong z4 = (ulong)(c >> 64);
+
+        // Row x1.
+        c = ((UInt128)x1 * y0) + z1;
+        z1 = (ulong)c;
+        c >>= 64;
+        c += ((UInt128)x1 * y1) + z2;
+        z2 = (ulong)c;
+        c >>= 64;
+        c += ((UInt128)x1 * y2) + z3;
+        z3 = (ulong)c;
+        c >>= 64;
+        c += ((UInt128)x1 * y3) + z4;
+        z4 = (ulong)c;
+        ulong z5 = (ulong)(c >> 64);
+
+        // Row x2.
+        c = ((UInt128)x2 * y0) + z2;
+        z2 = (ulong)c;
+        c >>= 64;
+        c += ((UInt128)x2 * y1) + z3;
+        z3 = (ulong)c;
+        c >>= 64;
+        c += ((UInt128)x2 * y2) + z4;
+        z4 = (ulong)c;
+        c >>= 64;
+        c += ((UInt128)x2 * y3) + z5;
+        z5 = (ulong)c;
+        ulong z6 = (ulong)(c >> 64);
+
+        // Row x3.
+        c = ((UInt128)x3 * y0) + z3;
+        z3 = (ulong)c;
+        c >>= 64;
+        c += ((UInt128)x3 * y1) + z4;
+        z4 = (ulong)c;
+        c >>= 64;
+        c += ((UInt128)x3 * y2) + z5;
+        z5 = (ulong)c;
+        c >>= 64;
+        c += ((UInt128)x3 * y3) + z6;
+        z6 = (ulong)c;
+
+        zd[7] = (ulong)(c >> 64);
+        zd[0] = z0;
+        zd[1] = z1;
+        zd[2] = z2;
+        zd[3] = z3;
+        zd[4] = z4;
+        zd[5] = z5;
+        zd[6] = z6;
+    }
+
+    /// <summary>
+    /// Squaring on four 64-bit limbs: the six off-diagonal products are computed once,
+    /// doubled by a 1-bit shift across the accumulator, then the four diagonal squares are added.
+    /// Ten MULX in total (on x64 each <see cref="UInt128"/> product is a single MULX plus ADD/ADC).<br/>
+    /// Little-endian only: eight little-endian 32-bit words are reinterpreted in place as four
+    /// little-endian 64-bit limbs.<br/>
+    /// The curve classes repeat this body verbatim inside their fused square-and-reduce loops;
+    /// helper extraction is deliberately avoided because address-taken <c>out</c> parameters defeat
+    /// register promotion in RyuJIT (measured ~9% slower). Keep the copies in sync.
+    /// </summary>
+    private static void Square64(ReadOnlySpan<uint> x, Span<uint> zz)
+    {
+        ReadOnlySpan<ulong> xd = MemoryMarshal.Cast<uint, ulong>(x);
+        Span<ulong> zd = MemoryMarshal.Cast<uint, ulong>(zz);
+
+        // Reading the highest index first lets the JIT elide the remaining bounds checks.
+        ulong x3 = xd[3], x2 = xd[2], x1 = xd[1], x0 = xd[0];
+
+        // Off-diagonal products x_i * x_j (i < j).
+        UInt128 c = (UInt128)x0 * x1;
+        ulong z1 = (ulong)c;
+        c >>= 64;
+        c += (UInt128)x0 * x2;
+        ulong z2 = (ulong)c;
+        c >>= 64;
+        c += (UInt128)x0 * x3;
+        ulong z3 = (ulong)c;
+        ulong z4 = (ulong)(c >> 64);
+
+        c = ((UInt128)x1 * x2) + z3;
+        z3 = (ulong)c;
+        c >>= 64;
+        c += ((UInt128)x1 * x3) + z4;
+        z4 = (ulong)c;
+        ulong z5 = (ulong)(c >> 64);
+
+        c = ((UInt128)x2 * x3) + z5;
+        z5 = (ulong)c;
+        ulong z6 = (ulong)(c >> 64);
+
+        // Double the off-diagonal part.
+        ulong z7 = z6 >> 63;
+        z6 = (z6 << 1) | (z5 >> 63);
+        z5 = (z5 << 1) | (z4 >> 63);
+        z4 = (z4 << 1) | (z3 >> 63);
+        z3 = (z3 << 1) | (z2 >> 63);
+        z2 = (z2 << 1) | (z1 >> 63);
+        z1 <<= 1;
+
+        // Add the diagonal squares x_i^2.
+        c = (UInt128)x0 * x0;
+        ulong z0 = (ulong)c;
+        c = (c >> 64) + z1;
+        z1 = (ulong)c;
+        c = ((UInt128)x1 * x1) + (ulong)(c >> 64) + z2;
+        z2 = (ulong)c;
+        c = (c >> 64) + z3;
+        z3 = (ulong)c;
+        c = ((UInt128)x2 * x2) + (ulong)(c >> 64) + z4;
+        z4 = (ulong)c;
+        c = (c >> 64) + z5;
+        z5 = (ulong)c;
+        c = ((UInt128)x3 * x3) + (ulong)(c >> 64) + z6;
+        z6 = (ulong)c;
+        z7 += (ulong)(c >> 64); // Cannot wrap: x^2 < 2^512, so the true top limb fits in 64 bits.
+
+        zd[7] = z7;
+        zd[0] = z0;
+        zd[1] = z1;
+        zd[2] = z2;
+        zd[3] = z3;
+        zd[4] = z4;
+        zd[5] = z5;
+        zd[6] = z6;
+    }
+
+    /// <summary>
+    /// Portable 32-bit word implementation of <see cref="Mul"/>, used on big-endian platforms.
+    /// </summary>
+    /// <param name="x">The first operand, eight 32-bit words, least significant first.</param>
+    /// <param name="y">The second operand, eight 32-bit words, least significant first.</param>
+    /// <param name="zz">Receives the 512-bit product as sixteen 32-bit words.</param>
+    internal static void MulSoft(ReadOnlySpan<uint> x, ReadOnlySpan<uint> y, Span<uint> zz)
     {
         ulong y_0 = y[0];
         ulong y_1 = y[1];
@@ -177,7 +378,12 @@ internal abstract class Nat256
         }
     }
 
-    public static void Square(ReadOnlySpan<uint> x, Span<uint> zz)
+    /// <summary>
+    /// Portable 32-bit word implementation of <see cref="Square"/>, used on big-endian platforms.
+    /// </summary>
+    /// <param name="x">The operand, eight 32-bit words, least significant first.</param>
+    /// <param name="zz">Receives the 512-bit square as sixteen 32-bit words.</param>
+    internal static void SquareSoft(ReadOnlySpan<uint> x, Span<uint> zz)
     {
         ulong x_0 = x[0];
         ulong zz_1;
