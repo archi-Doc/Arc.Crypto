@@ -8,16 +8,44 @@ namespace Arc.Crypto.EC;
 #pragma warning disable SA1203
 #pragma warning disable SA1405 // Debug.Assert should provide message text
 
+/// <summary>
+/// The secp256r1 (NIST P-256) elliptic curve.
+/// </summary>
 public class P256R1Curve : ECCurveBase
 {
+    /// <summary>
+    /// The number of 32-bit words in a field element.
+    /// </summary>
     public const int P256UIntLength = 8;
+
+    /// <summary>
+    /// The field prime, as a big-endian hexadecimal string.
+    /// </summary>
     public const string HexQ = "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF";
+
+    /// <summary>
+    /// The curve coefficient <c>a</c>, as a big-endian hexadecimal string.
+    /// </summary>
     public const string HexA = "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC";
+
+    /// <summary>
+    /// The curve coefficient <c>b</c>, as a big-endian hexadecimal string.
+    /// </summary>
     public const string HexB = "5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B";
+
+    /// <summary>
+    /// The order of the base point, as a big-endian hexadecimal string.
+    /// </summary>
     public const string HexOrder = "FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551";
 
+    /// <summary>
+    /// The shared instance of the secp256r1 curve.
+    /// </summary>
     public static readonly P256R1Curve Instance = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="P256R1Curve"/> class.
+    /// </summary>
     public P256R1Curve()
         : base(P256UIntLength, HexQ, HexA, HexB, HexOrder)
     {
@@ -36,8 +64,10 @@ public class P256R1Curve : ECCurveBase
     private const uint P7 = 0xFFFFFFFF;
     private const uint PExt15 = 0xFFFFFFFE;
 
+    /// <inheritdoc/>
     public override string CurveName => "secp256r1";
 
+    /// <inheritdoc/>
     public override int ElementIsZero(ReadOnlySpan<uint> x)
     {
         uint d = 0;
@@ -50,6 +80,7 @@ public class P256R1Curve : ECCurveBase
         return ((int)d - 1) >> 31;
     }
 
+    /// <inheritdoc/>
     public override void ElementSquare(ReadOnlySpan<uint> x, Span<uint> z)
     {
         scoped Span<uint> tmp = stackalloc uint[this.UIntLength * 2];
@@ -57,6 +88,7 @@ public class P256R1Curve : ECCurveBase
         Reduce(tmp, z);
     }
 
+    /// <inheritdoc/>
     public override void ElementAdd(ReadOnlySpan<uint> x, ReadOnlySpan<uint> y, Span<uint> z)
     {
         uint c = Nat256.Add(x, y, z);
@@ -66,6 +98,7 @@ public class P256R1Curve : ECCurveBase
         }
     }
 
+    /// <inheritdoc/>
     public override void ElementMultiply(ReadOnlySpan<uint> x, ReadOnlySpan<uint> y, Span<uint> z)
     {
         scoped Span<uint> tmp = stackalloc uint[this.UIntLength * 2];
@@ -73,6 +106,7 @@ public class P256R1Curve : ECCurveBase
         Reduce(tmp, z);
     }
 
+    /// <inheritdoc/>
     public override bool ElementSqrt(ReadOnlySpan<uint> x1, Span<uint> z)
     {
         if (Nat256.IsZero(x1) || Nat256.IsOne(x1))
@@ -119,6 +153,7 @@ public class P256R1Curve : ECCurveBase
         }
     }
 
+    /// <inheritdoc/>
     public override void ElementNegate(ReadOnlySpan<uint> x, Span<uint> z)
     {
         if (IsZero(x) != 0)

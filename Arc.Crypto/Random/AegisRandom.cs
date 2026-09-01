@@ -31,11 +31,18 @@ public class AegisRandom
 
     #endregion
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AegisRandom"/> class.
+    /// </summary>
     public AegisRandom()
     {
         this.FillBuffer();
     }
 
+    /// <summary>
+    /// Fills the elements of a specified span of bytes with random numbers.
+    /// </summary>
+    /// <param name="destination">The span to fill with random numbers.</param>
     public void NextBytes(Span<byte> destination)
     {
         while (destination.Length > 0)

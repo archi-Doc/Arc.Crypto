@@ -15,15 +15,15 @@ public static class CryptoDual
     /// <summary>
     /// Generates a new key pair for both signature and encryption using a random seed.
     /// </summary>
-    /// <param name="signSecretKey32">A span to hold the signature secret key. The size must be <see cref="CryptoSign.SecretKeySize"/> (64 bytes).</param>
+    /// <param name="signSecretKey64">A span to hold the signature secret key. The size must be <see cref="CryptoSign.SecretKeySize"/> (64 bytes).</param>
     /// <param name="signPublicKey32">A span to hold the signature public key. The size must be <see cref="CryptoSign.PublicKeySize"/> (32 bytes).</param>
     /// <param name="boxSecretKey32">A span to hold the encryption secret key. The size must be <see cref="CryptoBox.SecretKeySize"/> (32 bytes).</param>
     /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/> (32 bytes).</param>
-    public static void CreateKey(Span<byte> signSecretKey32, Span<byte> signPublicKey32, Span<byte> boxSecretKey32, Span<byte> boxPublicKey32)
+    public static void CreateKey(Span<byte> signSecretKey64, Span<byte> signPublicKey32, Span<byte> boxSecretKey32, Span<byte> boxPublicKey32)
     {
         Span<byte> seed = stackalloc byte[CryptoSign.SeedSize];
         CryptoRandom.NextBytes(seed);
-        CreateKey(seed, signSecretKey32, signPublicKey32, boxSecretKey32, boxPublicKey32);
+        CreateKey(seed, signSecretKey64, signPublicKey32, boxSecretKey32, boxPublicKey32);
     }
 
     /// <summary>

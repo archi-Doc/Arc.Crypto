@@ -25,6 +25,14 @@ public class Xoshiro256StarStar : RandomUInt64
     //
     //     See <http://creativecommons.org/publicdomain/zero/1.0/>.
 
+    /// <summary>
+    /// Derives a xoshiro256** state from a seed using SplitMix64, guaranteeing a non-zero state.
+    /// </summary>
+    /// <param name="seed">The seed value.</param>
+    /// <param name="state0">The first state word.</param>
+    /// <param name="state1">The second state word.</param>
+    /// <param name="state2">The third state word.</param>
+    /// <param name="state3">The fourth state word.</param>
     public static void InitializeState(ulong seed, out ulong state0, out ulong state1, out ulong state2, out ulong state3)
     {
         do
@@ -37,6 +45,14 @@ public class Xoshiro256StarStar : RandomUInt64
         while ((state0 | state1 | state2 | state3) == 0); // at least one value must be non-zero
     }
 
+    /// <summary>
+    /// Advances a xoshiro256** state and returns the generated value.
+    /// </summary>
+    /// <param name="state0">The first state word.</param>
+    /// <param name="state1">The second state word.</param>
+    /// <param name="state2">The third state word.</param>
+    /// <param name="state3">The fourth state word.</param>
+    /// <returns>A random 64-bit unsigned integer.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong NextState(ref ulong state0, ref ulong state1, ref ulong state2, ref ulong state3)
     {

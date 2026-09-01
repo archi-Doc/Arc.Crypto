@@ -25,6 +25,12 @@ public class Xoroshiro128StarStar : RandomUInt64
     //
     // See<http://creativecommons.org/publicdomain/zero/1.0/>.
 
+    /// <summary>
+    /// Derives a xoroshiro128** state from a seed using SplitMix64, guaranteeing a non-zero state.
+    /// </summary>
+    /// <param name="seed">The seed value.</param>
+    /// <param name="state0">The first state word.</param>
+    /// <param name="state1">The second state word.</param>
     public static void InitializeState(ulong seed, out ulong state0, out ulong state1)
     {
         do
@@ -35,6 +41,12 @@ public class Xoroshiro128StarStar : RandomUInt64
         while ((state0 | state1) == 0); // at least one value must be non-zero
     }
 
+    /// <summary>
+    /// Advances a xoroshiro128** state and returns the generated value.
+    /// </summary>
+    /// <param name="state0">The first state word.</param>
+    /// <param name="state1">The second state word.</param>
+    /// <returns>A random 64-bit unsigned integer.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong NextState(ref ulong state0, ref ulong state1)
     {

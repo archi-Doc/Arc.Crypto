@@ -84,6 +84,10 @@ public unsafe struct Blake3Hasher : IDisposable
 
     #endregion
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Blake3Hasher"/> struct.<br/>
+    /// This constructor is not supported; use <see cref="New()"/> instead.
+    /// </summary>
     [Obsolete("Use New() to create a new instance of Blake3Hasher", true)]
     public Blake3Hasher()
     {
@@ -107,6 +111,9 @@ public unsafe struct Blake3Hasher : IDisposable
         this.hasher = null;
     }
 
+    /// <summary>
+    /// Resets the hasher to its initial state so that it can be reused.
+    /// </summary>
     public void Reset()
     {
         if (this.hasher == null)

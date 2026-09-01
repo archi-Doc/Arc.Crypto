@@ -135,7 +135,7 @@ public static class CryptoBox
     {
         if (cipher.Length < MacSize)
         {
-            throw new ArgumentOutOfRangeException($"The {nameof(cipher)} length must be at least {MacSize} bytes.");
+            throw new ArgumentOutOfRangeException(nameof(cipher), cipher.Length, $"The {nameof(cipher)} length must be at least {MacSize} bytes.");
         }
 
         if (nonce24.Length != NonceSize)

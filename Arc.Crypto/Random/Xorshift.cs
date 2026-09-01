@@ -7,6 +7,10 @@ namespace Arc.Crypto;
 /// </summary>
 public class Xorshift : RandomUInt64
 {
+    /// <summary>
+    /// Advances a 32-bit Xorshift state in place. A zero state is replaced with the default seed.
+    /// </summary>
+    /// <param name="x">The state to advance.</param>
     public static void Xor32(ref uint x)
     {
         if (x == 0)
@@ -20,6 +24,11 @@ public class Xorshift : RandomUInt64
         x ^= x << 5;
     }
 
+    /// <summary>
+    /// Advances a 32-bit Xorshift state. A zero state is replaced with the default seed.
+    /// </summary>
+    /// <param name="x">The current state.</param>
+    /// <returns>The next state.</returns>
     public static uint Xor32(uint x)
     {
         if (x == 0)
@@ -33,6 +42,10 @@ public class Xorshift : RandomUInt64
         return x;
     }
 
+    /// <summary>
+    /// Advances a 64-bit Xorshift state in place. A zero state is replaced with the default seed.
+    /// </summary>
+    /// <param name="x">The state to advance.</param>
     public static void Xor64(ref ulong x)
     {
         if (x == 0)
@@ -46,6 +59,11 @@ public class Xorshift : RandomUInt64
         x ^= x << 17;
     }
 
+    /// <summary>
+    /// Advances a 64-bit Xorshift state. A zero state is replaced with the default seed.
+    /// </summary>
+    /// <param name="x">The current state.</param>
+    /// <returns>The next state.</returns>
     public static ulong Xor64(ulong x)
     {
         if (x == 0)
@@ -84,6 +102,10 @@ public class Xorshift : RandomUInt64
         }
     }
 
+    /// <summary>
+    /// Generates the next random 64-bit unsigned integer.
+    /// </summary>
+    /// <returns>A random 64-bit unsigned integer.</returns>
     public override ulong NextUInt64()
     {
         this.seed ^= this.seed << 13;
