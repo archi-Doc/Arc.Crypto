@@ -4,11 +4,19 @@ namespace Arc.Crypto;
 
 internal static class AES
 {
-    public const bool EnableArmIntrinsics = true;
+    /// <summary>
+    /// Gets the AEGIS constant c0 (Fibonacci sequence modulo 256).
+    /// </summary>
+    internal static ReadOnlySpan<byte> C0 => [0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x0d, 0x15, 0x22, 0x37, 0x59, 0x90, 0xe9, 0x79, 0x62];
+
+    /// <summary>
+    /// Gets the AEGIS constant c1.
+    /// </summary>
+    internal static ReadOnlySpan<byte> C1 => [0xdb, 0x3d, 0x18, 0x55, 0x6d, 0xc2, 0x2f, 0xf1, 0x20, 0x11, 0x31, 0x42, 0x73, 0xb5, 0x28, 0xdd];
 
     // S-box multiplied for the first column
     // https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/aes-development/rijndael-ammended.pdf
-    private static readonly uint[] Te0 =
+    private static ReadOnlySpan<uint> Te0 =>
     [
         0xc66363a5, 0xf87c7c84, 0xee777799, 0xf67b7b8d, 0xfff2f20d, 0xd66b6bbd, 0xde6f6fb1, 0x91c5c554,
         0x60303050, 0x02010103, 0xce6767a9, 0x562b2b7d, 0xe7fefe19, 0xb5d7d762, 0x4dababe6, 0xec76769a,
@@ -44,7 +52,7 @@ internal static class AES
         0x824141c3, 0x299999b0, 0x5a2d2d77, 0x1e0f0f11, 0x7bb0b0cb, 0xa85454fc, 0x6dbbbbd6, 0x2c16163a
     ];
 
-    private static readonly uint[] Te1 =
+    private static ReadOnlySpan<uint> Te1 =>
     [
         0xa5c66363, 0x84f87c7c, 0x99ee7777, 0x8df67b7b, 0x0dfff2f2, 0xbdd66b6b, 0xb1de6f6f, 0x5491c5c5,
         0x50603030, 0x03020101, 0xa9ce6767, 0x7d562b2b, 0x19e7fefe, 0x62b5d7d7, 0xe64dabab, 0x9aec7676,
@@ -80,7 +88,7 @@ internal static class AES
         0xc3824141, 0xb0299999, 0x775a2d2d, 0x111e0f0f, 0xcb7bb0b0, 0xfca85454, 0xd66dbbbb, 0x3a2c1616
     ];
 
-    private static readonly uint[] Te2 =
+    private static ReadOnlySpan<uint> Te2 =>
     [
         0x63a5c663, 0x7c84f87c, 0x7799ee77, 0x7b8df67b, 0xf20dfff2, 0x6bbdd66b, 0x6fb1de6f, 0xc55491c5,
         0x30506030, 0x01030201, 0x67a9ce67, 0x2b7d562b, 0xfe19e7fe, 0xd762b5d7, 0xabe64dab, 0x769aec76,
@@ -116,7 +124,7 @@ internal static class AES
         0x41c38241, 0x99b02999, 0x2d775a2d, 0x0f111e0f, 0xb0cb7bb0, 0x54fca854, 0xbbd66dbb, 0x163a2c16
     ];
 
-    private static readonly uint[] Te3 =
+    private static ReadOnlySpan<uint> Te3 =>
     [
         0x6363a5c6, 0x7c7c84f8, 0x777799ee, 0x7b7b8df6, 0xf2f20dff, 0x6b6bbdd6, 0x6f6fb1de, 0xc5c55491,
         0x30305060, 0x01010302, 0x6767a9ce, 0x2b2b7d56, 0xfefe19e7, 0xd7d762b5, 0xababe64d, 0x76769aec,
