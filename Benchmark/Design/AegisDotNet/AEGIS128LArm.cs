@@ -126,16 +126,22 @@ internal static class AEGIS128LArm
         }
     }
 
+    // Computes one AES encryption round (SubBytes, ShiftRows, MixColumns, AddRoundKey), equivalent to x86 AESENC.
+    // Arm Aes.Encrypt is AESE, which computes SubBytes(ShiftRows(value ^ roundKey)), so a zero key is passed
+    // and the round key is applied after MixColumns instead.
+    private static Vector128<byte> AesRound(Vector128<byte> value, Vector128<byte> roundKey)
+        => Aes.MixColumns(Aes.Encrypt(value, Vector128<byte>.Zero)) ^ roundKey;
+
     private static void Update(Vector128<byte> m0, Vector128<byte> m1)
     {
-        Vector128<byte> s0 = Aes.Encrypt(S7, S0 ^ m0);
-        Vector128<byte> s1 = Aes.Encrypt(S0, S1);
-        Vector128<byte> s2 = Aes.Encrypt(S1, S2);
-        Vector128<byte> s3 = Aes.Encrypt(S2, S3);
-        Vector128<byte> s4 = Aes.Encrypt(S3, S4 ^ m1);
-        Vector128<byte> s5 = Aes.Encrypt(S4, S5);
-        Vector128<byte> s6 = Aes.Encrypt(S5, S6);
-        Vector128<byte> s7 = Aes.Encrypt(S6, S7);
+        Vector128<byte> s0 = AesRound(S7, S0 ^ m0);
+        Vector128<byte> s1 = AesRound(S0, S1);
+        Vector128<byte> s2 = AesRound(S1, S2);
+        Vector128<byte> s3 = AesRound(S2, S3);
+        Vector128<byte> s4 = AesRound(S3, S4 ^ m1);
+        Vector128<byte> s5 = AesRound(S4, S5);
+        Vector128<byte> s6 = AesRound(S5, S6);
+        Vector128<byte> s7 = AesRound(S6, S7);
 
         S0 = s0;
         S1 = s1;
