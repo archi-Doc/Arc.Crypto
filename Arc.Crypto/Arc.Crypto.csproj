@@ -3,8 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <!--Turns on the trim/AOT/single-file analyzers and marks the assembly as trimmable, so that
-        consumers publishing with PublishAot or PublishTrimmed get accurate warnings.-->
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
