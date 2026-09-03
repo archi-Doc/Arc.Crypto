@@ -1,7 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
-using System.Buffers;
 
 namespace Arc.Crypto;
 
@@ -10,41 +9,13 @@ namespace Arc.Crypto;
 /// </summary>
 public static class Hex
 {
-#pragma warning disable SA1311 // Static readonly fields should begin with upper-case letter
-    private static readonly char[] encodingTable = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', };
-#pragma warning restore SA1311 // Static readonly fields should begin with upper-case letter
-
     /// <summary>
     /// Converts a byte sequence to a lower-case hexadecimal string.
     /// </summary>
     /// <param name="bytes">The bytes to convert.</param>
     /// <returns>A hexadecimal string twice as long as <paramref name="bytes"/>.</returns>
     public static string FromByteArrayToString(ReadOnlySpan<byte> bytes)
-    {
-        var length = bytes.Length * 2;
-        char[]? pooledName = null;
-        scoped Span<char> c = length <= 1024 ?
-            stackalloc char[length] : (pooledName = ArrayPool<char>.Shared.Rent(length)).AsSpan(0, length);
-
-        try
-        {
-            var i = 0;
-            foreach (var x in bytes)
-            {
-                c[i++] = encodingTable[x >> 4];
-                c[i++] = encodingTable[x & 0xF];
-            }
-
-            return new string(c);
-        }
-        finally
-        {
-            if (pooledName is not null)
-            {
-                ArrayPool<char>.Shared.Return(pooledName);
-            }
-        }
-    }
+        => Convert.ToHexStringLower(bytes); // Vectorized in the BCL, and writes straight into the string.
 
     /// <summary>
     /// Converts a hexadecimal string to a byte array.<br/>

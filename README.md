@@ -14,6 +14,17 @@
 
 The library targets .NET 10 and uses [Libsodium](https://doc.libsodium.org/) and [BLAKE3](https://github.com/BLAKE3-team/BLAKE3) through native interop.
 
+The library enables Native AOT and trimming compatibility analysis with `IsAotCompatible`. The `AotSmoke` project roots the entire assembly for analysis, fails on trim/AOT warnings, and checks native dependencies and cryptographic results in a published executable. CI is configured to publish and run it on Windows x64 and Linux x64 for both project references and NuGet packages. The two native libraries ship as RID-specific assets; BLAKE3 also flows automatically through project references.
+
+To verify Native AOT locally, install the [platform prerequisites](https://learn.microsoft.com/dotnet/core/deploying/native-aot/), then run:
+
+```sh
+dotnet publish AotSmoke/AotSmoke.csproj -c Release -r win-x64 -o artifacts/aot
+./artifacts/aot/AotSmoke.exe
+```
+
+On Linux, use `linux-x64` and run `./artifacts/aot/AotSmoke`. Deploy the entire publish directory, including `libsodium` and `blake3_dotnet`; the native executable still needs these shared libraries. Other RIDs need separate build and execution validation. See [Native AOT verification](doc/NativeAOT.md) for the checks and fixes.
+
 
 
 ## Quick Start

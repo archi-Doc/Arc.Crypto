@@ -1,6 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Buffers;
 using System.Security.Cryptography;
 
 #pragma warning disable SA1124 // Do not use regions
@@ -16,6 +17,11 @@ namespace Arc.Crypto;
 public abstract class HashAlgorithmWrapper : IHash, IDisposable
 {
     /// <summary>
+    /// The size of the buffer used to bridge the span-based API to <see cref="HashAlgorithm.TransformBlock"/>, which only accepts arrays.
+    /// </summary>
+    private const int TransformBufferSize = 4096;
+
+    /// <summary>
     /// Gets or sets the instance of HashAlgorithm.
     /// </summary>
     public HashAlgorithm HashAlgorithm { get; protected set; }
@@ -23,7 +29,7 @@ public abstract class HashAlgorithmWrapper : IHash, IDisposable
     /// <summary>
     /// Gets empty byte[].
     /// </summary>
-    public byte[] EmptyByte { get; } = new byte[] { };
+    public byte[] EmptyByte { get; } = [];
 
     /// <inheritdoc/>
     public virtual string HashName => "Wrapper";
@@ -42,14 +48,17 @@ public abstract class HashAlgorithmWrapper : IHash, IDisposable
         this.HashAlgorithm = null!; // this.HashAlgorithm must be set in a constructor of inherited class.
     }
 
-    /// <summary>
-    /// Not implemented, because HashAlgorithm does not support Span (TransformBlock()). Use <see cref="GetHash(byte[], int, int)"/> instead.
-    /// </summary>
-    /// <param name="input">The read-only span that contains input data.</param>
-    /// <returns>A hash.</returns>
+    /// <inheritdoc/>
     public byte[] GetHash(ReadOnlySpan<byte> input)
     {
-        throw new NotImplementedException();
+        var hash = new byte[this.HashAlgorithm.HashSize / 8];
+        if (!this.HashAlgorithm.TryComputeHash(input, hash, out var written) ||
+            written != hash.Length)
+        {
+            throw new CryptographicException($"{this.HashName} produced an unexpected hash size.");
+        }
+
+        return hash;
     }
 
     /// <inheritdoc/>
@@ -65,13 +74,31 @@ public abstract class HashAlgorithmWrapper : IHash, IDisposable
     /// <inheritdoc/>
     public void HashInitialize() => this.HashAlgorithm.Initialize();
 
-    /// <summary>
-    /// Not implemented, because HashAlgorithm does not support Span (TransformBlock()). Use <see cref="HashUpdate(byte[], int, int)"/> instead.
-    /// </summary>
-    /// <param name="input">The read-only span that contains input data.</param>
+    /// <inheritdoc/>
     public void HashUpdate(ReadOnlySpan<byte> input)
     {
-        throw new NotImplementedException();
+        if (input.IsEmpty)
+        {
+            return;
+        }
+
+        // TransformBlock() only accepts arrays, so feed it through a pooled buffer in bounded chunks.
+        var buffer = ArrayPool<byte>.Shared.Rent(Math.Min(input.Length, TransformBufferSize));
+        try
+        {
+            while (!input.IsEmpty)
+            {
+                var size = Math.Min(input.Length, buffer.Length);
+                input.Slice(0, size).CopyTo(buffer);
+                this.HashAlgorithm.TransformBlock(buffer, 0, size, null, 0);
+                input = input.Slice(size);
+            }
+        }
+        finally
+        {
+            // Clear the buffer so the hashed material does not linger in the shared pool.
+            ArrayPool<byte>.Shared.Return(buffer, clearArray: true);
+        }
     }
 
     /// <inheritdoc/>
@@ -80,13 +107,9 @@ public abstract class HashAlgorithmWrapper : IHash, IDisposable
     #region IDisposable Support
     private bool disposed = false; // To detect redundant calls.
 
-    /// <summary>
-    /// Finalizes an instance of the <see cref="HashAlgorithmWrapper"/> class.
-    /// </summary>
-    ~HashAlgorithmWrapper()
-    {
-        this.Dispose(false);
-    }
+    // No finalizer: the only resource held is the managed HashAlgorithm, whose own
+    // SafeHandles are finalizable. A finalizer here would just cost every instance an
+    // extra GC generation to run a Dispose(false) that has nothing to release.
 
     /// <inheritdoc/>
     public void Dispose()

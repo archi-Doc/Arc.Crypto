@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -43,8 +44,22 @@
     </Content>
   </ItemGroup>
 
+  <PropertyGroup>
+    <ArcCryptoNativeRid Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</ArcCryptoNativeRid>
+    <ArcCryptoNativeRid Condition="'$(ArcCryptoNativeRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</ArcCryptoNativeRid>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Arc.Collections" Version="1.44.0" />
+    <!-- Flow the selected native asset through project references as well as NuGet packages. -->
+    <Content Update="runtimes\$(ArcCryptoNativeRid)\native\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <TargetPath>%(Filename)%(Extension)</TargetPath>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Arc.Collections" Version="1.45.0" />
     <PackageReference Include="libsodium" Version="1.0.22" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556">
       <PrivateAssets>all</PrivateAssets>
