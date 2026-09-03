@@ -26,7 +26,7 @@ For Linux x64, replace `win-x64` with `linux-x64` and run `./artifacts/aot/AotSm
 
 The local Windows environment had an MSVC linker but no installed Windows SDK libraries. For this verification, the Microsoft `Microsoft.Windows.SDK.CPP.x64` 10.0.26100.7175 package was extracted under the ignored `artifacts/toolchain` directory, and its libraries and the existing MSVC tools were supplied through process-local `LIB`/`PATH` with `IlcUseEnvironmentalTools=true`. No system installation or permanent environment change was made. A normal C++/Windows SDK installation does not require that workaround.
 
-To test the NuGet path, pack a unique local prerelease version, restore the consumer with `ArcCryptoPackageVersion` set to that version and the absolute local package directory as an additional source, then publish with the same property and `--no-restore`. The CI workflow contains the complete commands. Use a fresh package version when repeating after code changes to avoid reusing a cached package.
+To test the NuGet path, pack a unique local prerelease version into `artifacts/packages`, restore the consumer with `ArcCryptoPackageVersion` set to that version and `--configfile .github/nuget-aot.config`, then publish with the same property and `--no-restore`. The configuration supplies the local package directory and nuget.org without mixing local paths and URLs in command-line sources, which can corrupt URLs on Windows. The CI workflow contains the complete commands. Use a fresh package version when repeating after code changes to avoid reusing a cached package.
 
 Deploy the complete publish directory. This library still uses shared native dependencies; Native AOT does not embed libsodium or BLAKE3 into the executable.
 
