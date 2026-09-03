@@ -11,6 +11,65 @@ namespace Test;
 public class Blake3Test
 {
     [Fact]
+    public void FinalizeRejectsUninitializedOrDisposedHasher()
+    {
+        var uninitialized = default(Blake3Hasher);
+        Assert.Throws<NullReferenceException>(() => uninitialized.Finalize());
+        Assert.Throws<NullReferenceException>(() => uninitialized.Finalize(Span<byte>.Empty));
+
+        var disposed = Blake3Hasher.New();
+        disposed.Dispose();
+        disposed.Dispose();
+        Assert.Throws<NullReferenceException>(() => disposed.Finalize());
+        Assert.Throws<NullReferenceException>(() => disposed.Finalize(new byte[32]));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(32)]
+    [InlineData(1024)]
+    [InlineData(1025)]
+    [InlineData(65536)]
+    public void GenericParallelAndExtendedOutputAgree(int outputLength)
+    {
+        var data = new ulong[2048];
+        for (var i = 0; i < data.Length; i++)
+        {
+            data[i] = (ulong)i;
+        }
+
+        using var sequential = Blake3Hasher.New();
+        using var parallel = Blake3Hasher.New();
+        using var bytes = Blake3Hasher.New();
+        sequential.Update<ulong>(ReadOnlySpan<ulong>.Empty);
+        parallel.UpdateWithJoin(ReadOnlySpan<byte>.Empty);
+        parallel.UpdateWithJoin<ulong>(ReadOnlySpan<ulong>.Empty);
+        sequential.Update<ulong>(data);
+        parallel.UpdateWithJoin<ulong>(data);
+        bytes.Update(MemoryMarshal.AsBytes(data.AsSpan()));
+        var expected = new byte[outputLength];
+        var actual = new byte[outputLength];
+        bytes.Finalize(expected);
+        sequential.Finalize(actual);
+        Assert.Equal(expected, actual);
+        parallel.Finalize(actual);
+        Assert.Equal(expected, actual);
+        Assert.Equal(bytes.Finalize(), sequential.Finalize());
+
+        sequential.Reset();
+        Assert.Equal(Blake3.Get256_Struct(ReadOnlySpan<byte>.Empty), sequential.Finalize());
+    }
+
+    [Fact]
+    public void EmptyDerivationContextIsSupported()
+    {
+        using var text = Blake3Hasher.NewDeriveKey(string.Empty);
+        using var bytes = Blake3Hasher.NewDeriveKey(ReadOnlySpan<byte>.Empty);
+        Assert.Equal(text.Finalize(), bytes.Finalize());
+    }
+
+    [Fact]
     public void Test1()
     {
         Span<byte> span = stackalloc byte[Blake3.Size];

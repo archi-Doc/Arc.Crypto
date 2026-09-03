@@ -14,13 +14,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!--Workarounds for Arm64 test-->
-    <TemporaryIdentifier>$(NETCoreSdkRuntimeIdentifier)</TemporaryIdentifier>
-    <TemporaryIdentifier Condition="'$(NETCoreSdkRuntimeIdentifier)' == 'ubuntu.22.04-arm64'">linux-arm64</TemporaryIdentifier>
-
-  </PropertyGroup>
-
   <ItemGroup>
     <AdditionalFiles Include="..\stylecop.json" Link="stylecop.json" />
   </ItemGroup>
@@ -42,9 +35,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arc.Crypto\Arc.Crypto.csproj" />
-    <Content Include="..\Arc.Crypto\runtimes\$(TemporaryIdentifier)\native\*.*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>

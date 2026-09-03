@@ -83,12 +83,14 @@ public static class Blake3
             BaseHelper.ThrowSizeMismatchException(nameof(output), Size);
         }
 
+        // Rust's from_raw_parts requires a non-null pointer even when the length is zero.
+        byte empty = 0;
         fixed (void* ptrOut = output, ptr = input)
         {
             var size = input.Length;
             if (size <= LimitPreemptive)
             {
-                Blake3Interops.blake3_hash(ptr, (void*)size, ptrOut);
+                Blake3Interops.blake3_hash(input.IsEmpty ? &empty : ptr, (void*)size, ptrOut);
             }
             else
             {

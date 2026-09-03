@@ -3,6 +3,7 @@ name: Build and Test
 on:
   push:
     branches: [ main ]
+  pull_request:
 
 jobs:
   build:
@@ -23,9 +24,17 @@ jobs:
       run: dotnet test --no-restore --verbosity normal
 
   nativeaot:
-    name: Native AOT
+    name: Native AOT (${{ matrix.rid }})
 
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: windows-latest
+            rid: win-x64
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v5
@@ -34,11 +43,30 @@ jobs:
       with:
         dotnet-version: 10.0.x
     - name: Install Native AOT prerequisites
+      if: runner.os == 'Linux'
       run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
-    # Publishing with PublishAot runs the whole ILCompiler analysis over Arc.Crypto,
-    # so any trim/AOT incompatibility introduced later shows up here as a warning.
+    # AotSmoke roots the entire library and treats trim/AOT warnings as errors.
     - name: Publish
-      run: dotnet publish QuickStart/QuickStart.csproj -c Release -r linux-x64 -p:PublishAot=true -p:TrimmerSingleWarn=false -p:IlcTreatWarningsAsErrors=true -o ./aot
-    # Running it proves the two native dependencies (libsodium, blake3_dotnet) still resolve.
-    - name: Run
-      run: ./aot/QuickStart
+      run: dotnet publish AotSmoke/AotSmoke.csproj -c Release -r ${{ matrix.rid }} -o ./artifacts/aot
+    - name: Run (Linux)
+      if: runner.os == 'Linux'
+      working-directory: artifacts/aot
+      run: ./AotSmoke
+    - name: Run (Windows)
+      if: runner.os == 'Windows'
+      working-directory: artifacts/aot
+      run: ./AotSmoke.exe
+    - name: Pack for consumer validation
+      run: dotnet pack Arc.Crypto/Arc.Crypto.csproj -c Release -p:PackageVersion=1.0.0-aot-validation -o ./artifacts/packages
+    - name: Restore NuGet consumer
+      run: dotnet restore AotSmoke/AotSmoke.csproj -r ${{ matrix.rid }} -p:ArcCryptoPackageVersion=1.0.0-aot-validation --source "${{ github.workspace }}/artifacts/packages" --source https://api.nuget.org/v3/index.json
+    - name: Publish NuGet consumer
+      run: dotnet publish AotSmoke/AotSmoke.csproj -c Release -r ${{ matrix.rid }} -p:ArcCryptoPackageVersion=1.0.0-aot-validation --no-restore -o ./artifacts/aot-package
+    - name: Run NuGet consumer (Linux)
+      if: runner.os == 'Linux'
+      working-directory: artifacts/aot-package
+      run: ./AotSmoke
+    - name: Run NuGet consumer (Windows)
+      if: runner.os == 'Windows'
+      working-directory: artifacts/aot-package
+      run: ./AotSmoke.exe

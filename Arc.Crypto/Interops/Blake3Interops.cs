@@ -18,15 +18,12 @@ internal static unsafe partial class Blake3Interops
     private const string Name = "blake3_dotnet";
 
     [DllImport(Name, CallingConvention = CallingConvention.Cdecl)]
-    [SuppressGCTransition]
     public static extern void* blake3_new();
 
     [DllImport(Name, CallingConvention = CallingConvention.Cdecl)]
-    [SuppressGCTransition]
     public static extern void* blake3_new_keyed(void* ptr32Bytes);
 
     [DllImport(Name, CallingConvention = CallingConvention.Cdecl)]
-    [SuppressGCTransition]
     public static extern void* blake3_new_derive_key(void* ptr, void* size);
 
     [DllImport(Name, CallingConvention = CallingConvention.Cdecl)]
@@ -37,7 +34,6 @@ internal static unsafe partial class Blake3Interops
     public static extern void blake3_hash_preemptive(void* ptr, void* size, void* ptrOut);
 
     [DllImport(Name, CallingConvention = CallingConvention.Cdecl)]
-    [SuppressGCTransition]
     public static extern void blake3_delete(void* hasher);
 
     [DllImport(Name, CallingConvention = CallingConvention.Cdecl)]
@@ -62,7 +58,9 @@ internal static unsafe partial class Blake3Interops
     [SuppressGCTransition]
     public static extern void blake3_finalize_xof(void* hasher, void* ptr, void* size);
 
+    [DllImport(Name, CallingConvention = CallingConvention.Cdecl, EntryPoint = "blake3_finalize_xof")]
+    public static extern void blake3_finalize_xof_preemptive(void* hasher, void* ptr, void* size);
+
     [DllImport(Name, CallingConvention = CallingConvention.Cdecl)]
-    [SuppressGCTransition]
     public static extern void blake3_finalize_seek_xof(void* hasher, ulong offset, void* ptr, void* size);
 }
