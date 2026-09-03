@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -22,23 +23,15 @@ internal static unsafe partial class LibsodiumInterops
     {
     }
 
-    /*private static bool initialized;
-
-#pragma warning disable CA2255 // The 'ModuleInitializer' attribute should not be used in libraries
-    [ModuleInitializer]
-#pragma warning restore CA2255 // The 'ModuleInitializer' attribute should not be used in libraries
-    public static void Initialize()
+    static LibsodiumInterops()
     {
-        if (!initialized)
+        // The CLR serializes initialization before the first native call.
+        // Sodium initializes its random source and selects the CPU-specific implementations here.
+        if (sodium_init() < 0)
         {
-            initialized = true;
-            sodium_init();
+            throw new CryptographicException("Libsodium initialization failed.");
         }
     }
-
-    [LibraryImport(Name)]
-    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int sodium_init();*/
 
     /*
     #region AEGIS
@@ -70,7 +63,7 @@ npub, ReadOnlySpan<byte> k);
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int crypto_pwhash_str(ReadOnlySpan<byte> str128, ReadOnlySpan<byte> passwd, ulong passwdlen, ulong opslimit, UIntPtr memlimit);
+    internal static partial int crypto_pwhash_str(Span<byte> str128, ReadOnlySpan<byte> passwd, ulong passwdlen, ulong opslimit, UIntPtr memlimit);
 
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -201,4 +194,8 @@ npub, ReadOnlySpan<byte> k);
     [LibraryImport(Name)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial void randombytes_buf(scoped Span<byte> buf, UIntPtr size);
+
+    [LibraryImport(Name)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    private static partial int sodium_init();
 }

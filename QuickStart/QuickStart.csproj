@@ -7,20 +7,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!--Arc.Crypto is referenced as a project here, so the blake3 native library is not flowed by NuGet
-        and has to be copied by hand. Follow the RID being published for (which is what matters when
-        cross-publishing or publishing with PublishAot), and fall back to the SDK's own RID for a plain build.-->
-    <ArcCryptoNativeRid Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</ArcCryptoNativeRid>
-    <ArcCryptoNativeRid Condition="'$(ArcCryptoNativeRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</ArcCryptoNativeRid>
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Arc.Crypto\Arc.Crypto.csproj" />
-    <Content Include="..\Arc.Crypto\runtimes\$(ArcCryptoNativeRid)\native\*.*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>%(Filename)%(Extension)</Link>
-    </Content>
   </ItemGroup>
 
 </Project>

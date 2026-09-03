@@ -3,7 +3,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Arc.Crypto;
@@ -72,9 +71,11 @@ public unsafe struct Blake3Hasher : IDisposable
     /// </remarks>
     public static Blake3Hasher NewDeriveKey(ReadOnlySpan<byte> input)
     {
+        // Rust slices require a non-null pointer even for an empty input.
+        byte empty = 0;
         fixed (void* ptr = input)
         {
-            return new Blake3Hasher(Blake3Interops.blake3_new_derive_key(ptr, (void*)input.Length));
+            return new Blake3Hasher(Blake3Interops.blake3_new_derive_key(input.IsEmpty ? &empty : ptr, (void*)input.Length));
         }
     }
 
@@ -144,7 +145,7 @@ public unsafe struct Blake3Hasher : IDisposable
 
         fixed (void* ptr = data)
         {
-            FastUpdate(this.hasher, ptr, data.Length);
+            FastUpdate(this.hasher, ptr, (nuint)data.Length);
         }
     }
 
@@ -170,7 +171,7 @@ public unsafe struct Blake3Hasher : IDisposable
 
         fixed (void* ptr = data)
         {
-            FastUpdate(this.hasher, ptr, data.Length * sizeof(T));
+            FastUpdate(this.hasher, ptr, checked((nuint)data.Length * (nuint)sizeof(T)));
         }
     }
 
@@ -191,6 +192,11 @@ public unsafe struct Blake3Hasher : IDisposable
         if (this.hasher == null)
         {
             ThrowNullReferenceException();
+        }
+
+        if (data.IsEmpty)
+        {
+            return;
         }
 
         fixed (void* ptr = data)
@@ -220,9 +226,14 @@ public unsafe struct Blake3Hasher : IDisposable
             ThrowNullReferenceException();
         }
 
+        if (data.IsEmpty)
+        {
+            return;
+        }
+
         fixed (void* ptr = data)
         {
-            void* size = (void*)(IntPtr)(data.Length * sizeof(T));
+            void* size = (void*)checked((nuint)data.Length * (nuint)sizeof(T));
             Blake3Interops.blake3_update_rayon(this.hasher, ptr, size);
         }
     }
@@ -239,6 +250,11 @@ public unsafe struct Blake3Hasher : IDisposable
     public Struct256 Finalize()
 #pragma warning restore 465
     {
+        if (this.hasher == null)
+        {
+            ThrowNullReferenceException();
+        }
+
         var hash = default(Struct256);
         Blake3Interops.blake3_finalize(this.hasher, &hash);
         return hash;
@@ -258,24 +274,37 @@ public unsafe struct Blake3Hasher : IDisposable
             ThrowNullReferenceException();
         }
 
-        ref var pData = ref MemoryMarshal.GetReference(hash32);
-        fixed (void* ptr = &pData)
+        if (hash32.IsEmpty)
+        {
+            return;
+        }
+
+        fixed (void* ptr = hash32)
         {
             var size = hash32.Length;
             if (size == Blake3.Size)
             {
                 Blake3Interops.blake3_finalize(this.hasher, ptr);
             }
-            else
+            else if (size <= Blake3.LimitPreemptive)
             {
                 Blake3Interops.blake3_finalize_xof(this.hasher, ptr, (void*)(IntPtr)hash32.Length);
+            }
+            else
+            {
+                Blake3Interops.blake3_finalize_xof_preemptive(this.hasher, ptr, (void*)hash32.Length);
             }
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void FastUpdate(void* hasher, void* ptr, long size)
+    private static void FastUpdate(void* hasher, void* ptr, nuint size)
     {
+        if (size == 0)
+        {
+            return;
+        }
+
         if (size <= Blake3.LimitPreemptive)
         {
             Blake3Interops.blake3_update(hasher, ptr, (void*)size);

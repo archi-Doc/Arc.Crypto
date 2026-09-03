@@ -3,6 +3,7 @@
     <File Path=".editorconfig" />
   </Folder>
   <Project Path="Arc.Crypto/Arc.Crypto.csproj" />
+  <Project Path="AotSmoke/AotSmoke.csproj" />
   <Project Path="Benchmark/Benchmark.csproj">
     <BuildDependency Project="Arc.Crypto/Arc.Crypto.csproj" />
   </Project>
