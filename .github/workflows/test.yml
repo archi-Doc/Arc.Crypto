@@ -59,7 +59,8 @@ jobs:
     - name: Pack for consumer validation
       run: dotnet pack Arc.Crypto/Arc.Crypto.csproj -c Release -p:PackageVersion=1.0.0-aot-validation -o ./artifacts/packages
     - name: Restore NuGet consumer
-      run: dotnet restore AotSmoke/AotSmoke.csproj -r ${{ matrix.rid }} -p:ArcCryptoPackageVersion=1.0.0-aot-validation --source "${{ github.workspace }}/artifacts/packages" --source https://api.nuget.org/v3/index.json
+      # Keep local paths and URLs in config to avoid Windows CLI source normalization.
+      run: dotnet restore AotSmoke/AotSmoke.csproj -r ${{ matrix.rid }} -p:ArcCryptoPackageVersion=1.0.0-aot-validation --configfile .github/nuget-aot.config
     - name: Publish NuGet consumer
       run: dotnet publish AotSmoke/AotSmoke.csproj -c Release -r ${{ matrix.rid }} -p:ArcCryptoPackageVersion=1.0.0-aot-validation --no-restore -o ./artifacts/aot-package
     - name: Run NuGet consumer (Linux)
