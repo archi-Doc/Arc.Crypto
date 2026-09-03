@@ -14,6 +14,8 @@
 
 The library targets .NET 10 and uses [Libsodium](https://doc.libsodium.org/) and [BLAKE3](https://github.com/BLAKE3-team/BLAKE3) through native interop.
 
+The assembly is trim-safe and Native AOT compatible: it contains no reflection, and both native dependencies are plain P/Invoke. Publishing with `PublishAot` or `PublishTrimmed` produces no trim or AOT analysis warnings, and CI publishes and runs an AOT binary on every push. The two native libraries ship as RID-specific assets, so `dotnet publish -r <rid>` places them next to the application automatically.
+
 
 
 ## Quick Start

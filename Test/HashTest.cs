@@ -391,4 +391,52 @@ public class HashTest
         var value = Crc32.Hash32(bytes);
         Assert.Equal(expected, value);
     }
+
+    /// <summary>
+    /// The span-based <see cref="IHash"/> members of <see cref="HashAlgorithmWrapper"/> used to throw
+    /// <see cref="NotImplementedException"/>, so check them against the array-based ones and the BCL one-shots.
+    /// </summary>
+    [Fact]
+    public void TestHashAlgorithmWrapperSpan()
+    {
+        using var sha1 = new Arc.Crypto.Sha1();
+        using var sha2_256 = new Arc.Crypto.Sha2_256();
+        using var sha2_384 = new Arc.Crypto.Sha2_384();
+        using var sha2_512 = new Arc.Crypto.Sha2_512();
+
+        var random = new Random(42);
+
+        // Lengths around the internal transform buffer size (4096) so the chunking loop is exercised.
+        foreach (var length in new[] { 0, 1, 31, 4095, 4096, 4097, 10_000, })
+        {
+            var buffer = new byte[length];
+            random.NextBytes(buffer);
+
+            this.TestHashAlgorithmWrapperSpan_do(sha1, buffer, System.Security.Cryptography.SHA1.HashData(buffer));
+            this.TestHashAlgorithmWrapperSpan_do(sha2_256, buffer, System.Security.Cryptography.SHA256.HashData(buffer));
+            this.TestHashAlgorithmWrapperSpan_do(sha2_384, buffer, System.Security.Cryptography.SHA384.HashData(buffer));
+            this.TestHashAlgorithmWrapperSpan_do(sha2_512, buffer, System.Security.Cryptography.SHA512.HashData(buffer));
+        }
+    }
+
+    private void TestHashAlgorithmWrapperSpan_do(IHash hash, byte[] data, byte[] expected)
+    {
+        // One-shot, span overload.
+        hash.GetHash(data.AsSpan()).SequenceEqual(expected).IsTrue();
+
+        // One-shot, array overload (the path that already worked).
+        hash.GetHash(data, 0, data.Length).SequenceEqual(expected).IsTrue();
+
+        // Incremental, span overload, in a single update.
+        hash.HashInitialize();
+        hash.HashUpdate(data.AsSpan());
+        hash.HashFinal().SequenceEqual(expected).IsTrue();
+
+        // Incremental, span overload, split so that the chunking crosses an update boundary.
+        var split = data.Length / 3;
+        hash.HashInitialize();
+        hash.HashUpdate(data.AsSpan(0, split));
+        hash.HashUpdate(data.AsSpan(split));
+        hash.HashFinal().SequenceEqual(expected).IsTrue();
+    }
 }
