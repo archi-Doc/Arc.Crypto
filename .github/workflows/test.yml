@@ -21,3 +21,24 @@ jobs:
       run: dotnet build --configuration Release --no-restore
     - name: Test
       run: dotnet test --no-restore --verbosity normal
+
+  nativeaot:
+    name: Native AOT
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v5
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: 10.0.x
+    - name: Install Native AOT prerequisites
+      run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+    # Publishing with PublishAot runs the whole ILCompiler analysis over Arc.Crypto,
+    # so any trim/AOT incompatibility introduced later shows up here as a warning.
+    - name: Publish
+      run: dotnet publish QuickStart/QuickStart.csproj -c Release -r linux-x64 -p:PublishAot=true -p:TrimmerSingleWarn=false -p:IlcTreatWarningsAsErrors=true -o ./aot
+    # Running it proves the two native dependencies (libsodium, blake3_dotnet) still resolve.
+    - name: Run
+      run: ./aot/QuickStart
