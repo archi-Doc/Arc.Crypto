@@ -80,18 +80,32 @@ public static class Base32Sort
     /// </summary>
     /// <param name="sourceLength">The source length.</param>
     /// <returns>The base32 encoded length of <paramref name="sourceLength"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The input is negative or the encoded length exceeds Int32.MaxValue.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetEncodedLength(int sourceLength)
-        => ((sourceLength << 3) + 4) / 5;
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(sourceLength);
+        var length = (((long)sourceLength * 8) + 4) / 5;
+        if (length > int.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(nameof(sourceLength), "Encoded length exceeds Int32.MaxValue.");
+        }
+
+        return (int)length;
+    }
 
     /// <summary>
     /// Gets the length of the decoded data.
     /// </summary>
     /// <param name="encodedLength">The encoded length.</param>
     /// <returns>The base32 decoded length of <paramref name="encodedLength"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The encoded length is negative.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetDecodedLength(int encodedLength)
-        => (encodedLength * 5) >> 3;
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(encodedLength);
+        return (int)(((long)encodedLength * 5) >> 3);
+    }
 
     /// <summary>
     /// Computes <paramref name="value"/> modulo 5, using a multiplication instead of a division on 64-bit processes.

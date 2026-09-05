@@ -11,7 +11,7 @@ namespace Arc.Crypto;
 /// Represents a BLAKE3 cryptographic hasher.
 /// </summary>
 /// <remarks>
-/// This struct is used to compute BLAKE3 hashes. It must be disposed explicitly to free unmanaged resources.
+/// Owns unmanaged state and is not thread-safe. Dispose exactly once; never copy an initialized instance or use a copy after disposal.
 /// </remarks>
 public unsafe struct Blake3Hasher : IDisposable
 {
@@ -51,21 +51,24 @@ public unsafe struct Blake3Hasher : IDisposable
     /// <summary>
     /// Construct a new Hasher for the key derivation function.
     /// </summary>
-    /// <param name="text">The input text to derive the key from.</param>
+    /// <param name="text">A public, application-specific context string. Supply secret key material through Update.</param>
     /// <returns>A new instance of the hasher.</returns>
     /// <remarks>
     /// The struct returned needs to be disposed explicitly.
     /// </remarks>
     public static Blake3Hasher NewDeriveKey(string text)
     {
-        return NewDeriveKey(Encoding.UTF8.GetBytes(text));
+        ArgumentNullException.ThrowIfNull(text);
+        Span<byte> buffer = stackalloc byte[Utf8Password.StackSize];
+        using var utf8 = new Utf8Password(text, buffer);
+        return NewDeriveKey(utf8.Bytes);
     }
 
     /// <summary>
     /// Construct a new Hasher for the key derivation function.
     /// </summary>
     /// <returns>A new instance of the hasher.</returns>
-    /// <param name="input">The input to derive the key from.</param>
+    /// <param name="input">The UTF-8 application-specific context. Supply secret key material through Update.</param>
     /// <remarks>
     /// The struct returned needs to be disposed explicitly.
     /// </remarks>

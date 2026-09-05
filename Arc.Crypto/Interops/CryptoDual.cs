@@ -1,5 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System.Security.Cryptography;
 using Arc.Crypto.Ed25519;
 
 namespace Arc.Crypto;
@@ -22,8 +23,15 @@ public static class CryptoDual
     public static void CreateKey(Span<byte> signSecretKey64, Span<byte> signPublicKey32, Span<byte> boxSecretKey32, Span<byte> boxPublicKey32)
     {
         Span<byte> seed = stackalloc byte[CryptoSign.SeedSize];
-        CryptoRandom.NextBytes(seed);
-        CreateKey(seed, signSecretKey64, signPublicKey32, boxSecretKey32, boxPublicKey32);
+        try
+        {
+            CryptoRandom.NextBytes(seed);
+            CreateKey(seed, signSecretKey64, signPublicKey32, boxSecretKey32, boxPublicKey32);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(seed);
+        }
     }
 
     /// <summary>
@@ -89,10 +97,12 @@ public static class CryptoDual
         Span<byte> hash = stackalloc byte[64];
         LibsodiumInterops.crypto_hash(hash, signSecretKey64.Slice(0, 32), 32); // Sha2Helper.Get512_Span(signSecretKey.Slice(0, 32), hash);
         hash.Slice(0, 32).CopyTo(boxSecretKey32);
+        CryptographicOperations.ZeroMemory(hash);
     }
 
     /// <summary>
     /// Converts a signature public key(32) to an encryption public key(32).
+    /// Input and output may overlap; the additional sign bit is preserved.
     /// </summary>
     /// <param name="signPublicKey32">The signature public key. The size must be <see cref="CryptoSign.PublicKeySize"/>(32 bytes).</param>
     /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/>(32 bytes).</param>
@@ -110,6 +120,7 @@ public static class CryptoDual
 
         // return LibsodiumInterops.crypto_sign_ed25519_pk_to_curve25519(boxPublicKey32, signPublicKey32) == 0;
 
+        var signBit = (byte)(0x80 & signPublicKey32[31]);
         Ed25519Internal.ge25519_frombytes_negate_vartime(out var a, signPublicKey32);
         var one = new fe25519(1);
         Ed25519Internal.fe25519_sub(out var xMinusOne, ref one, ref a.Y);
@@ -118,12 +129,12 @@ public static class CryptoDual
         Ed25519Internal.fe25519_mul(out var res, ref xPlusOne, ref inv);
         Ed25519Internal.fe25519_tobytes(boxPublicKey32, ref res);
 
-        boxPublicKey32[31] |= (byte)(0x80 & signPublicKey32[31]);
+        boxPublicKey32[31] |= signBit;
     }
 
     /// <summary>
-    /// Converts a encryption public key(32) to an signature public key(32).<br/>
-    /// Please note that only the encryption public keys created by CryptoDual.CreateKey() can be converted to signature public keys.
+    /// Converts a CryptoDual encryption public key to a signature public key, preserving the added sign bit.
+    /// Input and output may overlap. The input key is not validated.
     /// </summary>
     /// <param name="boxPublicKey32">The encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/>(32 bytes).</param>
     /// <param name="signPublicKey32">A span to hold the signature public key. The size must be <see cref="CryptoSign.PublicKeySize"/>(32 bytes).</param>
@@ -139,6 +150,7 @@ public static class CryptoDual
             BaseHelper.ThrowSizeMismatchException(nameof(signPublicKey32), CryptoSign.PublicKeySize);
         }
 
+        var signBit = (byte)(0x80 & boxPublicKey32[31]);
         Ed25519Internal.fe25519_frombytes(out var x, boxPublicKey32);
         var one = new fe25519(1);
         Ed25519Internal.fe25519_sub(out var xMinusOne, ref x, ref one);
@@ -147,7 +159,7 @@ public static class CryptoDual
         Ed25519Internal.fe25519_mul(out var res, ref xMinusOne, ref inv);
         Ed25519Internal.fe25519_tobytes(signPublicKey32, ref res);
 
-        signPublicKey32[31] |= (byte)(0x80 & boxPublicKey32[31]);
+        signPublicKey32[31] |= signBit;
     }
 
     /// <summary>

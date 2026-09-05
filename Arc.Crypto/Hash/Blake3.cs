@@ -10,7 +10,7 @@ namespace Arc.Crypto;
 /// </summary>
 /// <remarks>
 /// This class includes methods for computing 256-bit BLAKE3 hashes.
-/// The hash can be returned in various formats including byte arrays, tuples of longs, and custom structs.
+/// The hash can be returned in various formats including byte arrays, tuples of unsigned 64-bit words, and custom structs.
 /// </remarks>
 public static class Blake3
 {
@@ -49,7 +49,7 @@ public static class Blake3
     /// Computes the BLAKE3 hash of the input data and returns the hash as a tuple of four ulong values.
     /// </summary>
     /// <param name="input">The input data to hash.</param>
-    /// <returns>A tuple containing four long values representing the BLAKE3 hash.</returns>
+    /// <returns>The hash as four unsigned 64-bit words in native byte order.</returns>
     public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256_UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> hash = stackalloc ulong[4];

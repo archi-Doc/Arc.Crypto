@@ -28,7 +28,6 @@ public static class CryptoPasswordHash
     public const int HashStringLength = 128; // crypto_pwhash_STRBYTES crypto_pwhash_argon2id_STRBYTES
 
     private const int DefaultAlgorithm = 2; // crypto_pwhash_ALG_DEFAULT crypto_pwhash_ALG_ARGON2ID13 crypto_pwhash_argon2id_ALG_ARGON2ID13
-    private const int StackallocThreshold = 256;
 
     /// <summary>
     /// The computational cost of the Argon2id hash. A higher value increases the number of passes over memory.
@@ -80,21 +79,13 @@ public static class CryptoPasswordHash
     /// <param name="key">The buffer to store the derived key. Must be at least <see cref="MinimumKeySize"/>(16) bytes long.</param>
     /// <param name="opsLimit">The computational cost parameter.</param>
     /// <param name="memLimit">The memory cost parameter.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the key length is less than the minimum key size.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The salt size is invalid or the output is too short.</exception>
+    /// <exception cref="CryptographicException">Key derivation failed; the key buffer is cleared.</exception>
     public static void DeriveKey(ReadOnlySpan<char> password, ReadOnlySpan<byte> salt16, Span<byte> key, OpsLimit opsLimit = OpsLimit.Interactive, MemLimit memLimit = MemLimit.Interactive)
     {
-        var length = Encoding.UTF8.GetByteCount(password);
-        Span<byte> utf8Password = length <= StackallocThreshold ? stackalloc byte[length] : new byte[length];
-        Encoding.UTF8.GetBytes(password, utf8Password);
-
-        try
-        {
-            DeriveKey(utf8Password, salt16, key, opsLimit, memLimit);
-        }
-        finally
-        {
-            CryptographicOperations.ZeroMemory(utf8Password);
-        }
+        Span<byte> buffer = stackalloc byte[Utf8Password.StackSize];
+        using var utf8 = new Utf8Password(password, buffer);
+        DeriveKey(utf8.Bytes, salt16, key, opsLimit, memLimit);
     }
 
     /// <summary>
@@ -105,7 +96,7 @@ public static class CryptoPasswordHash
     /// <param name="key">The buffer to store the derived key. Must be at least <see cref="MinimumKeySize"/>(16) bytes long.</param>
     /// <param name="opsLimit">The computational cost parameter.</param>
     /// <param name="memLimit">The memory cost parameter.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the key length is less than the minimum key size.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The salt size is invalid or the output is too short.</exception>
     /// <exception cref="CryptographicException">Thrown when key derivation fails, typically because the requested memory could not be allocated.</exception>
     public static void DeriveKey(ReadOnlySpan<byte> utf8Password, ReadOnlySpan<byte> salt16, Span<byte> key, OpsLimit opsLimit = OpsLimit.Interactive, MemLimit memLimit = MemLimit.Interactive)
     {
@@ -137,20 +128,12 @@ public static class CryptoPasswordHash
     /// <exception cref="CryptographicException">Thrown when password hashing fails.</exception>
     public static string GetHashString(string password, OpsLimit opsLimit = OpsLimit.Interactive, MemLimit memLimit = MemLimit.Interactive)
     {
-        var length = Encoding.UTF8.GetByteCount(password);
-        Span<byte> utf8Password = length <= StackallocThreshold ? stackalloc byte[length] : new byte[length];
-        Encoding.UTF8.GetBytes(password, utf8Password);
-
-        try
-        {
-            Span<byte> utf8 = stackalloc byte[HashStringLength];
-            var hashLength = GenerateHashString(utf8Password, utf8, opsLimit, memLimit);
-            return Encoding.UTF8.GetString(utf8[..hashLength]);
-        }
-        finally
-        {
-            CryptographicOperations.ZeroMemory(utf8Password);
-        }
+        ArgumentNullException.ThrowIfNull(password);
+        Span<byte> buffer = stackalloc byte[Utf8Password.StackSize];
+        using var utf8Password = new Utf8Password(password, buffer);
+        Span<byte> utf8 = stackalloc byte[HashStringLength];
+        var hashLength = GenerateHashString(utf8Password.Bytes, utf8, opsLimit, memLimit);
+        return Encoding.UTF8.GetString(utf8[..hashLength]);
     }
 
     /// <summary>
@@ -170,7 +153,7 @@ public static class CryptoPasswordHash
     }
 
     /// <summary>
-    /// Verifies a password against a hash string using the specified computational and memory limits.
+    /// Verifies a password using the salt and cost parameters encoded in the hash string.
     /// </summary>
     /// <param name="hashString">The hash string to verify against.<br/>
     ///  The length must be less than or equal to <see cref="HashStringLength"/>(128).</param>
@@ -188,22 +171,14 @@ public static class CryptoPasswordHash
 
         Span<byte> utf8hashString = stackalloc byte[length];
         Encoding.UTF8.GetBytes(hashString, utf8hashString);
-        var passwordLength = Encoding.UTF8.GetByteCount(password);
-        Span<byte> utf8Password = passwordLength <= StackallocThreshold ? stackalloc byte[passwordLength] : new byte[passwordLength];
-        Encoding.UTF8.GetBytes(password, utf8Password);
-
-        try
-        {
-            return VerifyHashString(utf8hashString, utf8Password, opsLimit, memLimit);
-        }
-        finally
-        {
-            CryptographicOperations.ZeroMemory(utf8Password);
-        }
+        ArgumentNullException.ThrowIfNull(password);
+        Span<byte> buffer = stackalloc byte[Utf8Password.StackSize];
+        using var utf8Password = new Utf8Password(password, buffer);
+        return VerifyHashString(utf8hashString, utf8Password.Bytes, opsLimit, memLimit);
     }
 
     /// <summary>
-    /// Verifies a utf8 password against a hash string using the specified computational and memory limits.
+    /// Verifies a UTF-8 password using the salt and cost parameters encoded in the hash string.
     /// </summary>
     /// <param name="utf8HashString">The utf8 hash string to verify against.<br/>
     ///  The length must be less than or equal to <see cref="HashStringLength"/>(128).</param>

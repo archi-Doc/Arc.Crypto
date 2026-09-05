@@ -225,20 +225,18 @@ public abstract class ECCurveBase
 
         static int GetWeight(ReadOnlySpan<byte> value)
         {
-            var v = new BigInteger(value, true, true);
-            var d = ((v << 1) + v) ^ v;
-
-            var length = (d.GetByteCount(true) + (sizeof(ulong) - sizeof(byte))) / sizeof(ulong);
-            var u = new ulong[length];
-            d.TryWriteBytes(MemoryMarshal.AsBytes<ulong>(u.AsSpan()), out _, true, true);
-
+            // Count the set bits of (3 * value) XOR value, including the final carry.
+            // Processing from the least significant byte avoids temporary big integers.
             var sum = 0;
-            foreach (var x in u)
+            uint carry = 0;
+            for (var i = value.Length - 1; i >= 0; i--)
             {
-                sum += BitOperations.PopCount(x);
+                uint product = ((uint)value[i] * 3) + carry;
+                sum += BitOperations.PopCount((product ^ value[i]) & 0xFF);
+                carry = product >> 8;
             }
 
-            return sum;
+            return sum + BitOperations.PopCount(carry);
         }
     }
 
@@ -260,12 +258,12 @@ public abstract class ECCurveBase
     /// <summary>
     /// Recovers the y coordinate of a point from its x coordinate and the compressed sign bit.
     /// </summary>
-    /// <param name="x">The big-endian x coordinate. Its length must be <see cref="ByteLength"/>.</param>
+    /// <param name="x">The big-endian x coordinate. It must have <see cref="ByteLength"/> bytes and be below the field prime.</param>
     /// <param name="y">The compressed y bit, as returned by <see cref="CompressY(ReadOnlySpan{byte})"/>.</param>
     /// <returns>The big-endian y coordinate, or <see langword="null"/> if the point is not on the curve.</returns>
     public byte[]? TryDecompressY(ReadOnlySpan<byte> x, uint y)
     {
-        if (x.Length != this.ByteLength)
+        if (x.Length != this.ByteLength || x.SequenceCompareTo(this.ByteQ) >= 0)
         {
             return null;
         }

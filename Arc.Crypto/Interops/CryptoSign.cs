@@ -79,7 +79,7 @@ public static class CryptoSign
     /// Extracts the seed(32) from a secret key(64).
     /// </summary>
     /// <param name="secretKey64">The secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
-    /// <param name="seed32">A span to hold the seed. The size must be <see cref="SeedSize"/>(32 bytes).</param>
+    /// <param name="seed32">A buffer of at least <see cref="SeedSize"/> (32) bytes. Trailing bytes are unchanged.</param>
     public static void SecretKeyToSeed(ReadOnlySpan<byte> secretKey64, Span<byte> seed32)
     {
         if (secretKey64.Length != SecretKeySize)
@@ -99,7 +99,7 @@ public static class CryptoSign
     /// Extracts the public key(32) from a secret key(64).
     /// </summary>
     /// <param name="secretKey64">The secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
-    /// <param name="publicKey32">A span to hold the public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
+    /// <param name="publicKey32">A buffer of at least <see cref="PublicKeySize"/> (32) bytes. Trailing bytes are unchanged.</param>
     public static void SecretKeyToPublicKey(ReadOnlySpan<byte> secretKey64, Span<byte> publicKey32)
     {
         if (secretKey64.Length != SecretKeySize)

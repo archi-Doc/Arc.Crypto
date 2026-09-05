@@ -5,12 +5,12 @@ using System;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Hash interface.
+/// Common one-shot and incremental hashing operations. Instances are not thread-safe.
 /// </summary>
 public interface IHash
 {
     /// <summary>
-    /// Gets the hash name. e.g. "CRC-32", "FarmHash".
+    /// Gets the algorithm name, such as "CRC-32" or "SHA3-256".
     /// </summary>
     string HashName { get; }
 
@@ -41,10 +41,8 @@ public interface IHash
     byte[] GetHash(byte[] input, int inputOffset, int inputCount);
 
     /// <summary>
-    /// Initialize hash function state.
-    /// 1. Call HashInitialize() to initialize.
-    /// 2. Call HashUpdate() to update hash state.
-    /// 3. Call HashFinal() to get a hash.
+    /// Resets the state. Call before each incremental calculation, append data with HashUpdate,
+    /// then retrieve the result with HashFinal.
     /// </summary>
     void HashInitialize();
 
@@ -63,7 +61,8 @@ public interface IHash
     void HashUpdate(byte[] input, int inputOffset, int inputCount);
 
     /// <summary>
-    /// Calculates a hash from the given data (HashUpdate()).
+    /// Returns the hash of all appended data as a new array. Reset behavior varies by implementation;
+    /// call HashInitialize before starting another calculation.
     /// </summary>
     /// <returns>A hash.</returns>
     byte[] HashFinal();

@@ -59,13 +59,7 @@ public class P256R1Curve : ECCurveBase
         0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000, 0x00000001, 0xFFFFFFFF,
     };
 
-    private static readonly uint[] PExt = new uint[]
-    {
-        0x00000001, 0x00000000, 0x00000000, 0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0xFFFFFFFE, 0x00000001, 0x00000001, 0xFFFFFFFE, 0x00000002, 0xFFFFFFFE,
-    };
-
     private const uint P7 = 0xFFFFFFFF;
-    private const uint PExt15 = 0xFFFFFFFE;
 
     /// <inheritdoc/>
     public override string CurveName => "secp256r1";

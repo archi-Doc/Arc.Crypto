@@ -1,14 +1,14 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
+using System.Security.Cryptography;
 
 namespace Arc.Crypto;
 
 /// <summary>
 /// Provides methods for encrypting and decrypting data using a password.<br/>
 /// The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).<br/>
-/// The algorithm uses Argon2id for key derivation and AEGIS-256 for encryption, providing a highly secure design.
+/// Uses Argon2id and AEGIS-256. An empty password uses the public salt as the key and provides no secrecy.
 /// </summary>
 public static class PasswordEncryption
 {
@@ -31,8 +31,8 @@ public static class PasswordEncryption
     ///  The size will be the plaintext size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
     public static void Encrypt(ReadOnlySpan<byte> plaintext, string password, out byte[] ciphertext)
     {
-        ciphertext = new byte[SaltSize + plaintext.Length + TagSize];
-        Encrypt(plaintext, Encoding.UTF8.GetBytes(password), ciphertext);
+        ciphertext = new byte[checked(SaltSize + plaintext.Length + TagSize)];
+        Encrypt(plaintext, password, ciphertext);
     }
 
     /// <summary>
@@ -44,7 +44,7 @@ public static class PasswordEncryption
     ///  The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
     public static void Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> password, out byte[] ciphertext)
     {
-        ciphertext = new byte[SaltSize + plaintext.Length + TagSize];
+        ciphertext = new byte[checked(SaltSize + plaintext.Length + TagSize)];
         Encrypt(plaintext, password, ciphertext);
     }
 
@@ -56,7 +56,12 @@ public static class PasswordEncryption
     /// <param name="ciphertext">The encrypted data.<br/>
     ///  The size will be the plaintext size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
     public static void Encrypt(ReadOnlySpan<byte> plaintext, string password, Span<byte> ciphertext)
-        => Encrypt(plaintext, Encoding.UTF8.GetBytes(password), ciphertext);
+    {
+        ArgumentNullException.ThrowIfNull(password);
+        Span<byte> buffer = stackalloc byte[Utf8Password.StackSize];
+        using var utf8 = new Utf8Password(password, buffer);
+        Encrypt(plaintext, utf8.Bytes, ciphertext);
+    }
 
     /// <summary>
     /// Encrypts the specified data using the provided utf8 password.
@@ -67,7 +72,7 @@ public static class PasswordEncryption
     ///  The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
     public static void Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> utf8Password, Span<byte> ciphertext)
     {// Encrypted: Salt[32] + EncryptedData + Tag[16]
-        var cipherLength = SaltSize + plaintext.Length + TagSize;
+        var cipherLength = checked(SaltSize + plaintext.Length + TagSize);
         if (ciphertext.Length != cipherLength)
         {
             BaseHelper.ThrowSizeMismatchException(nameof(ciphertext), cipherLength);
@@ -77,9 +82,15 @@ public static class PasswordEncryption
         CryptoRandom.NextBytes(salt);
 
         Span<byte> key32 = stackalloc byte[Aegis256.KeySize];
-        DeriveKey(utf8Password, salt, key32);
-
-        Aegis256.Encrypt(ciphertext.Slice(SaltSize, plaintext.Length + TagSize), plaintext, salt, key32);
+        try
+        {
+            DeriveKey(utf8Password, salt, key32);
+            Aegis256.Encrypt(ciphertext.Slice(SaltSize, plaintext.Length + TagSize), plaintext, salt, key32);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key32);
+        }
     }
 
     /// <summary>
@@ -100,7 +111,7 @@ public static class PasswordEncryption
         }
 
         plaintext = new byte[ciphertext.Length - SaltSize - TagSize];
-        if (TryDecrypt(ciphertext, Encoding.UTF8.GetBytes(password), plaintext))
+        if (TryDecrypt(ciphertext, password, plaintext))
         {
             return true;
         }
@@ -116,7 +127,7 @@ public static class PasswordEncryption
     /// </summary>
     /// <param name="ciphertext">The encrypted data.<br/>
     /// The size must be at least <see cref="SaltSize"/>+<see cref="TagSize"/> (48 in the current implementation).</param>
-    /// <param name="utf8Password">The utf 8password to use for decryption.</param>
+    /// <param name="utf8Password">The UTF-8 password to use for decryption.</param>
     /// <param name="plaintext">The decrypted data.<br/>
     /// The size will be the encrypted data size minus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
     /// <returns><c>true</c> if decryption was successful; otherwise, <c>false</c>.</returns>
@@ -150,7 +161,17 @@ public static class PasswordEncryption
     /// The size will be the encrypted data size minus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
     /// <returns><c>true</c> if decryption was successful; otherwise, <c>false</c>.</returns>
     public static bool TryDecrypt(ReadOnlySpan<byte> ciphertext, string password, Span<byte> plaintext)
-        => TryDecrypt(ciphertext, Encoding.UTF8.GetBytes(password), plaintext);
+    {
+        ArgumentNullException.ThrowIfNull(password);
+        if (ciphertext.Length < SaltSize + TagSize)
+        {
+            return false;
+        }
+
+        Span<byte> buffer = stackalloc byte[Utf8Password.StackSize];
+        using var utf8 = new Utf8Password(password, buffer);
+        return TryDecrypt(ciphertext, utf8.Bytes, plaintext);
+    }
 
     /// <summary>
     /// Tries to decrypt the specified encrypted data using the provided utf8 password.
@@ -175,15 +196,14 @@ public static class PasswordEncryption
         }
 
         Span<byte> key32 = stackalloc byte[Aegis256.KeySize];
-        DeriveKey(utf8Password, ciphertext, key32);
-
-        if (Aegis256.TryDecrypt(plaintext, ciphertext.Slice(SaltSize), ciphertext.Slice(0, Aegis256.NonceSize), key32))
+        try
         {
-            return true;
+            DeriveKey(utf8Password, ciphertext, key32);
+            return Aegis256.TryDecrypt(plaintext, ciphertext.Slice(SaltSize), ciphertext.Slice(0, Aegis256.NonceSize), key32);
         }
-        else
+        finally
         {
-            return false;
+            CryptographicOperations.ZeroMemory(key32);
         }
     }
 

@@ -13,8 +13,8 @@ using static System.Numerics.BitOperations;
 namespace Arc.Crypto;
 
 /// <summary>
-/// An allocation-free, incremental 64bit FarmHash3.<br/>
-/// Usage: <c>var farm = default(FarmHash3);</c> then <c>farm.Append(data);</c> (repeatedly) then <c>var hash = farm.Finalize();</c>.<br/>
+/// An allocation-free, incremental 64-bit FarmHash.<br/>
+/// Usage: <c>var farm = default(FarmHash);</c> then <c>farm.Append(data);</c> repeatedly and <c>var hash = farm.Finalize();</c>.<br/>
 /// The result is identical to <see cref="Hash64(ReadOnlySpan{byte})"/> over the concatenated input.
 /// Call <see cref="Initialize"/> to reuse the instance after <see cref="Finalize"/>.
 /// </summary>
@@ -72,7 +72,7 @@ public unsafe ref struct FarmHash
     public static ulong Hash64(string str) => Hash64(MemoryMarshal.AsBytes(str.AsSpan()));
 
     /// <summary>
-    /// Resets the state so the instance can be reused. Not required for a fresh <c>default(FarmHash3)</c>.
+    /// Resets the state so the instance can be reused. Not required for a fresh <c>default(FarmHash)</c>.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Initialize()

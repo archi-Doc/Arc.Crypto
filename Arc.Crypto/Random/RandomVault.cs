@@ -8,10 +8,8 @@ using Arc.Crypto.Random;
 namespace Arc.Crypto;
 
 /// <summary>
-/// <see cref="RandomVault"/> is is a thread-safe random number pool.<br/>
-/// Target: Random integers requested by multiple threads simultaneously<br/><br/>
-/// <see cref="RandomVault"/> generates random integers using random generator<br/>
-/// specified by constructor parameters, and takes out integers from the buffer as needed.
+/// A thread-safe random number pool that buffers output from a supplied generator.
+/// Calls to the generator are serialized, including requests that bypass the buffer.
 /// </summary>
 public class RandomVault : RandomUInt64
 {
@@ -57,9 +55,13 @@ public class RandomVault : RandomUInt64
     ///  Initializes a new instance of the <see cref="RandomVault"/> class.<br/>
     /// </summary>
     /// <param name="nextBytes">Delegate that fills the elements of a specified span of bytes with random numbers.</param>
-    /// <param name="skipVaultThreshold">Threshold for skipping the vault and generating random bytes directly.</param>
+    /// <param name="skipVaultThreshold">Non-negative threshold for generating bytes directly; capped at the buffer size.</param>
+    /// <exception cref="ArgumentNullException">The generator is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The threshold is negative.</exception>
     public RandomVault(Action<Span<byte>> nextBytes, int skipVaultThreshold = DefaultSkipVaultThreshold)
     {
+        ArgumentNullException.ThrowIfNull(nextBytes);
+        ArgumentOutOfRangeException.ThrowIfNegative(skipVaultThreshold);
         this.nextBytesFunc = nextBytes;
         this.BufferSize = DefaultBufferSize;
         this.buffer = new byte[this.BufferSize];
@@ -102,6 +104,11 @@ public class RandomVault : RandomUInt64
     /// <param name="destination">The span to fill with random numbers.</param>
     public override void NextBytes(Span<byte> destination)
     {
+        if (destination.IsEmpty)
+        {
+            return;
+        }
+
         using (this.lockObject.EnterScope())
         {
             // First, attempt to consume the prepared buffer.
