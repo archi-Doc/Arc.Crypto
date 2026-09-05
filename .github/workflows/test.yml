@@ -20,7 +20,20 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore
     - name: Test
-      run: dotnet test --no-restore --verbosity normal
+      run: dotnet test --project Test/Test.csproj -c Release --no-build
+    - name: Test portable implementations
+      env:
+        DOTNET_EnableHWIntrinsic: '0'
+      run: dotnet test --project Test/Test.csproj -c Release --no-build
+    - name: Install coverage tool
+      run: dotnet tool install --tool-path ./artifacts/tools dotnet-coverage --version 18.11.0
+    - name: Collect coverage
+      run: ./artifacts/tools/dotnet-coverage collect -s Test/coverage.config -f cobertura -o artifacts/coverage/coverage.cobertura.xml dotnet Test/bin/Release/net10.0/Test.dll
+    - name: Upload coverage
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-coverage
+        path: artifacts/coverage/coverage.cobertura.xml
 
   nativeaot:
     name: Native AOT (${{ matrix.rid }})

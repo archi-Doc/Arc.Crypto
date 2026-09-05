@@ -29,7 +29,7 @@ public static class Aegis128L
 
     /// <summary>
     /// Encrypts the specified plaintext using the Aegis-128L algorithm.<br/>
-    /// <paramref name="plaintext"/> and <paramref name="ciphertext"/> can reference the same memory, but note that they must be different lengths in their respective spans.
+    /// In-place operation is supported when both spans start at the same address. Other overlaps are unsupported.
     /// </summary>
     /// <param name="ciphertext">The buffer to receive the ciphertext.<br/>
     /// Allocate a buffer with the size of the plaintext length plus the Tag size (16 bytes or 32 bytes).</param>
@@ -37,16 +37,16 @@ public static class Aegis128L
     /// <param name="nonce16">The nonce (16 bytes) to use for encryption.</param>
     /// <param name="key16">The key (16 bytes) to use for encryption.</param>
     /// <param name="associatedData">The associated data to authenticate.</param>
-    /// <param name="tagSize">The size of the authentication tag (16 or 32 bytes, or 0).</param>
+    /// <param name="tagSize">The tag size: 16 or 32 bytes. Zero disables authentication and tamper detection.</param>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="tagSize"/> is not equal to <see cref="MinTagSize"/> or <see cref="MaxTagSize"/>,
+    /// Thrown when <paramref name="tagSize"/> is not 0, <see cref="MinTagSize"/>, or <see cref="MaxTagSize"/>,
     /// or when the lengths of <paramref name="ciphertext"/>, <paramref name="nonce16"/>, or <paramref name="key16"/> are invalid.
     /// </exception>
     public static void Encrypt(Span<byte> ciphertext, ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> nonce16, ReadOnlySpan<byte> key16, ReadOnlySpan<byte> associatedData = default, int tagSize = MinTagSize)
     {
         if (tagSize != MinTagSize && tagSize != MaxTagSize && tagSize != 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(tagSize), tagSize, $"{nameof(tagSize)} must be equal to {MinTagSize} or {MaxTagSize}.");
+            throw new ArgumentOutOfRangeException(nameof(tagSize), tagSize, $"{nameof(tagSize)} must be 0, {MinTagSize}, or {MaxTagSize}.");
         }
 
         if (ciphertext.Length != plaintext.Length + tagSize)
@@ -80,7 +80,7 @@ public static class Aegis128L
 
     /// <summary>
     /// Decrypts the specified ciphertext using the Aegis-128L algorithm.<br/>
-    /// <paramref name="plaintext"/> and <paramref name="ciphertext"/> can reference the same memory, but note that they must be different lengths in their respective spans.
+    /// In-place operation is supported when both spans start at the same address. Other overlaps are unsupported.
     /// </summary>
     /// <param name="plaintext">The buffer to receive the plaintext.<br/>
     /// Allocate a buffer with the size of the ciphertext length minus the Tag size (16 bytes or 32 bytes).</param>
@@ -88,17 +88,17 @@ public static class Aegis128L
     /// <param name="nonce16">The nonce (16 bytes) to use for decryption.</param>
     /// <param name="key16">The key (16 bytes) to use for decryption.</param>
     /// <param name="associatedData">The associated data to authenticate.</param>
-    /// <param name="tagSize">The size of the authentication tag (16 or 32 bytes, or 0).</param>
-    /// <returns><c>true</c> if decryption is successful; otherwise, <c>false</c>.</returns>
+    /// <param name="tagSize">The tag size: 16 or 32 bytes. Zero disables authentication and tamper detection.</param>
+    /// <returns>True on success; false on authentication failure, with the plaintext buffer cleared. With a zero tag size, returns true without verification.</returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="tagSize"/> is not equal to <see cref="MinTagSize"/> or <see cref="MaxTagSize"/>,
+    /// Thrown when <paramref name="tagSize"/> is not 0, <see cref="MinTagSize"/>, or <see cref="MaxTagSize"/>,
     /// or when the lengths of <paramref name="ciphertext"/>, <paramref name="plaintext"/>, <paramref name="nonce16"/>, or <paramref name="key16"/> are invalid.
     /// </exception>
     public static bool TryDecrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce16, ReadOnlySpan<byte> key16, ReadOnlySpan<byte> associatedData = default, int tagSize = MinTagSize)
     {
         if (tagSize != MinTagSize && tagSize != MaxTagSize && tagSize != 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(tagSize), tagSize, $"{nameof(tagSize)} must be equal to {MinTagSize} or {MaxTagSize}.");
+            throw new ArgumentOutOfRangeException(nameof(tagSize), tagSize, $"{nameof(tagSize)} must be 0, {MinTagSize}, or {MaxTagSize}.");
         }
 
         if (ciphertext.Length < tagSize)

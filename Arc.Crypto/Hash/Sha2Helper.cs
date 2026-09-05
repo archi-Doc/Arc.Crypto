@@ -12,8 +12,7 @@ using Arc.Collections;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Helper class for SHA2 functions.<br/>
-/// This class is thread-safe and does not allocate heap memory.
+/// Thread-safe SHA-2 helpers. Array overloads allocate their result; span and tuple overloads reuse pooled state.
 /// </summary>
 public static class Sha2Helper
 {
@@ -34,47 +33,39 @@ public static class Sha2Helper
     private static readonly ObjectPool<HashAlgorithm> Sha512 = new(static () => System.Security.Cryptography.SHA512.Create());
 
     /// <summary>
-    /// Computes the SHA2-256 hash and returns the byte array (32 bytes).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA2-256 hash and returns a new 32-byte array.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The computed hash (32 bytes).</returns>
     public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[32];
-        var hashAlgorithm = Sha256.Rent();
-        hashAlgorithm.TryComputeHash(input, output, out _);
-        Sha256.Return(hashAlgorithm);
+        ComputeHash(Sha256, input, output, 32);
 
         return output;
     }
 
     /// <summary>
-    /// Computes the SHA2-256 hash and assign the result to the output (<see cref="byte"/>[32]).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA2-256 hash and writes 32 bytes to the output.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
-    /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[32]).</param>
+    /// <param name="output">A buffer of at least 32 bytes; any trailing bytes are unchanged.</param>
+    /// <exception cref="ArgumentException">The output buffer is too small.</exception>
     public static void Get256_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
-        var hashAlgorithm = Sha256.Rent();
-        hashAlgorithm.TryComputeHash(input, output, out _);
-        Sha256.Return(hashAlgorithm);
+        ComputeHash(Sha256, input, output, 32);
     }
 
     /// <summary>
-    /// Computes the SHA2-256 hash and returns the hash (<see cref="ulong"/>).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA2-256 hash as 4 unsigned 64-bit words in native byte order.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
-    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
+    /// <returns>The hash bytes interpreted as unsigned 64-bit words in native byte order.</returns>
     public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256_UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[4];
 
-        var hashAlgorithm = Sha256.Rent();
-        hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _);
-        Sha256.Return(hashAlgorithm);
+        ComputeHash(Sha256, input, MemoryMarshal.AsBytes(state), 32);
         // hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _); // NOT thread-safe
         // System.Security.Cryptography.SHA256.TryHashData(input, MemoryMarshal.Cast<ulong, byte>(state), out _); // Slow
 
@@ -82,106 +73,116 @@ public static class Sha2Helper
     }
 
     /// <summary>
-    /// Computes the SHA2-384 hash and returns the byte array (48 bytes).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA2-384 hash and returns a new 48-byte array.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The computed hash (48 bytes).</returns>
     public static byte[] Get384_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[48];
-        var hashAlgorithm = Sha384.Rent();
-        hashAlgorithm.TryComputeHash(input, output, out _);
-        Sha384.Return(hashAlgorithm);
+        ComputeHash(Sha384, input, output, 48);
 
         return output;
     }
 
     /// <summary>
-    /// Computes the SHA2-384 hash and assign the result to the output (<see cref="byte"/>[48]).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA2-384 hash and writes 48 bytes to the output.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
-    /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[48]).</param>
+    /// <param name="output">A buffer of at least 48 bytes; any trailing bytes are unchanged.</param>
+    /// <exception cref="ArgumentException">The output buffer is too small.</exception>
     public static void Get384_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
-        var hashAlgorithm = Sha384.Rent();
-        hashAlgorithm.TryComputeHash(input, output, out _);
-        Sha384.Return(hashAlgorithm);
+        ComputeHash(Sha384, input, output, 48);
     }
 
     /// <summary>
-    /// Computes the SHA2-384 hash and returns the hash (<see cref="ulong"/>).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA2-384 hash as 6 unsigned 64-bit words in native byte order.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
-    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
+    /// <returns>The hash bytes interpreted as unsigned 64-bit words in native byte order.</returns>
     public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) Get384_UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[6];
 
-        var hashAlgorithm = Sha384.Rent();
-        hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _);
-        Sha384.Return(hashAlgorithm);
+        ComputeHash(Sha384, input, MemoryMarshal.AsBytes(state), 48);
 
         return (state[0], state[1], state[2], state[3], state[4], state[5]);
     }
 
     /// <summary>
-    /// Computes the SHA2-512 hash and returns the byte array (64 bytes).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA2-512 hash and returns a new 64-byte array.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The computed hash (64 bytes).</returns>
     public static byte[] Get512_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[64];
-        var hashAlgorithm = Sha512.Rent();
-        hashAlgorithm.TryComputeHash(input, output, out _);
-        Sha512.Return(hashAlgorithm);
+        ComputeHash(Sha512, input, output, 64);
 
         return output;
     }
 
     /// <summary>
-    /// Computes the SHA2-512 hash and assign the result to the output (<see cref="byte"/>[64]).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA2-512 hash and writes 64 bytes to the output.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
-    /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[64]).</param>
+    /// <param name="output">A buffer of at least 64 bytes; any trailing bytes are unchanged.</param>
+    /// <exception cref="ArgumentException">The output buffer is too small.</exception>
     public static void Get512_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
-        var hashAlgorithm = Sha512.Rent();
-        hashAlgorithm.TryComputeHash(input, output, out _);
-        Sha512.Return(hashAlgorithm);
+        ComputeHash(Sha512, input, output, 64);
     }
 
     /// <summary>
-    /// Computes the SHA2-512 hash and returns the hash (<see cref="ulong"/>).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA2-512 hash as 8 unsigned 64-bit words in native byte order.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
-    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
+    /// <returns>The hash bytes interpreted as unsigned 64-bit words in native byte order.</returns>
     public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Get512_UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[8];
 
-        var hashAlgorithm = Sha512.Rent();
-        hashAlgorithm.TryComputeHash(input, MemoryMarshal.Cast<ulong, byte>(state), out _);
-        Sha512.Return(hashAlgorithm);
+        ComputeHash(Sha512, input, MemoryMarshal.AsBytes(state), 64);
 
         return (state[0], state[1], state[2], state[3], state[4], state[5], state[6], state[7]);
     }
 
     /// <summary>
-    /// Computes the SHA2-512 hash and assign the result to the output (<see cref="byte"/>[64]).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA2-512 hash and writes 64 bytes to the output.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
-    /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[64]).</param>
+    /// <param name="output">A buffer of at least 64 bytes; any trailing bytes are unchanged.</param>
+    /// <exception cref="ArgumentException">The output buffer is too small.</exception>
     public static void Get512_Libsodium(ReadOnlySpan<byte> input, Span<byte> output)
     {
+        if (output.Length < 64)
+        {
+            throw new ArgumentException("The output must hold at least 64 bytes.", nameof(output));
+        }
+
         LibsodiumInterops.crypto_hash(output, input, (ulong)input.Length);
+    }
+
+    private static void ComputeHash(ObjectPool<HashAlgorithm> pool, ReadOnlySpan<byte> input, Span<byte> output, int hashSize)
+    {
+        if (output.Length < hashSize)
+        {
+            throw new ArgumentException($"The output must hold at least {hashSize} bytes.", nameof(output));
+        }
+
+        var algorithm = pool.Rent();
+        try
+        {
+            if (!algorithm.TryComputeHash(input, output, out var written) || written != hashSize)
+            {
+                throw new CryptographicException("The hash calculation failed.");
+            }
+        }
+        finally
+        {
+            pool.Return(algorithm);
+        }
     }
 }
 

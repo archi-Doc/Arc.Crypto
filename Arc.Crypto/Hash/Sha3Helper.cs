@@ -11,17 +11,16 @@ using Arc.Collections;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Helper class for SHA3 functions.<br/>
-/// This class is thread-safe and does not allocate heap memory.
+/// Thread-safe SHA-3 helpers. Array overloads allocate their result; span and tuple overloads use stack storage.
 /// </summary>
 public static class Sha3Helper
 {
     /// <summary>
-    /// Computes the SHA3-256 hash and returns the byte array (32 bytes).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA3-256 hash and returns a new 32-byte array.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The computed hash (32 bytes).</returns>
+    [SkipLocalsInit]
     public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[32];
@@ -33,11 +32,12 @@ public static class Sha3Helper
     }
 
     /// <summary>
-    /// Computes the SHA3-256 hash and assign the result to the output (<see cref="byte"/>[32]).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA3-256 hash and writes 32 bytes to the output.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
-    /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[32]).</param>
+    /// <param name="output">A buffer of at least 32 bytes; any trailing bytes are unchanged.</param>
+    /// <exception cref="ArgumentException">The output buffer is too small.</exception>
+    [SkipLocalsInit]
     public static void Get256_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -47,11 +47,11 @@ public static class Sha3Helper
     }
 
     /// <summary>
-    /// Computes the SHA3-256 hash and returns the hash (<see cref="ulong"/>).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA3-256 hash as 4 unsigned 64-bit words in native byte order.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
-    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
+    /// <returns>The hash bytes interpreted as unsigned 64-bit words in native byte order.</returns>
+    [SkipLocalsInit]
     public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256_UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -62,11 +62,11 @@ public static class Sha3Helper
     }
 
     /// <summary>
-    /// Computes the SHA3-384 hash and returns the byte array (48 bytes).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA3-384 hash and returns a new 48-byte array.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The computed hash (48 bytes).</returns>
+    [SkipLocalsInit]
     public static byte[] Get384_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[48];
@@ -78,11 +78,12 @@ public static class Sha3Helper
     }
 
     /// <summary>
-    /// Computes the SHA3-384 hash and assign the result to the output (<see cref="byte"/>[48]).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA3-384 hash and writes 48 bytes to the output.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
-    /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[48]).</param>
+    /// <param name="output">A buffer of at least 48 bytes; any trailing bytes are unchanged.</param>
+    /// <exception cref="ArgumentException">The output buffer is too small.</exception>
+    [SkipLocalsInit]
     public static void Get384_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -92,11 +93,11 @@ public static class Sha3Helper
     }
 
     /// <summary>
-    /// Computes the SHA3-384 hash and returns the hash (<see cref="ulong"/>).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA3-384 hash as 6 unsigned 64-bit words in native byte order.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
-    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
+    /// <returns>The hash bytes interpreted as unsigned 64-bit words in native byte order.</returns>
+    [SkipLocalsInit]
     public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) Get384_UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -107,11 +108,11 @@ public static class Sha3Helper
     }
 
     /// <summary>
-    /// Computes the SHA3-512 hash and returns the byte array (64 bytes).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA3-512 hash and returns a new 64-byte array.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The computed hash (64 bytes).</returns>
+    [SkipLocalsInit]
     public static byte[] Get512_ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[64];
@@ -123,11 +124,12 @@ public static class Sha3Helper
     }
 
     /// <summary>
-    /// Computes the SHA3-512 hash and assign the result to the output (<see cref="byte"/>[64]).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA3-512 hash and writes 64 bytes to the output.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
-    /// <param name="output">The buffer to receive the hash value (<see cref="byte"/>[64]).</param>
+    /// <param name="output">A buffer of at least 64 bytes; any trailing bytes are unchanged.</param>
+    /// <exception cref="ArgumentException">The output buffer is too small.</exception>
+    [SkipLocalsInit]
     public static void Get512_Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -137,11 +139,11 @@ public static class Sha3Helper
     }
 
     /// <summary>
-    /// Computes the SHA3-512 hash and returns the hash (<see cref="ulong"/>).<br/>
-    /// Thread-safe and it does not allocate heap memory.
+    /// Computes the SHA3-512 hash as 8 unsigned 64-bit words in native byte order.
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
-    /// <returns>The computed hash (<see cref="ulong"/>).</returns>
+    /// <returns>The hash bytes interpreted as unsigned 64-bit words in native byte order.</returns>
+    [SkipLocalsInit]
     public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Get512_UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -182,7 +184,8 @@ internal unsafe ref struct KeccakSpongeStruct
 
         this.OutputBits = outputBits;
         this.Bitrate = 1600 - (this.OutputBits * 2);
-        this.State = state;
+        this.State = state[..StateLength];
+        this.State.Clear();
         this.statePosition = 0;
     }
 
@@ -227,7 +230,7 @@ internal unsafe ref struct KeccakSpongeStruct
                         to_take--;
                     }
 
-                    while (to_take != 0 && to_take % 8 == 0)
+                    while (to_take >= sizeof(ulong))
                     {
                         *(ulong*)s ^= *(ulong*)input;
                         s += 8;
@@ -263,6 +266,12 @@ internal unsafe ref struct KeccakSpongeStruct
     /// <param name="result">When this method returns, the bytes representing the hash of the input data (Length >= (OutputBits / 8)).</param>
     public unsafe void SqueezeTo(Span<byte> result)
     { // state 0..(this.Bitrate / 8) : data, (this.Bitrate / 8)..100
+        var resultSize = this.OutputBits / 8;
+        if (result.Length < resultSize)
+        {
+            throw new ArgumentException("The length of the result must be greater than or equal to (OutputBits / 8).");
+        }
+
         this.State[this.statePosition / 8] ^= 0x06UL << (8 * (this.statePosition % 8));
         this.State[(this.Bitrate / 64) - 1] ^= 0x80UL << 56;
         fixed (ulong* stateHead = this.State)
@@ -271,12 +280,6 @@ internal unsafe ref struct KeccakSpongeStruct
         }
 
         // copy result from this.state.
-        var resultSize = this.OutputBits / 8;
-        if (result.Length < resultSize)
-        {
-            throw new ArgumentException("The length of the result must be greater than or equal to (OutputBits / 8).");
-        }
-
         unsafe
         {
             fixed (void* source = this.State, destination = result)

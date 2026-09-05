@@ -1,6 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
-using Arc.Crypto.Ed25519;
+using System.Security.Cryptography;
 
 namespace Arc.Crypto;
 
@@ -96,6 +96,7 @@ public static class CryptoBox
     /// <param name="secretKey32">The secret key to use for encryption. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
     /// <param name="publicKey32">The public key to use for encryption. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
     /// <param name="cipher">The buffer to hold the encrypted message. The size must be message length + <see cref="MacSize"/>(16 bytes).</param>
+    /// <exception cref="CryptographicException">The recipient public key is invalid; the ciphertext buffer is cleared.</exception>
     public static void Encrypt(ReadOnlySpan<byte> message, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> cipher)
     {
         if (nonce24.Length != NonceSize)
@@ -118,7 +119,11 @@ public static class CryptoBox
             BaseHelper.ThrowSizeMismatchException(nameof(cipher), message.Length + MacSize);
         }
 
-        LibsodiumInterops.crypto_box_easy(cipher, message, (ulong)message.Length, nonce24, publicKey32, secretKey32);
+        if (LibsodiumInterops.crypto_box_easy(cipher, message, (ulong)message.Length, nonce24, publicKey32, secretKey32) != 0)
+        {
+            CryptographicOperations.ZeroMemory(cipher);
+            throw new CryptographicException("The public key is not valid for key agreement.");
+        }
     }
 
     /// <summary>
@@ -127,8 +132,8 @@ public static class CryptoBox
     /// </summary>
     /// <param name="cipher">The encrypted message to decrypt.</param>
     /// <param name="nonce24">The nonce used for encryption. The size must be <see cref="NonceSize"/>(24 bytes).</param>
-    /// <param name="secretKey32">The secret key used for encryption. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
-    /// <param name="publicKey32">The public key used for encryption. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
+    /// <param name="secretKey32">The recipient secret key. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
+    /// <param name="publicKey32">The sender public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
     /// <param name="message">The buffer to hold the decrypted message. The size must be cipher length - <see cref="MacSize"/>(16 bytes).</param>
     /// <returns><c>true</c> if decryption is successful; otherwise, <c>false</c>.</returns>
     public static bool TryDecrypt(ReadOnlySpan<byte> cipher, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> message)
@@ -162,14 +167,13 @@ public static class CryptoBox
     }
 
     /// <summary>
-    /// Derives a key material from the secret key and public key.<br/>
-    /// Do not use the result directly!<br/>
-    /// At the very least, compute a hash of the result and the key before using it.<br/>
-    /// Hash (material | secretKey | public key).
+    /// Computes a raw X25519 shared secret. Derive a session key from it with a KDF
+    /// that binds both public keys in a consistent order and the protocol context.
     /// </summary>
     /// <param name="secretKey32">The secret key to use for key derivation. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
     /// <param name="publicKey32">The public key to use for key derivation. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
-    /// <param name="material">The derived key material. The size must be message length + <see cref="KeyMaterialSize"/>(32 bytes).</param>
+    /// <param name="material">The output buffer, exactly <see cref="KeyMaterialSize"/> (32) bytes.</param>
+    /// <exception cref="CryptographicException">The public key is invalid for key agreement; the output is cleared.</exception>
     public static void DeriveKeyMaterial(ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> material)
     {
         if (secretKey32.Length != SecretKeySize)
@@ -187,6 +191,10 @@ public static class CryptoBox
             BaseHelper.ThrowSizeMismatchException(nameof(material), KeyMaterialSize);
         }
 
-        LibsodiumInterops.crypto_scalarmult_curve25519(material, secretKey32, publicKey32);
+        if (LibsodiumInterops.crypto_scalarmult_curve25519(material, secretKey32, publicKey32) != 0)
+        {
+            CryptographicOperations.ZeroMemory(material);
+            throw new CryptographicException("The public key is not valid for key agreement.");
+        }
     }
 }

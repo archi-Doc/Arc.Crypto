@@ -13,20 +13,14 @@ namespace Arc.Crypto;
 public abstract class RandomUInt64
 {
     /// <summary>
-    /// Returns the number of bits required to represent <paramref name="value"/>, rounded up.
+    /// Returns the ceiling of the base-2 logarithm, or zero for values zero and one.
     /// </summary>
     /// <param name="value">The value to measure.</param>
-    /// <returns>The ceiling of log2(<paramref name="value"/>).</returns>
+    /// <returns>The number of bits needed to represent values below <paramref name="value"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int Log2Ceiling(ulong value)
     {
-        var result = BitOperations.Log2(value);
-        if (BitOperations.PopCount(value) != 1)
-        {
-            result++;
-        }
-
-        return result;
+        return value <= 1 ? 0 : 64 - BitOperations.LeadingZeroCount(value - 1);
     }
 
     /// <summary>
@@ -89,9 +83,11 @@ public abstract class RandomUInt64
     /// </summary>
     /// <param name="maxValue">The exclusive upper bound of the random number to be generated.<br/>
     /// maxValue must be greater than or equal to 0.</param>
-    /// <returns>A 32-bit unsigned integer [0, maxValue).</returns>
+    /// <returns>A value in [0, maxValue), or zero when maxValue is zero.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The upper bound is negative.</exception>
     public int NextInt32(int maxValue)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(maxValue);
         if (maxValue > 1)
         {
             int bits = Log2Ceiling((uint)maxValue);
@@ -115,9 +111,11 @@ public abstract class RandomUInt64
     /// <param name="minValue">The inclusive lower bound of the random number returned.</param>
     /// <param name="maxValue">The exclusive upper bound of the random number returned.<br/>
     /// maxValue must be greater than or equal to minValue.</param>
-    /// <returns>A 32-bit signed integer [minValue, maxValue).</returns>
+    /// <returns>A value in [minValue, maxValue), or minValue when the bounds are equal.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The upper bound is less than the lower bound.</exception>
     public int NextInt32(int minValue, int maxValue)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxValue, minValue);
         ulong exclusiveRange = (ulong)((long)maxValue - minValue);
 
         if (exclusiveRange > 1)
@@ -151,9 +149,11 @@ public abstract class RandomUInt64
     /// </summary>
     /// <param name="maxValue">The exclusive upper bound of the random number to be generated.<br/>
     /// maxValue must be greater than or equal to 0.</param>
-    /// <returns>A 64-bit unsigned integer [0, maxValue).</returns>
+    /// <returns>A value in [0, maxValue), or zero when maxValue is zero.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The upper bound is negative.</exception>
     public long NextInt64(long maxValue)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(maxValue);
         if (maxValue > 1)
         {
             int bits = Log2Ceiling((ulong)maxValue);
@@ -177,10 +177,12 @@ public abstract class RandomUInt64
     /// <param name="minValue">The inclusive lower bound of the random number returned.</param>
     /// <param name="maxValue">The exclusive upper bound of the random number returned.<br/>
     /// maxValue must be greater than or equal to minValue.</param>
-    /// <returns>A 64-bit signed integer [minValue, maxValue).</returns>
+    /// <returns>A value in [minValue, maxValue), or minValue when the bounds are equal.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The upper bound is less than the lower bound.</exception>
     public long NextInt64(long minValue, long maxValue)
     {
-        var exclusiveRange = (ulong)(maxValue - minValue);
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxValue, minValue);
+        var exclusiveRange = unchecked((ulong)(maxValue - minValue));
 
         if (exclusiveRange > 1)
         {
@@ -190,7 +192,7 @@ public abstract class RandomUInt64
                 var result = this.NextUInt64() >> ((sizeof(ulong) * 8) - bits);
                 if (result < exclusiveRange)
                 {
-                    return (long)result + minValue;
+                    return unchecked((long)result + minValue);
                 }
             }
         }

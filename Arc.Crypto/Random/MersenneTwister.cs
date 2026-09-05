@@ -45,7 +45,7 @@ public class MersenneTwister : RandomUInt64
     /// <summary>
     /// Initializes a new instance of the <see cref="MersenneTwister"/> class.<br/>
     /// </summary>
-    /// <param name="seed">seed (the default seed is 5489).</param>
+    /// <param name="seed">The seed value.</param>
     public MersenneTwister(uint seed)
     {
         this.Reset(seed);
@@ -54,7 +54,7 @@ public class MersenneTwister : RandomUInt64
     /// <summary>
     /// Initializes a new instance of the <see cref="MersenneTwister"/> class.<br/>
     /// </summary>
-    /// <param name="seed">seed (the default seed is 5489ul).</param>
+    /// <param name="seed">The seed value.</param>
     public MersenneTwister(ulong seed)
     {
         this.Reset(seed);
@@ -63,7 +63,7 @@ public class MersenneTwister : RandomUInt64
     /// <summary>
     /// Initializes a new instance of the <see cref="MersenneTwister"/> class.<br/>
     /// </summary>
-    /// <param name="seedArray">The array of seeds.</param>
+    /// <param name="seedArray">A non-empty array of seeds. Byte arrays must contain complete 64-bit words in native byte order.</param>
     public MersenneTwister(ulong[] seedArray)
     {
         this.Reset(seedArray);
@@ -72,7 +72,7 @@ public class MersenneTwister : RandomUInt64
     /// <summary>
     /// Initializes a new instance of the <see cref="MersenneTwister"/> class.<br/>
     /// </summary>
-    /// <param name="seedArray">The array of seeds.</param>
+    /// <param name="seedArray">A non-empty array of seeds. Byte arrays must contain complete 64-bit words in native byte order.</param>
     public MersenneTwister(byte[] seedArray)
     {
         this.Reset(seedArray);
@@ -94,9 +94,16 @@ public class MersenneTwister : RandomUInt64
     /// <summary>
     /// Reset state vectors with the specified seeds.
     /// </summary>
-    /// <param name="seedArray">The array of seeds.</param>
+    /// <param name="seedArray">A non-empty sequence of 64-bit seed words in native byte order.</param>
+    /// <exception cref="ArgumentException">The byte length is zero or not a multiple of eight.</exception>
     public unsafe void Reset(byte[] seedArray)
     {
+        ArgumentNullException.ThrowIfNull(seedArray);
+        if (seedArray.Length == 0 || (seedArray.Length % sizeof(ulong)) != 0)
+        {
+            throw new ArgumentException("The seed must contain a non-empty sequence of 64-bit words.", nameof(seedArray));
+        }
+
         var seedLength = seedArray.Length / sizeof(ulong);
         fixed (byte* seed = seedArray)
         {
@@ -107,9 +114,15 @@ public class MersenneTwister : RandomUInt64
     /// <summary>
     /// Reset state vectors with the specified seeds.
     /// </summary>
-    /// <param name="seedArray">The array of seeds.</param>
+    /// <param name="seedArray">A non-empty array of seeds. Byte arrays must contain complete 64-bit words in native byte order.</param>
     public unsafe void Reset(ulong[] seedArray)
     {
+        ArgumentNullException.ThrowIfNull(seedArray);
+        if (seedArray.Length == 0)
+        {
+            throw new ArgumentException("At least one seed is required.", nameof(seedArray));
+        }
+
         fixed (ulong* seed = seedArray)
         {
             this.Reset(seed, seedArray.Length);

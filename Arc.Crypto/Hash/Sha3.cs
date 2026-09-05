@@ -252,11 +252,6 @@ internal unsafe class KeccakSponge
     /// </summary>
     public unsafe void Initialize()
     {
-        if (this.statePosition == 0)
-        { // already initialized.
-            return;
-        }
-
         this.statePosition = 0;
 
         Array.Fill<ulong>(this.state, 0);
@@ -292,7 +287,7 @@ internal unsafe class KeccakSponge
                             to_take--;
                         }
 
-                        while (to_take != 0 && to_take % 8 == 0)
+                        while (to_take >= sizeof(ulong))
                         {
                             *(ulong*)s ^= *(ulong*)input;
                             s += 8;
@@ -356,17 +351,17 @@ internal unsafe class KeccakSponge
     /// <param name="result">When this method returns, the bytes representing the hash of the input data (Length >= (OutputBits / 8)).</param>
     public unsafe void SqueezeTo(Span<byte> result)
     { // state 0..(this.Bitrate / 8) : data, (this.Bitrate / 8)..100
-        this.state[this.statePosition / 8] ^= 0x06UL << (8 * (this.statePosition % 8));
-        this.state[(this.Bitrate / 64) - 1] ^= 0x80UL << 56;
-        this.Permute(this.state);
-
-        // copy result from this.state.
         var resultSize = this.OutputBits / 8;
         if (result.Length < resultSize)
         {
             throw new ArgumentException("The length of the result must be greater than or equal to (OutputBits / 8).");
         }
 
+        this.state[this.statePosition / 8] ^= 0x06UL << (8 * (this.statePosition % 8));
+        this.state[(this.Bitrate / 64) - 1] ^= 0x80UL << 56;
+        this.Permute(this.state);
+
+        // copy result from this.state.
         unsafe
         {
             fixed (void* source = this.state, destination = result)
@@ -399,56 +394,6 @@ internal unsafe class KeccakSponge
         this.Initialize();
 
         return (h0, h1, h2, h3);
-    }
-
-    internal unsafe (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) SqueezeToUInt64_6()
-    {
-        if (this.OutputBits < 384)
-        {
-            throw new InvalidOperationException();
-        }
-
-        this.state[this.statePosition / 8] ^= 0x06UL << (8 * (this.statePosition % 8));
-        this.state[(this.Bitrate / 64) - 1] ^= 0x80UL << 56;
-        this.Permute(this.state);
-
-        var h0 = this.state[0];
-        var h1 = this.state[1];
-        var h2 = this.state[2];
-        var h3 = this.state[3];
-        var h4 = this.state[4];
-        var h5 = this.state[5];
-
-        this.statePosition = -1; // force initialize.
-        this.Initialize();
-
-        return (h0, h1, h2, h3, h4, h5);
-    }
-
-    internal unsafe (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) SqueezeToUInt64_8()
-    {
-        if (this.OutputBits < 512)
-        {
-            throw new InvalidOperationException();
-        }
-
-        this.state[this.statePosition / 8] ^= 0x06UL << (8 * (this.statePosition % 8));
-        this.state[(this.Bitrate / 64) - 1] ^= 0x80UL << 56;
-        this.Permute(this.state);
-
-        var h0 = this.state[0];
-        var h1 = this.state[1];
-        var h2 = this.state[2];
-        var h3 = this.state[3];
-        var h4 = this.state[4];
-        var h5 = this.state[5];
-        var h6 = this.state[6];
-        var h7 = this.state[7];
-
-        this.statePosition = -1; // force initialize.
-        this.Initialize();
-
-        return (h0, h1, h2, h3, h4, h5, h6, h7);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

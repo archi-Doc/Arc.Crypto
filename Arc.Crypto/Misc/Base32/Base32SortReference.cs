@@ -1,7 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
-using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -48,24 +47,16 @@ internal class Base32SortReference : IBase32Converter
         return true;
     }
 
-    public string FromByteArrayToString(ReadOnlySpan<byte> source)
+    public unsafe string FromByteArrayToString(ReadOnlySpan<byte> source)
     {
-        var encodedLength = Base32Sort.GetEncodedLength(source.Length);
-        char[]? pooledName = null;
-
-        Span<char> destination = encodedLength <= 1024 ?
-            stackalloc char[encodedLength] :
-            (pooledName = ArrayPool<char>.Shared.Rent(encodedLength)).AsSpan(0, encodedLength);
-
-        this.ByteSpanToCharSpan(source, destination, encodedLength);
-        var result = new string(destination);
-
-        if (pooledName != null)
+        var length = Base32Sort.GetEncodedLength(source.Length);
+        fixed (byte* data = source)
         {
-            ArrayPool<char>.Shared.Return(pooledName);
+            return string.Create(length, (Source: (nint)data, Length: source.Length, Converter: this), static (destination, state) =>
+            {
+                state.Converter.ByteSpanToCharSpan(new ReadOnlySpan<byte>((void*)state.Source, state.Length), destination, destination.Length);
+            });
         }
-
-        return result;
     }
 
     public byte[] FromByteArrayToUtf8(ReadOnlySpan<byte> source)

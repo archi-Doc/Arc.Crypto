@@ -58,7 +58,7 @@ public sealed class Utf8StringEqualityComparer : IEqualityComparer<byte[]>, IAlt
     /// <param name="other">The byte array to compare.</param>
     /// <returns><c>true</c> if the span and the byte array are equal; otherwise, <c>false</c>.</returns>
     public bool Equals(ReadOnlySpan<byte> alternate, byte[] other)
-        => other.AsSpan().SequenceEqual(alternate);
+        => other is not null && other.AsSpan().SequenceEqual(alternate);
 
     /// <summary>
     /// Returns a hash code for the specified read-only span of bytes.

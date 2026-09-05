@@ -69,7 +69,7 @@ public class SpeedBenchmark
     [Benchmark]
     public byte[] Sha2_512() => this.sha2_512.GetHash(this.data, 0, this.data.Length);*/
 
-    // [Benchmark]
+    [Benchmark]
     public byte[] Sha3_256() => this.sha3_256.GetHash(this.data, 0, this.data.Length);
 
     // [Benchmark]
