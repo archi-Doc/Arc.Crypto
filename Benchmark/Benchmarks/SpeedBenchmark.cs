@@ -33,7 +33,7 @@ public class SpeedBenchmark
 
         this.farm = new FarmHashObs();
         this.farmBeta = new Beta.Crypto.FarmHash(); // System.Numerics.BitOperation
-        this.xxh32 = new XXHash32();
+        this.xxh32 = new XxHash32();
         this.xxh64 = new XxHash64();
         this.sha1 = new Arc.Crypto.Sha1();
         this.sha2_256 = new Sha2_256();
@@ -78,7 +78,7 @@ public class SpeedBenchmark
     [Benchmark]
     public byte[] Blake2B_256()
     {
-        return Blake2B.Get256_ByteArray(this.data.AsSpan(0, this.data.Length));
+        return Blake2B.Get256ByteArray(this.data.AsSpan(0, this.data.Length));
     }
 
     /*[Benchmark]

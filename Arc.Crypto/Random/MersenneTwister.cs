@@ -13,12 +13,12 @@ namespace Arc.Crypto;
 /// This class is NOT thread-safe.<br/>
 /// Consider using <see langword="lock"/> statement or <see cref="RandomVault"/> in multi-threaded application.
 /// </summary>
-public class MersenneTwister : RandomUInt64
+public class MersenneTwister : RandomUInt64Base
 {
     /// <summary>
     /// The size in bytes of the internal state buffer.
     /// </summary>
-    public const int BufferSize = NN * sizeof(ulong);
+    public const int StateSize = NN * sizeof(ulong);
     private const int NN = 312;
     private const int MM = 156;
     private const ulong MATRIX_A = 0xB5026F5AA96619E9UL;

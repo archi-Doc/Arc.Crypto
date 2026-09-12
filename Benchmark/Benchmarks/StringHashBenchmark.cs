@@ -59,7 +59,7 @@ public class StringHashBenchmark
         var farm = default(FarmHash);
         farm.Append(this.String40A);
         farm.Append(this.String40B);
-        return farm.Finalize();
+        return farm.FinalizeHash();
     }
 
     [Benchmark]
@@ -81,7 +81,7 @@ public class StringHashBenchmark
             farm.Append(this.String40B);
         }
 
-        return farm.Finalize();
+        return farm.FinalizeHash();
     }
 
     [Benchmark]

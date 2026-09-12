@@ -17,7 +17,7 @@ namespace Arc.Crypto;
 /// <see cref="RandomVault"/> generates random integers using random generator<br/>
 /// specified by constructor parameters, and takes out integers from the buffer as needed.<br/>
 /// </summary>
-public class RandomVault : RandomUInt64
+public class RandomVault : RandomUInt64Base
 {
     public const uint MinimumVaultSize = 32;
     public const uint DefaultVaultSize = 128;

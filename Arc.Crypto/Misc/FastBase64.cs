@@ -43,7 +43,7 @@ namespace Arc.Crypto;
 /// High-performance Base64 codec using the standard alphabet
 /// (<c>A-Z a-z 0-9 + /</c>) with <c>'='</c> padding (RFC 4648 section 4).
 /// </summary>
-public static unsafe class Base64
+public static unsafe class FastBase64
 {
     /// <summary>
     /// Returns the exact number of characters produced by encoding
@@ -207,7 +207,7 @@ public static unsafe class Base64
 /// (<c>A-Z a-z 0-9 - _</c>, RFC 4648 section 5). Encoding emits no padding;
 /// decoding accepts both padded and unpadded input.
 /// </summary>
-public static unsafe class Base64Url
+public static unsafe class FastBase64Url
 {
     /// <summary>
     /// Returns the exact number of characters produced by encoding

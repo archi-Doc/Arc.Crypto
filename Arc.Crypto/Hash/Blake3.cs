@@ -17,7 +17,7 @@ public static class Blake3
     /// <summary>
     /// The size of the BLAKE3 hash in bytes.
     /// </summary>
-    public const int Size = 32;
+    public const int HashLength = 32;
     internal const int LimitPreemptive = 1024;
 
     /// <summary>
@@ -25,10 +25,10 @@ public static class Blake3
     /// </summary>
     /// <param name="input">The input data to hash.</param>
     /// <returns>A 32-byte array containing the BLAKE3 hash.</returns>
-    public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
+    public static byte[] Get256ByteArray(ReadOnlySpan<byte> input)
     {
-        var output = new byte[Size];
-        Get256_Span(input, output);
+        var output = new byte[HashLength];
+        Get256Span(input, output);
         return output;
     }
 
@@ -38,10 +38,10 @@ public static class Blake3
     /// </summary>
     /// <param name="input">The input data to hash.</param>
     /// <returns>A tuple containing four long values representing the BLAKE3 hash.</returns>
-    public static (long Hash0, long Hash1, long Hash2, long Hash3) Get256_Int64(ReadOnlySpan<byte> input)
+    public static (long Hash0, long Hash1, long Hash2, long Hash3) Get256Int64(ReadOnlySpan<byte> input)
     {
         Span<long> hash = stackalloc long[4];
-        Get256_Span(input, MemoryMarshal.AsBytes(hash));
+        Get256Span(input, MemoryMarshal.AsBytes(hash));
         return (hash[0], hash[1], hash[2], hash[3]);
     }*/
 
@@ -50,10 +50,10 @@ public static class Blake3
     /// </summary>
     /// <param name="input">The input data to hash.</param>
     /// <returns>The hash as four unsigned 64-bit words in native byte order.</returns>
-    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256_UInt64(ReadOnlySpan<byte> input)
+    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> hash = stackalloc ulong[4];
-        Get256_Span(input, MemoryMarshal.AsBytes(hash));
+        Get256Span(input, MemoryMarshal.AsBytes(hash));
         return (hash[0], hash[1], hash[2], hash[3]);
     }
 
@@ -62,11 +62,11 @@ public static class Blake3
     /// </summary>
     /// <param name="input">The input data to hash.</param>
     /// <returns>A Struct256 containing the BLAKE3 hash.</returns>
-    public static unsafe Struct256 Get256_Struct(ReadOnlySpan<byte> input)
+    public static unsafe Struct256 Get256Struct(ReadOnlySpan<byte> input)
     {
         Struct256 st;
         byte* b = (byte*)&st;
-        Get256_Span(input, new(b, Struct256.Length));
+        Get256Span(input, new(b, Struct256.Length));
         return st;
     }
 
@@ -76,11 +76,11 @@ public static class Blake3
     /// <param name="input">The input data to hash.</param>
     /// <param name="output">The span to write the 32-byte BLAKE3 hash to.</param>
     /// <exception cref="ArgumentException">Thrown when the output span length is not 32 bytes.</exception>
-    public static unsafe void Get256_Span(ReadOnlySpan<byte> input, Span<byte> output)
+    public static unsafe void Get256Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
-        if (output.Length != Size)
+        if (output.Length != HashLength)
         {
-            BaseHelper.ThrowSizeMismatchException(nameof(output), Size);
+            BaseHelper.ThrowSizeMismatchException(nameof(output), HashLength);
         }
 
         // Rust's from_raw_parts requires a non-null pointer even when the length is zero.

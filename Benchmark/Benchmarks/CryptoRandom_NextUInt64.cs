@@ -36,7 +36,7 @@ public class CryptoRandom_NextUInt64
 
     [Benchmark]
     public ulong NextUInt64_RandomVault_Rng()
-        => RandomVault.RandomNumberGenerator.NextUInt64();
+        => RandomVault.SystemRng.NextUInt64();
 
     [Benchmark]
     public ulong NextUInt64_RandomVaultObs_Rng()

@@ -18,7 +18,7 @@ public class HexTest
             var source = new byte[length];
             random.NextBytes(source);
 
-            var st = Hex.FromByteArrayToString(source);
+            var st = Hex.FromBytesToString(source);
             st.Length.Is(length * 2);
             st.Is(Convert.ToHexString(source).ToLowerInvariant()); // Lower-case, no separators, no prefix.
             Hex.FromStringToByteArray(st).SequenceEqual(source).IsTrue();

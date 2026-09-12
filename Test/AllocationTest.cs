@@ -12,7 +12,7 @@ public class AllocationTest
     public void SeedValidationDoesNotAllocate()
     {
         var seed = Enumerable.Repeat((byte)0x5A, 32).ToArray();
-        var curve = P256K1Curve.Instance;
+        var curve = Secp256k1Curve.Instance;
         for (var i = 0; i < 100; i++)
         {
             Assert.True(curve.IsValidSeed(seed));
@@ -40,7 +40,7 @@ public class AllocationTest
         {
             for (var i = 0; i < 100; i++)
             {
-                converter.FromByteArrayToString(data);
+                converter.FromBytesToString(data);
             }
 
             var encodedLength = Base32Sort.GetEncodedLength(length);
@@ -49,7 +49,7 @@ public class AllocationTest
             var stringAllocation = GC.GetAllocatedBytesForCurrentThread() - before;
             GC.KeepAlive(plain);
             before = GC.GetAllocatedBytesForCurrentThread();
-            var encoded = converter.FromByteArrayToString(data);
+            var encoded = converter.FromBytesToString(data);
             var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
             Assert.Equal(stringAllocation, allocated);
             Assert.Equal(plain, encoded);

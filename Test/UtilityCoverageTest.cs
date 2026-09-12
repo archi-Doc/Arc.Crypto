@@ -52,21 +52,21 @@ public class UtilityCoverageTest
     public void XorshiftKnownStatesAndByteTails()
     {
         uint state32 = 1;
-        Xorshift.Xor32(ref state32);
+        Xorshift.NextState32(ref state32);
         Assert.Equal(270369U, state32);
-        Assert.Equal(state32, Xorshift.Xor32(1));
+        Assert.Equal(state32, Xorshift.NextState32(1));
         state32 = 0;
-        Xorshift.Xor32(ref state32);
+        Xorshift.NextState32(ref state32);
         Assert.Equal(2463534242U, state32);
-        Assert.Equal(state32, Xorshift.Xor32(0));
+        Assert.Equal(state32, Xorshift.NextState32(0));
         ulong state64 = 1;
-        Xorshift.Xor64(ref state64);
+        Xorshift.NextState64(ref state64);
         Assert.Equal(1082269761UL, state64);
-        Assert.Equal(state64, Xorshift.Xor64(1));
+        Assert.Equal(state64, Xorshift.NextState64(1));
         state64 = 0;
-        Xorshift.Xor64(ref state64);
+        Xorshift.NextState64(ref state64);
         Assert.Equal(88172645463325252UL, state64);
-        Assert.Equal(state64, Xorshift.Xor64(0));
+        Assert.Equal(state64, Xorshift.NextState64(0));
         Assert.Equal(new Xorshift(state64).NextUInt64(), new Xorshift().NextUInt64());
         for (var length = 0; length < 32; length++)
         {

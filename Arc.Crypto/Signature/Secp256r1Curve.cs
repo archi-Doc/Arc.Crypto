@@ -14,7 +14,7 @@ namespace Arc.Crypto.EC;
 /// <summary>
 /// The secp256r1 (NIST P-256) elliptic curve.
 /// </summary>
-public class P256R1Curve : ECCurveBase
+public class Secp256r1Curve : ECCurveBase
 {
     /// <summary>
     /// The number of 32-bit words in a field element.
@@ -44,12 +44,12 @@ public class P256R1Curve : ECCurveBase
     /// <summary>
     /// The shared instance of the secp256r1 curve.
     /// </summary>
-    public static readonly P256R1Curve Instance = new();
+    public static readonly Secp256r1Curve Instance = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="P256R1Curve"/> class.
+    /// Initializes a new instance of the <see cref="Secp256r1Curve"/> class.
     /// </summary>
-    public P256R1Curve()
+    public Secp256r1Curve()
         : base(P256UIntLength, HexQ, HexA, HexB, HexOrder)
     {
     }
@@ -104,19 +104,19 @@ public class P256R1Curve : ECCurveBase
     }
 
     /// <inheritdoc/>
-    public override bool ElementSqrt(ReadOnlySpan<uint> x1, Span<uint> z)
+    public override bool ElementSqrt(ReadOnlySpan<uint> x, Span<uint> z)
     {
-        if (Nat256.IsZero(x1) || Nat256.IsOne(x1))
+        if (Nat256.IsZero(x) || Nat256.IsOne(x))
         {
-            x1.CopyTo(z);
+            x.CopyTo(z);
             return true;
         }
 
         scoped Span<uint> t1 = stackalloc uint[this.UIntLength];
         scoped Span<uint> t2 = stackalloc uint[this.UIntLength];
 
-        this.ElementSquare(x1, t1);
-        this.ElementMultiply(t1, x1, t1);
+        this.ElementSquare(x, t1);
+        this.ElementMultiply(t1, x, t1);
 
         ElementSquareN(t1, 2, t2);
         this.ElementMultiply(t2, t1, t2);
@@ -131,15 +131,15 @@ public class P256R1Curve : ECCurveBase
         this.ElementMultiply(t1, t2, t1);
 
         ElementSquareN(t1, 32, t1);
-        this.ElementMultiply(t1, x1, t1);
+        this.ElementMultiply(t1, x, t1);
 
         ElementSquareN(t1, 96, t1);
-        this.ElementMultiply(t1, x1, t1);
+        this.ElementMultiply(t1, x, t1);
 
         ElementSquareN(t1, 94, t1);
         this.ElementSquare(t1, t2);
 
-        if (x1.SequenceEqual(t2))
+        if (x.SequenceEqual(t2))
         {
             t1.CopyTo(z);
             return true;

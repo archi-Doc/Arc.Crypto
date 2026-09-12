@@ -17,19 +17,19 @@ public class AllocationBenchmark
     public void Setup() => new Random(42).NextBytes(this.data);
 
     [Benchmark]
-    public bool SeedValidation() => P256K1Curve.Instance.IsValidSeed(this.data.AsSpan(0, 32));
+    public bool SeedValidation() => Secp256k1Curve.Instance.IsValidSeed(this.data.AsSpan(0, 32));
 
     [Benchmark]
-    public string Base32Short() => Base32Sort.Default.FromByteArrayToString(this.data.AsSpan(0, 32));
+    public string Base32Short() => Base32Sort.Default.FromBytesToString(this.data.AsSpan(0, 32));
 
     [Benchmark]
-    public string Base32Long() => Base32Sort.Default.FromByteArrayToString(this.data);
+    public string Base32Long() => Base32Sort.Default.FromBytesToString(this.data);
 
     [Benchmark]
-    public void Sha256Span() => Sha2Helper.Get256_Span(this.data.AsSpan(0, 32), this.hash);
+    public void Sha256Span() => Sha2Helper.Get256Span(this.data.AsSpan(0, 32), this.hash);
 
     [Benchmark]
-    public void Sha3Tail() => Sha3Helper.Get256_Span(this.data.AsSpan(0, 135), this.hash);
+    public void Sha3Tail() => Sha3Helper.Get256Span(this.data.AsSpan(0, 135), this.hash);
 
     [Benchmark]
     public void PasswordSpan() => PasswordEncryption.Encrypt(ReadOnlySpan<byte>.Empty, "password", this.cipher);

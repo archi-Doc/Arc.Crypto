@@ -42,12 +42,12 @@ public static class CryptoSecretBox
     /// <summary>
     /// Encrypts a message using the specified nonce and key.
     /// </summary>
-    /// <param name="message">The message to encrypt.</param>
+    /// <param name="plaintext">The message to encrypt.</param>
     /// <param name="nonce24">The nonce to use for encryption. The size must be <see cref="NonceSize"/>(24 bytes).</param>
     /// <param name="key32">The key to use for encryption. The size must be <see cref="KeySize"/>(32 bytes).</param>
-    /// <param name="cipher">A span to hold the encrypted message. Must be message length + <see cref="MacSize"/>(16 bytes).</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the nonce, key, or cipher span lengths are incorrect.</exception>
-    public static void Encrypt(ReadOnlySpan<byte> message, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> key32, Span<byte> cipher)
+    /// <param name="ciphertext">A span to hold the encrypted message. Must be plaintext length + <see cref="MacSize"/>(16 bytes).</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if the nonce, key, or ciphertext span lengths are incorrect.</exception>
+    public static void Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> key32, Span<byte> ciphertext)
     {
         if (nonce24.Length != NonceSize)
         {
@@ -59,28 +59,28 @@ public static class CryptoSecretBox
             BaseHelper.ThrowSizeMismatchException(nameof(key32), KeySize);
         }
 
-        if (cipher.Length != message.Length + MacSize)
+        if (ciphertext.Length != plaintext.Length + MacSize)
         {
-            BaseHelper.ThrowSizeMismatchException(nameof(cipher), message.Length + MacSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(ciphertext), plaintext.Length + MacSize);
         }
 
-        LibsodiumInterops.crypto_secretbox_easy(cipher, message, (ulong)message.Length, nonce24, key32);
+        LibsodiumInterops.crypto_secretbox_easy(ciphertext, plaintext, (ulong)plaintext.Length, nonce24, key32);
     }
 
     /// <summary>
-    /// Decrypts a cipher using the specified nonce and key.
+    /// Decrypts a ciphertext using the specified nonce and key.
     /// </summary>
-    /// <param name="cipher">The encrypted message to decrypt. Must be at least 16 bytes long.</param>
+    /// <param name="ciphertext">The encrypted message to decrypt. Must be at least 16 bytes long.</param>
     /// <param name="nonce24">The nonce to use for decryption. The size must be <see cref="NonceSize"/>(24 bytes).</param>
     /// <param name="key32">The key to use for decryption. The size must be <see cref="KeySize"/>(32 bytes).</param>
-    /// <param name="message">A span to hold the decrypted message. Must be cipher length - <see cref="MacSize"/>(16 bytes).</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the cipher, nonce, key, or message span lengths are incorrect.</exception>
+    /// <param name="plaintext">A span to hold the decrypted message. Must be ciphertext length - <see cref="MacSize"/>(16 bytes).</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if the ciphertext, nonce, key, or plaintext span lengths are incorrect.</exception>
     /// <returns><c>true</c> if decryption is successful; otherwise, <c>false</c>.</returns>
-    public static bool TryDecrypt(ReadOnlySpan<byte> cipher, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> key32, Span<byte> message)
+    public static bool TryDecrypt(ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> key32, Span<byte> plaintext)
     {
-        if (cipher.Length < MacSize)
+        if (ciphertext.Length < MacSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(cipher), cipher.Length, $"The {nameof(cipher)} length must be at least {MacSize} bytes.");
+            throw new ArgumentOutOfRangeException(nameof(ciphertext), ciphertext.Length, $"The {nameof(ciphertext)} length must be at least {MacSize} bytes.");
         }
 
         if (nonce24.Length != NonceSize)
@@ -93,11 +93,11 @@ public static class CryptoSecretBox
             BaseHelper.ThrowSizeMismatchException(nameof(key32), KeySize);
         }
 
-        if (message.Length != cipher.Length - MacSize)
+        if (plaintext.Length != ciphertext.Length - MacSize)
         {
-            BaseHelper.ThrowSizeMismatchException(nameof(message), cipher.Length - MacSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(plaintext), ciphertext.Length - MacSize);
         }
 
-        return LibsodiumInterops.crypto_secretbox_open_easy(message, cipher, (ulong)cipher.Length, nonce24, key32) == 0;
+        return LibsodiumInterops.crypto_secretbox_open_easy(plaintext, ciphertext, (ulong)ciphertext.Length, nonce24, key32) == 0;
     }
 }

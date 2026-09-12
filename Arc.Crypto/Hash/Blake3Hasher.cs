@@ -51,16 +51,16 @@ public unsafe struct Blake3Hasher : IDisposable
     /// <summary>
     /// Construct a new Hasher for the key derivation function.
     /// </summary>
-    /// <param name="text">A public, application-specific context string. Supply secret key material through Update.</param>
+    /// <param name="context">A public, application-specific context string. Supply secret key material through Update.</param>
     /// <returns>A new instance of the hasher.</returns>
     /// <remarks>
     /// The struct returned needs to be disposed explicitly.
     /// </remarks>
-    public static Blake3Hasher NewDeriveKey(string text)
+    public static Blake3Hasher NewDeriveKey(string context)
     {
-        ArgumentNullException.ThrowIfNull(text);
+        ArgumentNullException.ThrowIfNull(context);
         Span<byte> buffer = stackalloc byte[Utf8Password.StackSize];
-        using var utf8 = new Utf8Password(text, buffer);
+        using var utf8 = new Utf8Password(context, buffer);
         return NewDeriveKey(utf8.Bytes);
     }
 
@@ -68,17 +68,17 @@ public unsafe struct Blake3Hasher : IDisposable
     /// Construct a new Hasher for the key derivation function.
     /// </summary>
     /// <returns>A new instance of the hasher.</returns>
-    /// <param name="input">The UTF-8 application-specific context. Supply secret key material through Update.</param>
+    /// <param name="utf8Context">The UTF-8 application-specific context. Supply secret key material through Update.</param>
     /// <remarks>
     /// The struct returned needs to be disposed explicitly.
     /// </remarks>
-    public static Blake3Hasher NewDeriveKey(ReadOnlySpan<byte> input)
+    public static Blake3Hasher NewDeriveKey(ReadOnlySpan<byte> utf8Context)
     {
         // Rust slices require a non-null pointer even for an empty input.
         byte empty = 0;
-        fixed (void* ptr = input)
+        fixed (void* ptr = utf8Context)
         {
-            return new Blake3Hasher(Blake3Interops.blake3_new_derive_key(input.IsEmpty ? &empty : ptr, (void*)input.Length));
+            return new Blake3Hasher(Blake3Interops.blake3_new_derive_key(utf8Context.IsEmpty ? &empty : ptr, (void*)utf8Context.Length));
         }
     }
 
@@ -133,7 +133,7 @@ public unsafe struct Blake3Hasher : IDisposable
     /// </summary>
     /// <param name="data">The input data byte buffer to hash.</param>
     /// <remarks>
-    /// This method is always single-threaded. For multi-threading support, see <see cref="UpdateWithJoin"/> below.
+    /// This method is always single-threaded. For multi-threading support, see <see cref="UpdateParallel"/> below.
     ///
     /// Note that the degree of SIMD parallelism that update can use is limited by the size of this input buffer.
     /// The 8 KiB buffer currently used by std::io::copy is enough to leverage AVX2, for example, but not enough to leverage AVX-512.
@@ -158,7 +158,7 @@ public unsafe struct Blake3Hasher : IDisposable
     /// <typeparam name="T">Type of the data.</typeparam>
     /// <param name="data">The data span to hash.</param>
     /// <remarks>
-    /// This method is always single-threaded. For multi-threading support, see <see cref="UpdateWithJoin"/> below.
+    /// This method is always single-threaded. For multi-threading support, see <see cref="UpdateParallel"/> below.
     ///
     /// Note that the degree of SIMD parallelism that update can use is limited by the size of this input buffer.
     /// The 8 KiB buffer currently used by std::io::copy is enough to leverage AVX2, for example, but not enough to leverage AVX-512.
@@ -190,7 +190,7 @@ public unsafe struct Blake3Hasher : IDisposable
     /// Where memory mapping is not possible, good multi-threading performance requires doing IO on a background thread, to avoid sleeping all your worker threads while the input buffer is (serially) refilled.
     /// This is quite complicated compared to memory mapping.
     /// </remarks>
-    public void UpdateWithJoin(scoped ReadOnlySpan<byte> data)
+    public void UpdateParallel(scoped ReadOnlySpan<byte> data)
     {
         if (this.hasher == null)
         {
@@ -221,7 +221,7 @@ public unsafe struct Blake3Hasher : IDisposable
     /// Where memory mapping is not possible, good multi-threading performance requires doing IO on a background thread, to avoid sleeping all your worker threads while the input buffer is (serially) refilled.
     /// This is quite complicated compared to memory mapping.
     /// </remarks>
-    public void UpdateWithJoin<T>(scoped ReadOnlySpan<T> data)
+    public void UpdateParallel<T>(scoped ReadOnlySpan<T> data)
         where T : unmanaged
     {
         if (this.hasher == null)
@@ -249,9 +249,7 @@ public unsafe struct Blake3Hasher : IDisposable
     /// This method is idempotent. Calling it twice will give the same result. You can also add more input and finalize again.
     /// </remarks>
     [SkipLocalsInit]
-#pragma warning disable 465
-    public Struct256 Finalize()
-#pragma warning restore 465
+    public Struct256 FinalizeHash()
     {
         if (this.hasher == null)
         {
@@ -266,36 +264,36 @@ public unsafe struct Blake3Hasher : IDisposable
     /// <summary>
     /// Finalize the hash state to the output span, which can supply any number of output bytes.
     /// </summary>
-    /// <param name="hash32">The output hash, which can supply any number of output bytes.</param>
+    /// <param name="output">The output hash, which can supply any number of output bytes.</param>
     /// <remarks>
     /// This method is idempotent. Calling it twice will give the same result. You can also add more input and finalize again.
     /// </remarks>
-    public void Finalize(scoped Span<byte> hash32)
+    public void FinalizeHash(scoped Span<byte> output)
     {
         if (this.hasher == null)
         {
             ThrowNullReferenceException();
         }
 
-        if (hash32.IsEmpty)
+        if (output.IsEmpty)
         {
             return;
         }
 
-        fixed (void* ptr = hash32)
+        fixed (void* ptr = output)
         {
-            var size = hash32.Length;
-            if (size == Blake3.Size)
+            var size = output.Length;
+            if (size == Blake3.HashLength)
             {
                 Blake3Interops.blake3_finalize(this.hasher, ptr);
             }
             else if (size <= Blake3.LimitPreemptive)
             {
-                Blake3Interops.blake3_finalize_xof(this.hasher, ptr, (void*)(IntPtr)hash32.Length);
+                Blake3Interops.blake3_finalize_xof(this.hasher, ptr, (void*)(IntPtr)output.Length);
             }
             else
             {
-                Blake3Interops.blake3_finalize_xof_preemptive(this.hasher, ptr, (void*)hash32.Length);
+                Blake3Interops.blake3_finalize_xof_preemptive(this.hasher, ptr, (void*)output.Length);
             }
         }
     }

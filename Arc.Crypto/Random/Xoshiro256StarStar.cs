@@ -13,7 +13,7 @@ namespace Arc.Crypto;
 /// This class is NOT thread-safe.<br/>
 /// Consider using <see langword="lock"/> statement or <see cref="RandomVault"/> in multi-threaded application.
 /// </summary>
-public class Xoshiro256StarStar : RandomUInt64
+public class Xoshiro256StarStar : RandomUInt64Base
 {
     // xoshiro256** is based on the algorithm from http://prng.di.unimi.it/xoshiro256starstar.c:
     //
@@ -160,16 +160,16 @@ public class Xoshiro256StarStar : RandomUInt64
     }
 
     /// <inheritdoc/>
-    public override unsafe void NextBytes(Span<byte> buffer)
+    public override unsafe void NextBytes(Span<byte> destination)
     {
         var s0 = this.ss0;
         var s1 = this.ss1;
         var s2 = this.ss2;
         var s3 = this.ss3;
 
-        while (buffer.Length >= sizeof(ulong))
+        while (destination.Length >= sizeof(ulong))
         {
-            Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(buffer), BitOperations.RotateLeft(s1 * 5, 7) * 9);
+            Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(destination), BitOperations.RotateLeft(s1 * 5, 7) * 9);
 
             var t = s1 << 17;
             s2 ^= s0;
@@ -179,16 +179,16 @@ public class Xoshiro256StarStar : RandomUInt64
             s2 ^= t;
             s3 = BitOperations.RotateLeft(s3, 45);
 
-            buffer = buffer.Slice(sizeof(ulong));
+            destination = destination.Slice(sizeof(ulong));
         }
 
-        if (!buffer.IsEmpty)
+        if (!destination.IsEmpty)
         {
             var next = BitOperations.RotateLeft(s1 * 5, 7) * 9;
             byte* remainingBytes = (byte*)&next;
-            for (var i = 0; i < buffer.Length; i++)
+            for (var i = 0; i < destination.Length; i++)
             {
-                buffer[i] = remainingBytes[i];
+                destination[i] = remainingBytes[i];
             }
 
             var t = s1 << 17;

@@ -14,14 +14,14 @@ public class Blake3Test
     public void FinalizeRejectsUninitializedOrDisposedHasher()
     {
         var uninitialized = default(Blake3Hasher);
-        Assert.Throws<NullReferenceException>(() => uninitialized.Finalize());
-        Assert.Throws<NullReferenceException>(() => uninitialized.Finalize(Span<byte>.Empty));
+        Assert.Throws<NullReferenceException>(() => uninitialized.FinalizeHash());
+        Assert.Throws<NullReferenceException>(() => uninitialized.FinalizeHash(Span<byte>.Empty));
 
         var disposed = Blake3Hasher.New();
         disposed.Dispose();
         disposed.Dispose();
-        Assert.Throws<NullReferenceException>(() => disposed.Finalize());
-        Assert.Throws<NullReferenceException>(() => disposed.Finalize(new byte[32]));
+        Assert.Throws<NullReferenceException>(() => disposed.FinalizeHash());
+        Assert.Throws<NullReferenceException>(() => disposed.FinalizeHash(new byte[32]));
     }
 
     [Theory]
@@ -43,22 +43,22 @@ public class Blake3Test
         using var parallel = Blake3Hasher.New();
         using var bytes = Blake3Hasher.New();
         sequential.Update<ulong>(ReadOnlySpan<ulong>.Empty);
-        parallel.UpdateWithJoin(ReadOnlySpan<byte>.Empty);
-        parallel.UpdateWithJoin<ulong>(ReadOnlySpan<ulong>.Empty);
+        parallel.UpdateParallel(ReadOnlySpan<byte>.Empty);
+        parallel.UpdateParallel<ulong>(ReadOnlySpan<ulong>.Empty);
         sequential.Update<ulong>(data);
-        parallel.UpdateWithJoin<ulong>(data);
+        parallel.UpdateParallel<ulong>(data);
         bytes.Update(MemoryMarshal.AsBytes(data.AsSpan()));
         var expected = new byte[outputLength];
         var actual = new byte[outputLength];
-        bytes.Finalize(expected);
-        sequential.Finalize(actual);
+        bytes.FinalizeHash(expected);
+        sequential.FinalizeHash(actual);
         Assert.Equal(expected, actual);
-        parallel.Finalize(actual);
+        parallel.FinalizeHash(actual);
         Assert.Equal(expected, actual);
-        Assert.Equal(bytes.Finalize(), sequential.Finalize());
+        Assert.Equal(bytes.FinalizeHash(), sequential.FinalizeHash());
 
         sequential.Reset();
-        Assert.Equal(Blake3.Get256_Struct(ReadOnlySpan<byte>.Empty), sequential.Finalize());
+        Assert.Equal(Blake3.Get256Struct(ReadOnlySpan<byte>.Empty), sequential.FinalizeHash());
     }
 
     [Fact]
@@ -66,13 +66,13 @@ public class Blake3Test
     {
         using var text = Blake3Hasher.NewDeriveKey(string.Empty);
         using var bytes = Blake3Hasher.NewDeriveKey(ReadOnlySpan<byte>.Empty);
-        Assert.Equal(text.Finalize(), bytes.Finalize());
+        Assert.Equal(text.FinalizeHash(), bytes.FinalizeHash());
     }
 
     [Fact]
     public void Test1()
     {
-        Span<byte> span = stackalloc byte[Blake3.Size];
+        Span<byte> span = stackalloc byte[Blake3.HashLength];
         var data = new byte[1025];
         for (var i = 0; i < data.Length; i++)
         {
@@ -91,7 +91,7 @@ public class Blake3Test
 
         foreach (var x in lengthToHash)
         {
-            Blake3.Get256_Span(data.AsSpan(0, x.Key), span);
+            Blake3.Get256Span(data.AsSpan(0, x.Key), span);
             span.SequenceEqual(x.Value.AsSpan()).IsTrue();
         }
 
@@ -101,14 +101,14 @@ public class Blake3Test
             var half = x.Key / 2;
             hasher.Update(data.AsSpan(0, half));
             hasher.Update(data.AsSpan(half, x.Key - half));
-            hasher.Finalize(span);
+            hasher.FinalizeHash(span);
             span.SequenceEqual(x.Value.AsSpan()).IsTrue();
         }
 
         void AddHash(int length, string hex)
         {
             var bin = Hex.FromStringToByteArray(hex);
-            bin.Length.Is(Blake3.Size);
+            bin.Length.Is(Blake3.HashLength);
 
             lengthToHash.TryAdd(length, bin);
         }

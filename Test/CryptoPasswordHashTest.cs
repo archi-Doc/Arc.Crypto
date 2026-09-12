@@ -14,10 +14,10 @@ public class CryptoPasswordHashTest
     [InlineData(1, 0)]
     public void InvalidCostsThrow(int ops, int memory)
     {
-        var opsLimit = (CryptoPasswordHash.OpsLimit)ops;
-        var memLimit = (CryptoPasswordHash.MemLimit)memory;
-        Assert.Throws<CryptographicException>(() => CryptoPasswordHash.GetHashString("password", opsLimit, memLimit));
-        Assert.Throws<CryptographicException>(() => CryptoPasswordHash.GetHashString("password"u8, opsLimit, memLimit));
+        var operationLimit = (CryptoPasswordHash.OperationLimit)ops;
+        var memoryLimit = (CryptoPasswordHash.MemoryLimit)memory;
+        Assert.Throws<CryptographicException>(() => CryptoPasswordHash.GetHashString("password", operationLimit, memoryLimit));
+        Assert.Throws<CryptographicException>(() => CryptoPasswordHash.GetUtf8HashString("password"u8, operationLimit, memoryLimit));
     }
 
     [Theory]
@@ -29,8 +29,8 @@ public class CryptoPasswordHashTest
     public void PasswordOverloadsAgree(int length)
     {
         // Small costs keep boundary testing fast; these are not production defaults.
-        const CryptoPasswordHash.OpsLimit Ops = (CryptoPasswordHash.OpsLimit)1;
-        const CryptoPasswordHash.MemLimit Memory = (CryptoPasswordHash.MemLimit)8192;
+        const CryptoPasswordHash.OperationLimit Ops = (CryptoPasswordHash.OperationLimit)1;
+        const CryptoPasswordHash.MemoryLimit Memory = (CryptoPasswordHash.MemoryLimit)8192;
         var password = new string('p', length) + "日本語\0";
         var utf8 = Encoding.UTF8.GetBytes(password);
         var hash = CryptoPasswordHash.GetHashString(password, Ops, Memory);
@@ -38,10 +38,10 @@ public class CryptoPasswordHashTest
         Assert.True(CryptoPasswordHash.VerifyHashString(Encoding.UTF8.GetBytes(hash), utf8));
         Assert.False(CryptoPasswordHash.VerifyHashString(hash, password + "wrong"));
 
-        var byteHash = CryptoPasswordHash.GetHashString(utf8, Ops, Memory);
+        var byteHash = CryptoPasswordHash.GetUtf8HashString(utf8, Ops, Memory);
         Assert.True(CryptoPasswordHash.VerifyHashString(byteHash, utf8));
         Assert.True(CryptoPasswordHash.VerifyHashString(Encoding.UTF8.GetString(byteHash), password));
-        var padded = new byte[CryptoPasswordHash.HashStringLength];
+        var padded = new byte[CryptoPasswordHash.MaxHashStringLength];
         byteHash.CopyTo(padded, 0);
         Assert.True(CryptoPasswordHash.VerifyHashString(padded, utf8));
 

@@ -22,13 +22,13 @@ public class CryptographicCoverageTest
         for (var i = 0; i < 100; i++)
         {
             random.NextBytes(seed);
-            CryptoSign.CreateKey(seed, secret, publicKey);
+            CryptoSign.CreateKeyPair(seed, secret, publicKey);
             seenSignBits |= 1 << (publicKey[31] >> 7);
-            CryptoDual.PublicKey_SignToBox(publicKey, box);
+            CryptoDual.ConvertSignPublicKeyToBox(publicKey, box);
             var inPlace = publicKey.ToArray();
-            CryptoDual.PublicKey_SignToBox(inPlace, inPlace);
+            CryptoDual.ConvertSignPublicKeyToBox(inPlace, inPlace);
             Assert.Equal(box, inPlace);
-            CryptoDual.PublicKey_BoxToSign(inPlace, inPlace);
+            CryptoDual.ConvertBoxPublicKeyToSign(inPlace, inPlace);
             Assert.Equal(publicKey, inPlace);
         }
 
@@ -43,20 +43,20 @@ public class CryptographicCoverageTest
         var input = System.Text.Encoding.UTF8.GetBytes(text);
         var expected256 = Convert.FromHexString(hash256);
         var expected512 = Convert.FromHexString(hash512);
-        Assert.Equal(expected256, Blake2B.Get256_ByteArray(input));
-        Assert.Equal(expected512, Blake2B.Get512_ByteArray(input));
-        Assert.Equal(expected256, TupleBytes(Blake2B.Get256_UInt64(input)));
-        var value = Blake2B.Get256_Struct(input);
+        Assert.Equal(expected256, Blake2B.Get256ByteArray(input));
+        Assert.Equal(expected512, Blake2B.Get512ByteArray(input));
+        Assert.Equal(expected256, TupleBytes(Blake2B.Get256UInt64(input)));
+        var value = Blake2B.Get256Struct(input);
         Assert.Equal(expected256, MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref value, 1)).ToArray());
         var output = new byte[64];
-        Blake2B.Get256_Span(input, output.AsSpan(0, 32));
+        Blake2B.Get256Span(input, output.AsSpan(0, 32));
         Assert.Equal(expected256, output[..32]);
-        Blake2B.Get512_Span(input, output);
+        Blake2B.Get512Span(input, output);
         Assert.Equal(expected512, output);
-        Assert.Throws<ArgumentException>(() => Blake2B.Get256_Span(input, new byte[31]));
-        Assert.Throws<ArgumentException>(() => Blake2B.Get256_Span(input, new byte[33]));
-        Assert.Throws<ArgumentException>(() => Blake2B.Get512_Span(input, new byte[63]));
-        Assert.Throws<ArgumentException>(() => Blake2B.Get512_Span(input, new byte[65]));
+        Assert.Throws<ArgumentException>(() => Blake2B.Get256Span(input, new byte[31]));
+        Assert.Throws<ArgumentException>(() => Blake2B.Get256Span(input, new byte[33]));
+        Assert.Throws<ArgumentException>(() => Blake2B.Get512Span(input, new byte[63]));
+        Assert.Throws<ArgumentException>(() => Blake2B.Get512Span(input, new byte[65]));
     }
 
     [Theory]
@@ -74,30 +74,30 @@ public class CryptographicCoverageTest
     {
         var input = new byte[length];
         new Random(42).NextBytes(input);
-        Assert.Equal(SHA256.HashData(input), Sha2Helper.Get256_ByteArray(input));
-        Assert.Equal(SHA384.HashData(input), Sha2Helper.Get384_ByteArray(input));
-        Assert.Equal(SHA512.HashData(input), Sha2Helper.Get512_ByteArray(input));
-        Assert.Equal(SHA256.HashData(input), TupleBytes(Sha2Helper.Get256_UInt64(input)));
-        Assert.Equal(SHA384.HashData(input), TupleBytes(Sha2Helper.Get384_UInt64(input)));
-        Assert.Equal(SHA512.HashData(input), TupleBytes(Sha2Helper.Get512_UInt64(input)));
+        Assert.Equal(SHA256.HashData(input), Sha2Helper.Get256ByteArray(input));
+        Assert.Equal(SHA384.HashData(input), Sha2Helper.Get384ByteArray(input));
+        Assert.Equal(SHA512.HashData(input), Sha2Helper.Get512ByteArray(input));
+        Assert.Equal(SHA256.HashData(input), TupleBytes(Sha2Helper.Get256UInt64(input)));
+        Assert.Equal(SHA384.HashData(input), TupleBytes(Sha2Helper.Get384UInt64(input)));
+        Assert.Equal(SHA512.HashData(input), TupleBytes(Sha2Helper.Get512UInt64(input)));
 
-        Assert.Equal(Sha3Helper.Get256_ByteArray(input), TupleBytes(Sha3Helper.Get256_UInt64(input)));
-        Assert.Equal(Sha3Helper.Get384_ByteArray(input), TupleBytes(Sha3Helper.Get384_UInt64(input)));
-        Assert.Equal(Sha3Helper.Get512_ByteArray(input), TupleBytes(Sha3Helper.Get512_UInt64(input)));
+        Assert.Equal(Sha3Helper.Get256ByteArray(input), TupleBytes(Sha3Helper.Get256UInt64(input)));
+        Assert.Equal(Sha3Helper.Get384ByteArray(input), TupleBytes(Sha3Helper.Get384UInt64(input)));
+        Assert.Equal(Sha3Helper.Get512ByteArray(input), TupleBytes(Sha3Helper.Get512UInt64(input)));
         if (SHA3_256.IsSupported)
         {
-            Assert.Equal(SHA3_256.HashData(input), Sha3Helper.Get256_ByteArray(input));
-            Assert.Equal(SHA3_384.HashData(input), Sha3Helper.Get384_ByteArray(input));
-            Assert.Equal(SHA3_512.HashData(input), Sha3Helper.Get512_ByteArray(input));
+            Assert.Equal(SHA3_256.HashData(input), Sha3Helper.Get256ByteArray(input));
+            Assert.Equal(SHA3_384.HashData(input), Sha3Helper.Get384ByteArray(input));
+            Assert.Equal(SHA3_512.HashData(input), Sha3Helper.Get512ByteArray(input));
         }
 
-        VerifyOutput(Sha2Helper.Get256_Span, input, SHA256.HashData(input));
-        VerifyOutput(Sha2Helper.Get384_Span, input, SHA384.HashData(input));
-        VerifyOutput(Sha2Helper.Get512_Span, input, SHA512.HashData(input));
-        VerifyOutput(Sha2Helper.Get512_Libsodium, input, SHA512.HashData(input));
-        VerifyOutput(Sha3Helper.Get256_Span, input, Sha3Helper.Get256_ByteArray(input));
-        VerifyOutput(Sha3Helper.Get384_Span, input, Sha3Helper.Get384_ByteArray(input));
-        VerifyOutput(Sha3Helper.Get512_Span, input, Sha3Helper.Get512_ByteArray(input));
+        VerifyOutput(Sha2Helper.Get256Span, input, SHA256.HashData(input));
+        VerifyOutput(Sha2Helper.Get384Span, input, SHA384.HashData(input));
+        VerifyOutput(Sha2Helper.Get512Span, input, SHA512.HashData(input));
+        VerifyOutput(Sha2Helper.Get512SpanLibsodium, input, SHA512.HashData(input));
+        VerifyOutput(Sha3Helper.Get256Span, input, Sha3Helper.Get256ByteArray(input));
+        VerifyOutput(Sha3Helper.Get384Span, input, Sha3Helper.Get384ByteArray(input));
+        VerifyOutput(Sha3Helper.Get512Span, input, Sha3Helper.Get512ByteArray(input));
 
         foreach (var hash in new Sha3[] { new Sha3_256(), new Sha3_384(), new Sha3_512(), })
         {
@@ -187,12 +187,12 @@ public class CryptographicCoverageTest
         var alicePublic = new byte[32];
         var bobSecret = new byte[32];
         var bobPublic = new byte[32];
-        CryptoBox.CreateKey(aliceSecret, alicePublic);
-        CryptoBox.CreateKey(bobSecret, bobPublic);
+        CryptoBox.CreateKeyPair(aliceSecret, alicePublic);
+        CryptoBox.CreateKeyPair(bobSecret, bobPublic);
         var aliceMaterial = new byte[32];
         var bobMaterial = new byte[32];
-        CryptoBox.DeriveKeyMaterial(aliceSecret, bobPublic, aliceMaterial);
-        CryptoBox.DeriveKeyMaterial(bobSecret, alicePublic, bobMaterial);
+        CryptoBox.DeriveSharedSecret(aliceSecret, bobPublic, aliceMaterial);
+        CryptoBox.DeriveSharedSecret(bobSecret, alicePublic, bobMaterial);
         Assert.Equal(aliceMaterial, bobMaterial);
         var nonce = new byte[24];
         var cipher = new byte[19];
@@ -207,7 +207,7 @@ public class CryptographicCoverageTest
             var invalidKey = new byte[32];
             invalidKey[0] = lowOrder;
             aliceMaterial.AsSpan().Fill(0xA5);
-            Assert.Throws<CryptographicException>(() => CryptoBox.DeriveKeyMaterial(aliceSecret, invalidKey, aliceMaterial));
+            Assert.Throws<CryptographicException>(() => CryptoBox.DeriveSharedSecret(aliceSecret, invalidKey, aliceMaterial));
             Assert.All(aliceMaterial, x => Assert.Equal(0, x));
             Assert.Throws<CryptographicException>(() => CryptoBox.Encrypt("abc"u8, nonce, aliceSecret, invalidKey, cipher));
             Assert.All(cipher, x => Assert.Equal(0, x));
@@ -222,11 +222,11 @@ public class CryptographicCoverageTest
         var nonce = new byte[24];
         var cipher = new byte[17];
         var message = new byte[1];
-        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.CreateKey(wrongKey, key));
-        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.CreateKey(key, wrongKey));
-        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.CreateKey(wrongKey, key, key));
-        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.CreateKey(key, wrongKey, key));
-        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.CreateKey(key, key, wrongKey));
+        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.CreateKeyPair(wrongKey, key));
+        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.CreateKeyPair(key, wrongKey));
+        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.CreateKeyPair(wrongKey, key, key));
+        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.CreateKeyPair(key, wrongKey, key));
+        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.CreateKeyPair(key, key, wrongKey));
         Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.Encrypt(message, new byte[23], key, key, cipher));
         Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.Encrypt(message, nonce, wrongKey, key, cipher));
         Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.Encrypt(message, nonce, key, wrongKey, cipher));
@@ -236,9 +236,9 @@ public class CryptographicCoverageTest
         Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.TryDecrypt(cipher, nonce, wrongKey, key, message));
         Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.TryDecrypt(cipher, nonce, key, wrongKey, message));
         Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.TryDecrypt(cipher, nonce, key, key, new byte[2]));
-        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.DeriveKeyMaterial(wrongKey, key, key));
-        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.DeriveKeyMaterial(key, wrongKey, key));
-        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.DeriveKeyMaterial(key, key, wrongKey));
+        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.DeriveSharedSecret(wrongKey, key, key));
+        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.DeriveSharedSecret(key, wrongKey, key));
+        Assert.Throws<ArgumentOutOfRangeException>(() => CryptoBox.DeriveSharedSecret(key, key, wrongKey));
     }
 
     private static byte[] TupleBytes(ITuple tuple)

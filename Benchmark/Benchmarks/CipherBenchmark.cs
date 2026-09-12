@@ -81,10 +81,10 @@ public class CipherBenchmark
 
         this.boxSecretKey = new byte[CryptoBox.SecretKeySize];
         this.boxPublicKey = new byte[CryptoBox.PublicKeySize];
-        CryptoBox.CreateKey(this.boxSecretKey, this.boxPublicKey);
+        CryptoBox.CreateKeyPair(this.boxSecretKey, this.boxPublicKey);
         this.boxSecretKey2 = new byte[CryptoBox.SecretKeySize];
         this.boxPublicKey2 = new byte[CryptoBox.PublicKeySize];
-        CryptoBox.CreateKey(this.boxSecretKey2, this.boxPublicKey2);
+        CryptoBox.CreateKeyPair(this.boxSecretKey2, this.boxPublicKey2);
         this.cipherBox = new byte[this.message.Length + CryptoBox.MacSize];
     }
 

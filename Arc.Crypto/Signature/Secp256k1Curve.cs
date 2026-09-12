@@ -14,7 +14,7 @@ namespace Arc.Crypto.EC;
 /// <summary>
 /// The secp256k1 elliptic curve, as used by Bitcoin and other systems.
 /// </summary>
-public class P256K1Curve : ECCurveBase
+public class Secp256k1Curve : ECCurveBase
 {
     /// <summary>
     /// The number of 32-bit words in a field element.
@@ -44,12 +44,12 @@ public class P256K1Curve : ECCurveBase
     /// <summary>
     /// The shared instance of the secp256k1 curve.
     /// </summary>
-    public static readonly P256K1Curve Instance = new();
+    public static readonly Secp256k1Curve Instance = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="P256K1Curve"/> class.
+    /// Initializes a new instance of the <see cref="Secp256k1Curve"/> class.
     /// </summary>
-    public P256K1Curve()
+    public Secp256k1Curve()
         : base(P256UIntLength, HexQ, HexA, HexB, HexOrder)
     {
     }
@@ -105,11 +105,11 @@ public class P256K1Curve : ECCurveBase
     }
 
     /// <inheritdoc/>
-    public override bool ElementSqrt(ReadOnlySpan<uint> x1, Span<uint> z)
+    public override bool ElementSqrt(ReadOnlySpan<uint> x, Span<uint> z)
     {
-        if (Nat256.IsZero(x1) || Nat256.IsOne(x1))
+        if (Nat256.IsZero(x) || Nat256.IsOne(x))
         {
-            x1.CopyTo(z);
+            x.CopyTo(z);
             return true;
         }
 
@@ -117,10 +117,10 @@ public class P256K1Curve : ECCurveBase
         scoped Span<uint> x3 = stackalloc uint[this.UIntLength];
         scoped Span<uint> x6 = stackalloc uint[this.UIntLength];
 
-        this.ElementSquare(x1, x2);
-        this.ElementMultiply(x2, x1, x2);
+        this.ElementSquare(x, x2);
+        this.ElementMultiply(x2, x, x2);
         this.ElementSquare(x2, x3);
-        this.ElementMultiply(x3, x1, x3);
+        this.ElementMultiply(x3, x, x3);
         ElementSquareN(x3, 3, x6);
         this.ElementMultiply(x6, x3, x6);
         var x9 = x6;
@@ -158,7 +158,7 @@ public class P256K1Curve : ECCurveBase
         var t2 = x2;
         this.ElementSquare(t1, t2);
 
-        if (x1.SequenceEqual(t2))
+        if (x.SequenceEqual(t2))
         {
             t1.CopyTo(z);
             return true;

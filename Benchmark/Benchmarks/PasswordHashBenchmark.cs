@@ -26,7 +26,7 @@ public class PasswordHashBenchmark
     public byte[] GetHashStringUtf8()
     {
         ReadOnlySpan<byte> utf8 = [0, 1, 2, 3,];
-        var st = CryptoPasswordHash.GetHashString(utf8);
+        var st = CryptoPasswordHash.GetUtf8HashString(utf8);
         return st;
     }
 

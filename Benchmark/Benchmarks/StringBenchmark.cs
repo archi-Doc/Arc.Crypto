@@ -25,7 +25,7 @@ public class StringBenchmark
     public ulong ArcFarmHash64_GetBytes() => Arc.Crypto.FarmHash.Hash64(Encoding.UTF8.GetBytes(TestString));
 
     [Benchmark]
-    public uint ArcXXHash32_Direct() => Arc.Crypto.XXHash32.Hash32(TestString);
+    public uint ArcXXHash32_Direct() => Arc.Crypto.XxHash32.Hash32(TestString);
 
     [Benchmark]
     public ulong ArcXxHash64_Direct() => Arc.Crypto.XxHash64.Hash64(TestString);*/

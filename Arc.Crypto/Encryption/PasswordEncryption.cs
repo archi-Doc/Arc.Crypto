@@ -39,13 +39,13 @@ public static class PasswordEncryption
     /// Encrypts the specified data using the provided utf8 password.
     /// </summary>
     /// <param name="plaintext">The plaintext to encrypt.</param>
-    /// <param name="password">The password to use for encryption.</param>
+    /// <param name="utf8Password">The UTF-8 password to use for encryption.</param>
     /// <param name="ciphertext">The encrypted data.<br/>
     ///  The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
-    public static void Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> password, out byte[] ciphertext)
+    public static void Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> utf8Password, out byte[] ciphertext)
     {
         ciphertext = new byte[checked(SaltSize + plaintext.Length + TagSize)];
-        Encrypt(plaintext, password, ciphertext);
+        Encrypt(plaintext, utf8Password, ciphertext);
     }
 
     /// <summary>

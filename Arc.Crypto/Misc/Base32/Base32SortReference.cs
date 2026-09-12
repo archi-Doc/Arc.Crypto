@@ -19,7 +19,7 @@ internal class Base32SortReference : IBase32Converter
     private byte[] utf8EncodeTable;
     private byte[] decodeTable;
 
-    public bool FromByteArrayToSpan(ReadOnlySpan<byte> source, Span<byte> destination, out int written)
+    public bool FromBytesToSpan(ReadOnlySpan<byte> source, Span<byte> destination, out int written)
     {
         var encodedLength = Base32Sort.GetEncodedLength(source.Length);
         if (destination.Length < encodedLength)
@@ -33,7 +33,7 @@ internal class Base32SortReference : IBase32Converter
         return true;
     }
 
-    public bool FromByteArrayToSpan(ReadOnlySpan<byte> source, Span<char> destination, out int written)
+    public bool FromBytesToSpan(ReadOnlySpan<byte> source, Span<char> destination, out int written)
     {
         var encodedLength = Base32Sort.GetEncodedLength(source.Length);
         if (destination.Length < encodedLength)
@@ -47,7 +47,7 @@ internal class Base32SortReference : IBase32Converter
         return true;
     }
 
-    public unsafe string FromByteArrayToString(ReadOnlySpan<byte> source)
+    public unsafe string FromBytesToString(ReadOnlySpan<byte> source)
     {
         var length = Base32Sort.GetEncodedLength(source.Length);
         fixed (byte* data = source)
@@ -59,7 +59,7 @@ internal class Base32SortReference : IBase32Converter
         }
     }
 
-    public byte[] FromByteArrayToUtf8(ReadOnlySpan<byte> source)
+    public byte[] FromBytesToUtf8(ReadOnlySpan<byte> source)
     {
         var encodedLength = Base32Sort.GetEncodedLength(source.Length);
         var destination = new byte[encodedLength];

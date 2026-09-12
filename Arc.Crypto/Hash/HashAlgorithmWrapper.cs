@@ -29,7 +29,7 @@ public abstract class HashAlgorithmWrapper : IHash, IDisposable
     /// <summary>
     /// Gets empty byte[].
     /// </summary>
-    public byte[] EmptyByte { get; } = [];
+    public byte[] EmptyBytes { get; } = [];
 
     /// <inheritdoc/>
     public virtual string HashName => "Wrapper";
@@ -67,7 +67,7 @@ public abstract class HashAlgorithmWrapper : IHash, IDisposable
     /// <inheritdoc/>
     public byte[] HashFinal()
     {
-        this.HashAlgorithm.TransformFinalBlock(this.EmptyByte, 0, 0);
+        this.HashAlgorithm.TransformFinalBlock(this.EmptyBytes, 0, 0);
         return this.HashAlgorithm.Hash ?? Array.Empty<byte>();
     }
 

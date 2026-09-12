@@ -10,7 +10,7 @@ namespace Arc.Crypto;
 /// Base class for random number generators that produce 64-bit unsigned integers.<br/>
 /// Derived classes only need to implement <see cref="NextUInt64"/>; every other method is built on it.
 /// </summary>
-public abstract class RandomUInt64
+public abstract class RandomUInt64Base
 {
     /// <summary>
     /// Returns the ceiling of the base-2 logarithm, or zero for values zero and one.
@@ -214,7 +214,7 @@ public abstract class RandomUInt64
     /// </summary>
     /// <returns>A double-precision floating-point number that is greater than or equal to 0.0, and less than or equal to 1.0.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double NextDouble2() => (this.NextUInt64() >> 11) * (1.0 / 9007199254740991.0);
+    public double NextDoubleInclusive() => (this.NextUInt64() >> 11) * (1.0 / 9007199254740991.0);
 
     /// <summary>
     /// (0,1)<br/>
@@ -222,7 +222,7 @@ public abstract class RandomUInt64
     /// </summary>
     /// <returns>A double-precision floating-point number that is greater than 0.0, and less than 1.0.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double NextDouble3() => ((this.NextUInt64() >> 12) + 0.5) * (1.0 / 4503599627370496.0);
+    public double NextDoubleExclusive() => ((this.NextUInt64() >> 12) + 0.5) * (1.0 / 4503599627370496.0);
 
     /// <summary>
     /// [0,1)<br/>

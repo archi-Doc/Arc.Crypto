@@ -14,9 +14,9 @@ namespace Arc.Crypto;
 
 /// <summary>
 /// An allocation-free, incremental 64-bit FarmHash.<br/>
-/// Usage: <c>var farm = default(FarmHash);</c> then <c>farm.Append(data);</c> repeatedly and <c>var hash = farm.Finalize();</c>.<br/>
+/// Usage: <c>var farm = default(FarmHash);</c> then <c>farm.Append(data);</c> repeatedly and <c>var hash = farm.FinalizeHash();</c>.<br/>
 /// The result is identical to <see cref="Hash64(ReadOnlySpan{byte})"/> over the concatenated input.
-/// Call <see cref="Initialize"/> to reuse the instance after <see cref="Finalize"/>.
+/// Call <see cref="Reset"/> to reuse the instance after <see cref="FinalizeHash"/>.
 /// </summary>
 public unsafe ref struct FarmHash
 {
@@ -75,7 +75,7 @@ public unsafe ref struct FarmHash
     /// Resets the state so the instance can be reused. Not required for a fresh <c>default(FarmHash)</c>.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Initialize()
+    public void Reset()
     {
         this.position = 0;
         this.blockPhase = false;
@@ -166,7 +166,7 @@ public unsafe ref struct FarmHash
     /// Finalizes the hash calculation.
     /// </summary>
     /// <returns>A 64bit hash, identical to <see cref="Hash64(ReadOnlySpan{byte})"/> over the concatenated input.</returns>
-    public ulong Finalize()
+    public ulong FinalizeHash()
     {
         fixed (byte* buf = this.buffer)
         {

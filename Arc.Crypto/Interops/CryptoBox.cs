@@ -37,16 +37,16 @@ public static class CryptoBox
     public const int MacSize = 16; // crypto_box_curve25519xsalsa20poly1305_MACBYTES
 
     /// <summary>
-    /// The size of the key material in bytes.
+    /// The size of the raw X25519 shared secret in bytes.
     /// </summary>
-    public const int KeyMaterialSize = 32;
+    public const int SharedSecretSize = 32;
 
     /// <summary>
     /// Creates a new key pair (secret(32) and public(32) keys).
     /// </summary>
     /// <param name="secretKey32">The buffer to hold the secret key. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
     /// <param name="publicKey32">The buffer to hold the public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
-    public static void CreateKey(Span<byte> secretKey32, Span<byte> publicKey32)
+    public static void CreateKeyPair(Span<byte> secretKey32, Span<byte> publicKey32)
     {
         if (secretKey32.Length != SecretKeySize)
         {
@@ -67,7 +67,7 @@ public static class CryptoBox
     /// <param name="seed32">The seed to generate the key pair. The size must be <see cref="SeedSize"/>(32 bytes).</param>
     /// <param name="secretKey32">The buffer to hold the secret key. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
     /// <param name="publicKey32">The buffer to hold the public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
-    public static void CreateKey(ReadOnlySpan<byte> seed32, Span<byte> secretKey32, Span<byte> publicKey32)
+    public static void CreateKeyPair(ReadOnlySpan<byte> seed32, Span<byte> secretKey32, Span<byte> publicKey32)
     {
         if (seed32.Length != SeedSize)
         {
@@ -89,15 +89,15 @@ public static class CryptoBox
 
     /// <summary>
     /// Encrypts a message using the given nonce(24), secret key(32), and public key(32).<br/>
-    /// Cipher = Message + MAC(16).
+    /// Ciphertext = Plaintext + MAC(16).
     /// </summary>
-    /// <param name="message">The message to encrypt.</param>
+    /// <param name="plaintext">The message to encrypt.</param>
     /// <param name="nonce24">The nonce to use for encryption. The size must be <see cref="NonceSize"/>(24 bytes).</param>
     /// <param name="secretKey32">The secret key to use for encryption. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
     /// <param name="publicKey32">The public key to use for encryption. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
-    /// <param name="cipher">The buffer to hold the encrypted message. The size must be message length + <see cref="MacSize"/>(16 bytes).</param>
+    /// <param name="ciphertext">The buffer to hold the encrypted message. The size must be plaintext length + <see cref="MacSize"/>(16 bytes).</param>
     /// <exception cref="CryptographicException">The recipient public key is invalid; the ciphertext buffer is cleared.</exception>
-    public static void Encrypt(ReadOnlySpan<byte> message, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> cipher)
+    public static void Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> ciphertext)
     {
         if (nonce24.Length != NonceSize)
         {
@@ -114,33 +114,33 @@ public static class CryptoBox
             BaseHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
-        if (cipher.Length != (message.Length + MacSize))
+        if (ciphertext.Length != (plaintext.Length + MacSize))
         {
-            BaseHelper.ThrowSizeMismatchException(nameof(cipher), message.Length + MacSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(ciphertext), plaintext.Length + MacSize);
         }
 
-        if (LibsodiumInterops.crypto_box_easy(cipher, message, (ulong)message.Length, nonce24, publicKey32, secretKey32) != 0)
+        if (LibsodiumInterops.crypto_box_easy(ciphertext, plaintext, (ulong)plaintext.Length, nonce24, publicKey32, secretKey32) != 0)
         {
-            CryptographicOperations.ZeroMemory(cipher);
+            CryptographicOperations.ZeroMemory(ciphertext);
             throw new CryptographicException("The public key is not valid for key agreement.");
         }
     }
 
     /// <summary>
-    /// Decrypts a cipher using the given nonce(24), secret key(32), and public key(32).<br/>
-    /// Message = Cipher - MAC(16).
+    /// Decrypts a ciphertext using the given nonce(24), secret key(32), and public key(32).<br/>
+    /// Plaintext = Ciphertext - MAC(16).
     /// </summary>
-    /// <param name="cipher">The encrypted message to decrypt.</param>
+    /// <param name="ciphertext">The encrypted message to decrypt.</param>
     /// <param name="nonce24">The nonce used for encryption. The size must be <see cref="NonceSize"/>(24 bytes).</param>
     /// <param name="secretKey32">The recipient secret key. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
     /// <param name="publicKey32">The sender public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
-    /// <param name="message">The buffer to hold the decrypted message. The size must be cipher length - <see cref="MacSize"/>(16 bytes).</param>
+    /// <param name="plaintext">The buffer to hold the decrypted message. The size must be ciphertext length - <see cref="MacSize"/>(16 bytes).</param>
     /// <returns><c>true</c> if decryption is successful; otherwise, <c>false</c>.</returns>
-    public static bool TryDecrypt(ReadOnlySpan<byte> cipher, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> message)
+    public static bool TryDecrypt(ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> plaintext)
     {
-        if (cipher.Length < MacSize)
+        if (ciphertext.Length < MacSize)
         {
-            throw new ArgumentOutOfRangeException(nameof(cipher), cipher.Length, $"The {nameof(cipher)} length must be at least {MacSize} bytes.");
+            throw new ArgumentOutOfRangeException(nameof(ciphertext), ciphertext.Length, $"The {nameof(ciphertext)} length must be at least {MacSize} bytes.");
         }
 
         if (nonce24.Length != NonceSize)
@@ -158,12 +158,12 @@ public static class CryptoBox
             BaseHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
-        if (message.Length != (cipher.Length - MacSize))
+        if (plaintext.Length != (ciphertext.Length - MacSize))
         {
-            BaseHelper.ThrowSizeMismatchException(nameof(message), cipher.Length - MacSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(plaintext), ciphertext.Length - MacSize);
         }
 
-        return LibsodiumInterops.crypto_box_open_easy(message, cipher, (ulong)cipher.Length, nonce24, publicKey32, secretKey32) == 0;
+        return LibsodiumInterops.crypto_box_open_easy(plaintext, ciphertext, (ulong)ciphertext.Length, nonce24, publicKey32, secretKey32) == 0;
     }
 
     /// <summary>
@@ -172,9 +172,9 @@ public static class CryptoBox
     /// </summary>
     /// <param name="secretKey32">The secret key to use for key derivation. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
     /// <param name="publicKey32">The public key to use for key derivation. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
-    /// <param name="material">The output buffer, exactly <see cref="KeyMaterialSize"/> (32) bytes.</param>
+    /// <param name="sharedSecret">The output buffer, exactly <see cref="SharedSecretSize"/> (32) bytes.</param>
     /// <exception cref="CryptographicException">The public key is invalid for key agreement; the output is cleared.</exception>
-    public static void DeriveKeyMaterial(ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> material)
+    public static void DeriveSharedSecret(ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> sharedSecret)
     {
         if (secretKey32.Length != SecretKeySize)
         {
@@ -186,14 +186,14 @@ public static class CryptoBox
             BaseHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
         }
 
-        if (material.Length != KeyMaterialSize)
+        if (sharedSecret.Length != SharedSecretSize)
         {
-            BaseHelper.ThrowSizeMismatchException(nameof(material), KeyMaterialSize);
+            BaseHelper.ThrowSizeMismatchException(nameof(sharedSecret), SharedSecretSize);
         }
 
-        if (LibsodiumInterops.crypto_scalarmult_curve25519(material, secretKey32, publicKey32) != 0)
+        if (LibsodiumInterops.crypto_scalarmult_curve25519(sharedSecret, secretKey32, publicKey32) != 0)
         {
-            CryptographicOperations.ZeroMemory(material);
+            CryptographicOperations.ZeroMemory(sharedSecret);
             throw new CryptographicException("The public key is not valid for key agreement.");
         }
     }
