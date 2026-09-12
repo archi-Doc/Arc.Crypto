@@ -5,13 +5,13 @@ namespace Arc.Crypto;
 /// <summary>
 /// Represents a pseudo-random number generator based on Xorshift.<br/>
 /// </summary>
-public class Xorshift : RandomUInt64
+public class Xorshift : RandomUInt64Base
 {
     /// <summary>
     /// Advances a 32-bit Xorshift state in place. A zero state is replaced with the default seed.
     /// </summary>
     /// <param name="x">The state to advance.</param>
-    public static void Xor32(ref uint x)
+    public static void NextState32(ref uint x)
     {
         if (x == 0)
         {
@@ -29,7 +29,7 @@ public class Xorshift : RandomUInt64
     /// </summary>
     /// <param name="x">The current state.</param>
     /// <returns>The next state.</returns>
-    public static uint Xor32(uint x)
+    public static uint NextState32(uint x)
     {
         if (x == 0)
         {
@@ -46,7 +46,7 @@ public class Xorshift : RandomUInt64
     /// Advances a 64-bit Xorshift state in place. A zero state is replaced with the default seed.
     /// </summary>
     /// <param name="x">The state to advance.</param>
-    public static void Xor64(ref ulong x)
+    public static void NextState64(ref ulong x)
     {
         if (x == 0)
         {
@@ -64,7 +64,7 @@ public class Xorshift : RandomUInt64
     /// </summary>
     /// <param name="x">The current state.</param>
     /// <returns>The next state.</returns>
-    public static ulong Xor64(ulong x)
+    public static ulong NextState64(ulong x)
     {
         if (x == 0)
         {

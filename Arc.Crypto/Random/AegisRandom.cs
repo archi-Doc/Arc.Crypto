@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
-namespace Arc.Crypto.Random;
+namespace Arc.Crypto;
 
 /// <summary>
 /// A high-performance cryptographically secure pseudo-random number generator combining RandomNumberGenerator and AEGIS-256.<br/>

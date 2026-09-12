@@ -40,7 +40,7 @@ public class Base64Benchmark
 
         this.testUtf8 = Base64c.Default.FromByteArrayToUtf8(this.testArray);
         this.testString = Convert.ToBase64String(this.testArray);
-        this.testStringB = Base32Sort.Reference.FromByteArrayToString(this.testArray);
+        this.testStringB = Base32Sort.Reference.FromBytesToString(this.testArray);
 
         var array = gfoidl.Base64.Base64.Default.Decode(this.testString);
     }
@@ -82,7 +82,7 @@ public class Base64Benchmark
     [Benchmark]
     public int Base64_ByteArrayToSpan3()
     {
-        return Base64.Encode(this.TestArray, this.encoded);
+        return FastBase64.Encode(this.TestArray, this.encoded);
     }
 
     [Benchmark]
@@ -102,7 +102,7 @@ public class Base64Benchmark
     [Benchmark]
     public int Base64_SpanToByteArray3()
     {
-        return Base64.Decode(this.encoded, this.decoded);
+        return FastBase64.Decode(this.encoded, this.decoded);
     }
 
     [Benchmark]
@@ -115,7 +115,7 @@ public class Base64Benchmark
     [Benchmark]
     public int Base64_ByteArrayToSpan3Url()
     {
-        return Base64Url.Encode(this.TestArray, this.encodedUrl);
+        return FastBase64Url.Encode(this.TestArray, this.encodedUrl);
     }
 
     [Benchmark]
@@ -128,7 +128,7 @@ public class Base64Benchmark
     [Benchmark]
     public int Base64_SpanToByteArray3Url()
     {
-        return Base64Url.Decode(this.encodedUrl, this.decoded);
+        return FastBase64Url.Decode(this.encodedUrl, this.decoded);
     }
 
     /*[Benchmark]
@@ -149,11 +149,11 @@ public class Base64Benchmark
 
     /*[Benchmark]
     public string Base32Reference_ByteArrayToString()
-        => Base32Sort.Reference.FromByteArrayToString(this.TestArray);
+        => Base32Sort.Reference.FromBytesToString(this.TestArray);
 
     [Benchmark]
     public string Base32Table_ByteArrayToString()
-        => Base32Sort.Table.FromByteArrayToString(this.TestArray);
+        => Base32Sort.Table.FromBytesToString(this.TestArray);
 
     // [Benchmark]
     public byte[] Base64_StringToByteArray()

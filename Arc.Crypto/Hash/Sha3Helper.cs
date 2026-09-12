@@ -21,7 +21,7 @@ public static class Sha3Helper
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The computed hash (32 bytes).</returns>
     [SkipLocalsInit]
-    public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
+    public static byte[] Get256ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[32];
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -38,7 +38,7 @@ public static class Sha3Helper
     /// <param name="output">A buffer of at least 32 bytes; any trailing bytes are unchanged.</param>
     /// <exception cref="ArgumentException">The output buffer is too small.</exception>
     [SkipLocalsInit]
-    public static void Get256_Span(ReadOnlySpan<byte> input, Span<byte> output)
+    public static void Get256Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
         var sponge = new KeccakSpongeStruct(256, state);
@@ -52,7 +52,7 @@ public static class Sha3Helper
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The hash bytes interpreted as unsigned 64-bit words in native byte order.</returns>
     [SkipLocalsInit]
-    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256_UInt64(ReadOnlySpan<byte> input)
+    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
         var sponge = new KeccakSpongeStruct(256, state);
@@ -67,7 +67,7 @@ public static class Sha3Helper
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The computed hash (48 bytes).</returns>
     [SkipLocalsInit]
-    public static byte[] Get384_ByteArray(ReadOnlySpan<byte> input)
+    public static byte[] Get384ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[48];
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -84,7 +84,7 @@ public static class Sha3Helper
     /// <param name="output">A buffer of at least 48 bytes; any trailing bytes are unchanged.</param>
     /// <exception cref="ArgumentException">The output buffer is too small.</exception>
     [SkipLocalsInit]
-    public static void Get384_Span(ReadOnlySpan<byte> input, Span<byte> output)
+    public static void Get384Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
         var sponge = new KeccakSpongeStruct(384, state);
@@ -98,7 +98,7 @@ public static class Sha3Helper
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The hash bytes interpreted as unsigned 64-bit words in native byte order.</returns>
     [SkipLocalsInit]
-    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) Get384_UInt64(ReadOnlySpan<byte> input)
+    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) Get384UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
         var sponge = new KeccakSpongeStruct(384, state);
@@ -113,7 +113,7 @@ public static class Sha3Helper
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The computed hash (64 bytes).</returns>
     [SkipLocalsInit]
-    public static byte[] Get512_ByteArray(ReadOnlySpan<byte> input)
+    public static byte[] Get512ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[64];
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
@@ -130,7 +130,7 @@ public static class Sha3Helper
     /// <param name="output">A buffer of at least 64 bytes; any trailing bytes are unchanged.</param>
     /// <exception cref="ArgumentException">The output buffer is too small.</exception>
     [SkipLocalsInit]
-    public static void Get512_Span(ReadOnlySpan<byte> input, Span<byte> output)
+    public static void Get512Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
         var sponge = new KeccakSpongeStruct(512, state);
@@ -144,7 +144,7 @@ public static class Sha3Helper
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The hash bytes interpreted as unsigned 64-bit words in native byte order.</returns>
     [SkipLocalsInit]
-    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Get512_UInt64(ReadOnlySpan<byte> input)
+    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Get512UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[KeccakSpongeStruct.StateLength];
         var sponge = new KeccakSpongeStruct(512, state);

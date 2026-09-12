@@ -3,7 +3,6 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Arc.Collections;
-using Arc.Crypto.Random;
 
 namespace Arc.Crypto;
 
@@ -14,7 +13,7 @@ namespace Arc.Crypto;
 /// <see cref="RandomVaultObsolete"/> generates random integers using random generator<br/>
 /// specified by constructor parameters, and takes out integers from the buffer as needed.
 /// </summary>
-public class RandomVaultObsolete : RandomUInt64
+public class RandomVaultObsolete : RandomUInt64Base
 {
     public const int DefaultBufferSize = 4096;
 

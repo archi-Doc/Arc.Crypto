@@ -38,14 +38,14 @@ public class Curve25519Benchmark
         this.cryptoSignSecretKey = new byte[CryptoSign.SecretKeySize];
         this.cryptoSignPublicKey = new byte[CryptoSign.PublicKeySize];
         this.cryptoSignPublicKey2 = new byte[CryptoSign.PublicKeySize];
-        CryptoSign.CreateKey(this.seed, this.cryptoSignSecretKey, this.cryptoSignPublicKey);
+        CryptoSign.CreateKeyPair(this.seed, this.cryptoSignSecretKey, this.cryptoSignPublicKey);
 
         this.cryptoBoxPublicKey = new byte[CryptoBox.SecretKeySize];
         this.cryptoBoxSecretKey = new byte[CryptoBox.PublicKeySize];
-        CryptoBox.CreateKey(this.seed, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey);
+        CryptoBox.CreateKeyPair(this.seed, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey);
         this.cryptoBoxPublicKey2 = new byte[CryptoBox.SecretKeySize];
         this.cryptoBoxSecretKey2 = new byte[CryptoBox.PublicKeySize];
-        CryptoBox.CreateKey(this.seed2, this.cryptoBoxSecretKey2, this.cryptoBoxPublicKey2);
+        CryptoBox.CreateKeyPair(this.seed2, this.cryptoBoxSecretKey2, this.cryptoBoxPublicKey2);
 
         this.cryptoBoxConvertedPublicKey = new byte[CryptoBox.PublicKeySize];
         this.cryptoSignConvertedPublicKey = new byte[CryptoSign.PublicKeySize];
@@ -65,7 +65,7 @@ public class Curve25519Benchmark
     {
         var secretKey = new byte[CryptoSign.SecretKeySize];
         var publicKey = new byte[CryptoSign.PublicKeySize];
-        CryptoSign.CreateKey(secretKey, publicKey);
+        CryptoSign.CreateKeyPair(secretKey, publicKey);
         return secretKey;
     }*/
 
@@ -74,7 +74,7 @@ public class Curve25519Benchmark
     {
         var secretKey = new byte[CryptoSign.SecretKeySize];
         var publicKey = new byte[CryptoSign.PublicKeySize];
-        CryptoSign.CreateKey(this.seed, secretKey, publicKey);
+        CryptoSign.CreateKeyPair(this.seed, secretKey, publicKey);
         return secretKey;
     }
 
@@ -94,15 +94,15 @@ public class Curve25519Benchmark
         var publicKey = new byte[CryptoSign.PublicKeySize];
         var secretKey2 = new byte[CryptoBox.SecretKeySize];
         var publicKey2 = new byte[CryptoBox.PublicKeySize];
-        CryptoDual.CreateKey(this.seed, secretKey, publicKey, secretKey2, publicKey2);
+        CryptoDual.CreateKeyPair(this.seed, secretKey, publicKey, secretKey2, publicKey2);
         return secretKey;
     }
 
     [Benchmark]
     public byte[] CryptoBox_DeriveKeyMaterial()
     {
-        var material = new byte[CryptoBox.KeyMaterialSize];
-        CryptoBox.DeriveKeyMaterial(material, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey2);
+        var material = new byte[CryptoBox.SharedSecretSize];
+        CryptoBox.DeriveSharedSecret(material, this.cryptoBoxSecretKey, this.cryptoBoxPublicKey2);
         return material;
     }
 
@@ -125,7 +125,7 @@ public class Curve25519Benchmark
     {
         var secretKey = new byte[CryptoBox.SecretKeySize];
         var publicKey = new byte[CryptoBox.PublicKeySize];
-        CryptoBox.CreateKey(secretKey, publicKey);
+        CryptoBox.CreateKeyPair(secretKey, publicKey);
         return secretKey;
     }
 
@@ -138,23 +138,23 @@ public class Curve25519Benchmark
     }
 
     [Benchmark]
-    public byte[] SecretKey_SignToBox()
+    public byte[] ConvertSignSecretKeyToBox()
     {
-        CryptoDual.SecretKey_SignToBox(this.cryptoSignSecretKey, this.cryptoBoxSecretKey);
+        CryptoDual.ConvertSignSecretKeyToBox(this.cryptoSignSecretKey, this.cryptoBoxSecretKey);
         return this.cryptoBoxSecretKey;
     }
 
     [Benchmark]
-    public byte[] PublicKey_SignToBox()
+    public byte[] ConvertSignPublicKeyToBox()
     {
-        CryptoDual.PublicKey_SignToBox(this.cryptoSignPublicKey, this.cryptoBoxConvertedPublicKey);
+        CryptoDual.ConvertSignPublicKeyToBox(this.cryptoSignPublicKey, this.cryptoBoxConvertedPublicKey);
         return this.cryptoBoxConvertedPublicKey;
     }
 
     [Benchmark]
-    public byte[] PublicKey_BoxToSign()
+    public byte[] ConvertBoxPublicKeyToSign()
     {
-        CryptoDual.PublicKey_BoxToSign(this.cryptoBoxPublicKey, this.cryptoSignConvertedPublicKey);
+        CryptoDual.ConvertBoxPublicKeyToSign(this.cryptoBoxPublicKey, this.cryptoSignConvertedPublicKey);
         return this.cryptoSignConvertedPublicKey;
     }
 }

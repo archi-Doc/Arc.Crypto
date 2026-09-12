@@ -64,7 +64,7 @@ public class CryptoRandom_NextBytes
     [Benchmark]
     public byte[] NextBytes_RandomVault_Rng()
     {
-        RandomVault.RandomNumberGenerator.NextBytes(this.random.AsSpan(0, this.Length));
+        RandomVault.SystemRng.NextBytes(this.random.AsSpan(0, this.Length));
         return this.random;
     }
 

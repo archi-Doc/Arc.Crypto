@@ -40,7 +40,7 @@ public class Sha256Benchmark
     public byte[] Sha256() => this.sha256.ComputeHash(this.data, 0, this.Length);
 
     [Benchmark]
-    public byte[] Sha256B() => Sha2Helper.Get256_ByteArray(this.data.AsSpan(0, this.Length));
+    public byte[] Sha256B() => Sha2Helper.Get256ByteArray(this.data.AsSpan(0, this.Length));
 
     /*[Benchmark]
     public byte[] Sha256Managed() => this.sha256Managed.ComputeHash(this.data, 0, this.Length);

@@ -38,14 +38,14 @@ public class DsaBenchmark
 
         ECParameters p = default;
         p.Curve = this.curve;
-        p.D = Sha3Helper.Get256_ByteArray([]);
+        p.D = Sha3Helper.Get256ByteArray([]);
         this.ecdsa = ECDsa.Create(p);
-        this.hash = Sha2Helper.Get256_ByteArray(this.message);
+        this.hash = Sha2Helper.Get256ByteArray(this.message);
         this.signSecp256r1 = this.ecdsa.SignHash(this.hash);
         var verify = this.ecdsa.VerifyHash(this.hash, this.signSecp256r1);
 
         this.ed25519 = new Ed25519();
-        this.ed25519.FromSeed(Sha3Helper.Get256_ByteArray([]));
+        this.ed25519.FromSeed(Sha3Helper.Get256ByteArray([]));
         this.signEd25519 = this.ed25519.SignMessage(this.message);
         verify = this.ed25519.VerifyMessage(this.message, this.signEd25519);
 
@@ -53,7 +53,7 @@ public class DsaBenchmark
         var pub = this.ed25519.GetPublicKey();
         this.pri2 = new byte[CryptoSign.SecretKeySize];
         this.pub2 = new byte[CryptoSign.PublicKeySize];
-        CryptoSign.CreateKey(Sha3Helper.Get256_ByteArray([]), this.pri2, this.pub2);
+        CryptoSign.CreateKeyPair(Sha3Helper.Get256ByteArray([]), this.pri2, this.pub2);
         Debug.Assert(pri.SequenceEqual(this.pri2));
         Debug.Assert(pub.SequenceEqual(this.pub2));
         this.signature = new byte[CryptoSign.SignatureSize];

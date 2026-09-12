@@ -34,7 +34,7 @@ public static class CryptoSign
     /// </summary>
     /// <param name="secretKey64">A span to hold the secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
     /// <param name="publicKey32">A span to hold the public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
-    public static void CreateKey(Span<byte> secretKey64, Span<byte> publicKey32)
+    public static void CreateKeyPair(Span<byte> secretKey64, Span<byte> publicKey32)
     {
         if (secretKey64.Length != SecretKeySize)
         {
@@ -55,7 +55,7 @@ public static class CryptoSign
     /// <param name="seed32">The seed span. The size must be <see cref="SeedSize"/>(32 bytes).</param>
     /// <param name="secretKey64">A span to hold the secret key. The size must be <see cref="SecretKeySize"/>(64 bytes).</param>
     /// <param name="publicKey32">A span to hold the public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
-    public static void CreateKey(ReadOnlySpan<byte> seed32, Span<byte> secretKey64, Span<byte> publicKey32)
+    public static void CreateKeyPair(ReadOnlySpan<byte> seed32, Span<byte> secretKey64, Span<byte> publicKey32)
     {
         if (seed32.Length != SeedSize)
         {

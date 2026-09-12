@@ -22,10 +22,10 @@ public static class Blake2B
     /// </summary>
     /// <param name="input">The input data to hash.</param>
     /// <returns>A 256-bit hash as a byte array.</returns>
-    public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
+    public static byte[] Get256ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[Hash256Size];
-        Get256_Span(input, output);
+        Get256Span(input, output);
         return output;
     }
 
@@ -34,10 +34,10 @@ public static class Blake2B
     /// </summary>
     /// <param name="input">The input data to hash.</param>
     /// <returns>A tuple containing the 256-bit hash as four longs.</returns>
-    public static (long Hash0, long Hash1, long Hash2, long Hash3) Get256_Int64(ReadOnlySpan<byte> input)
+    public static (long Hash0, long Hash1, long Hash2, long Hash3) Get256Int64(ReadOnlySpan<byte> input)
     {
         Span<long> hash = stackalloc long[4];
-        Get256_Span(input, MemoryMarshal.AsBytes(hash));
+        Get256Span(input, MemoryMarshal.AsBytes(hash));
         return (hash[0], hash[1], hash[2], hash[3]);
     }*/
 
@@ -46,10 +46,10 @@ public static class Blake2B
     /// </summary>
     /// <param name="input">The input data to hash.</param>
     /// <returns>The hash as four unsigned 64-bit words in native byte order.</returns>
-    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256_UInt64(ReadOnlySpan<byte> input)
+    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> hash = stackalloc ulong[4];
-        Get256_Span(input, MemoryMarshal.AsBytes(hash));
+        Get256Span(input, MemoryMarshal.AsBytes(hash));
         return (hash[0], hash[1], hash[2], hash[3]);
     }
 
@@ -58,11 +58,11 @@ public static class Blake2B
     /// </summary>
     /// <param name="input">The input data to hash.</param>
     /// <returns>A Struct256 containing the 256-bit hash.</returns>
-    public static unsafe Struct256 Get256_Struct(ReadOnlySpan<byte> input)
+    public static unsafe Struct256 Get256Struct(ReadOnlySpan<byte> input)
     {
         Struct256 st;
         byte* b = (byte*)&st;
-        Get256_Span(input, new(b, Struct256.Length));
+        Get256Span(input, new(b, Struct256.Length));
         return st;
     }
 
@@ -72,7 +72,7 @@ public static class Blake2B
     /// <param name="input">The input data to hash.</param>
     /// <param name="output">The span to write the 256-bit hash to.</param>
     /// <exception cref="ArgumentException">Thrown when the output span length is not 32 bytes.</exception>
-    public static void Get256_Span(ReadOnlySpan<byte> input, Span<byte> output)
+    public static void Get256Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         if (output.Length != Hash256Size)
         {
@@ -87,10 +87,10 @@ public static class Blake2B
     /// </summary>
     /// <param name="input">The input data to hash.</param>
     /// <returns>A 512-bit hash as a byte array.</returns>
-    public static byte[] Get512_ByteArray(ReadOnlySpan<byte> input)
+    public static byte[] Get512ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[Hash512Size];
-        Get512_Span(input, output);
+        Get512Span(input, output);
         return output;
     }
 
@@ -100,7 +100,7 @@ public static class Blake2B
     /// <param name="input">The input data to hash.</param>
     /// <param name="output">The span to write the 512-bit hash to.</param>
     /// <exception cref="ArgumentException">Thrown when the output span length is not 64 bytes.</exception>
-    public static void Get512_Span(ReadOnlySpan<byte> input, Span<byte> output)
+    public static void Get512Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         if (output.Length != Hash512Size)
         {

@@ -28,7 +28,7 @@ public class Ed25519Test
         for (var i = 0; i < 100; i++)
         {// Create key, secret key -> public key, secret key -> seed
             random.NextBytes(seed);
-            CryptoSign.CreateKey(seed, secretKey, publicKey);
+            CryptoSign.CreateKeyPair(seed, secretKey, publicKey);
 
             CryptoSign.SecretKeyToPublicKey(secretKey, publicKey2);
             publicKey.SequenceEqual(publicKey2).IsTrue();
@@ -40,7 +40,7 @@ public class Ed25519Test
         for (var i = 0; i < 32; i++)
         {
             random.NextBytes(seed);
-            CryptoSign.CreateKey(seed, secretKey, publicKey);
+            CryptoSign.CreateKeyPair(seed, secretKey, publicKey);
 
             for (var j = 0; j < 1000; j += 13)
             {
@@ -78,8 +78,8 @@ public class Ed25519Test
         bool result;
 
         random.NextBytes(seed);
-        CryptoBox.CreateKey(seed, boxSecretKey, boxPublicKey);
-        CryptoBox.CreateKey(seed, boxSecretKey2, boxPublicKey2);
+        CryptoBox.CreateKeyPair(seed, boxSecretKey, boxPublicKey);
+        CryptoBox.CreateKeyPair(seed, boxSecretKey2, boxPublicKey2);
 
         CryptoBox.Encrypt(message, nonce, boxSecretKey, boxPublicKey2, cipher);
         result = CryptoBox.TryDecrypt(cipher, nonce, boxSecretKey, boxPublicKey2, message);
@@ -107,30 +107,30 @@ public class Ed25519Test
         Span<byte> nonce = new byte[CryptoBox.NonceSize];
         Span<byte> decrypted = new byte[MessageSize];
         Span<byte> signature = new byte[CryptoSign.SignatureSize];
-        Span<byte> material = new byte[CryptoBox.KeyMaterialSize];
-        Span<byte> material2 = new byte[CryptoBox.KeyMaterialSize];
+        Span<byte> material = new byte[CryptoBox.SharedSecretSize];
+        Span<byte> material2 = new byte[CryptoBox.SharedSecretSize];
 
         Span<byte> boxSecretKey2 = new byte[CryptoBox.SecretKeySize];
         Span<byte> boxPublicKey2 = new byte[CryptoBox.PublicKeySize];
         random.NextBytes(seed);
-        CryptoBox.CreateKey(seed, boxSecretKey2, boxPublicKey2);
+        CryptoBox.CreateKeyPair(seed, boxSecretKey2, boxPublicKey2);
 
         for (var i = 0; i < 1_000; i++)
         {
             random.NextBytes(seed);
 
-            CryptoSign.CreateKey(seed, signSecretKey, signPublicKey);
-            CryptoBox.CreateKey(seed, boxSecretKey, boxPublicKey);
-            CryptoDual.CreateKey(seed, dualSignSecretKey, dualSignPublicKey, dualBoxSecretKey, dualBoxPublicKey);
+            CryptoSign.CreateKeyPair(seed, signSecretKey, signPublicKey);
+            CryptoBox.CreateKeyPair(seed, boxSecretKey, boxPublicKey);
+            CryptoDual.CreateKeyPair(seed, dualSignSecretKey, dualSignPublicKey, dualBoxSecretKey, dualBoxPublicKey);
 
             dualSignSecretKey.SequenceEqual(signSecretKey).IsTrue();
             dualSignPublicKey.SequenceEqual(signPublicKey).IsTrue();
             dualBoxSecretKey.SequenceEqual(boxSecretKey).IsTrue();
-            CryptoDual.BoxPublicKey_Equals(dualBoxPublicKey, boxPublicKey).IsTrue();
+            CryptoDual.BoxPublicKeyEquals(dualBoxPublicKey, boxPublicKey).IsTrue();
 
-            CryptoDual.PublicKey_SignToBox(dualSignPublicKey, dualBoxPublicKey);
-            CryptoDual.BoxPublicKey_Equals(dualBoxPublicKey, boxPublicKey).IsTrue();
-            CryptoDual.PublicKey_BoxToSign(dualBoxPublicKey, dualSignPublicKey);
+            CryptoDual.ConvertSignPublicKeyToBox(dualSignPublicKey, dualBoxPublicKey);
+            CryptoDual.BoxPublicKeyEquals(dualBoxPublicKey, boxPublicKey).IsTrue();
+            CryptoDual.ConvertBoxPublicKeyToSign(dualBoxPublicKey, dualSignPublicKey);
             dualSignPublicKey.SequenceEqual(signPublicKey).IsTrue();
 
             // Encryption
@@ -152,8 +152,8 @@ public class Ed25519Test
             CryptoSign.Verify(message, signPublicKey, signature).IsFalse();
 
             // Key derivation
-            CryptoBox.DeriveKeyMaterial(boxSecretKey2, boxPublicKey, material);
-            CryptoBox.DeriveKeyMaterial(boxSecretKey, boxPublicKey2, material2);
+            CryptoBox.DeriveSharedSecret(boxSecretKey2, boxPublicKey, material);
+            CryptoBox.DeriveSharedSecret(boxSecretKey, boxPublicKey2, material2);
             material.SequenceEqual(material2).IsTrue();
         }
     }

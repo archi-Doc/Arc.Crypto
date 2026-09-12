@@ -259,16 +259,16 @@ public abstract class ECCurveBase
     /// Recovers the y coordinate of a point from its x coordinate and the compressed sign bit.
     /// </summary>
     /// <param name="x">The big-endian x coordinate. It must have <see cref="ByteLength"/> bytes and be below the field prime.</param>
-    /// <param name="y">The compressed y bit, as returned by <see cref="CompressY(ReadOnlySpan{byte})"/>.</param>
+    /// <param name="yBit">The compressed y bit, as returned by <see cref="CompressY(ReadOnlySpan{byte})"/>.</param>
     /// <returns>The big-endian y coordinate, or <see langword="null"/> if the point is not on the curve.</returns>
-    public byte[]? TryDecompressY(ReadOnlySpan<byte> x, uint y)
+    public byte[]? DecompressY(ReadOnlySpan<byte> x, uint yBit)
     {
         if (x.Length != this.ByteLength || x.SequenceCompareTo(this.ByteQ) >= 0)
         {
             return null;
         }
 
-        return this.DecompressPoint(y, x);
+        return this.DecompressPoint(yBit, x);
     }
 
     private byte[]? DecompressPoint(uint yTilde, ReadOnlySpan<byte> x1)

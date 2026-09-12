@@ -12,7 +12,7 @@ public class FarmHashTest
     {
         var farm = default(FarmHash);
 
-        Assert.Equal(FarmHash.Hash64(ReadOnlySpan<byte>.Empty), farm.Finalize());
+        Assert.Equal(FarmHash.Hash64(ReadOnlySpan<byte>.Empty), farm.FinalizeHash());
     }
 
     [Theory]
@@ -64,7 +64,7 @@ public class FarmHashTest
         var farm = default(FarmHash);
         farm.Append(data);
 
-        Assert.Equal(expected, farm.Finalize());
+        Assert.Equal(expected, farm.FinalizeHash());
     }
 
     [Theory]
@@ -99,7 +99,7 @@ public class FarmHashTest
             farm.Append(data.AsSpan(i, 1));
         }
 
-        Assert.Equal(expected, farm.Finalize());
+        Assert.Equal(expected, farm.FinalizeHash());
     }
 
     [Theory]
@@ -128,7 +128,7 @@ public class FarmHashTest
         farm.Append(data.AsSpan(0, split));
         farm.Append(data.AsSpan(split));
 
-        Assert.Equal(expected, farm.Finalize());
+        Assert.Equal(expected, farm.FinalizeHash());
     }
 
     [Theory]
@@ -155,7 +155,7 @@ public class FarmHashTest
             farm.Append(data.AsSpan(0, split));
             farm.Append(data.AsSpan(split));
 
-            Assert.Equal(expected, farm.Finalize());
+            Assert.Equal(expected, farm.FinalizeHash());
         }
     }
 
@@ -181,7 +181,7 @@ public class FarmHashTest
                 offset += count;
             }
 
-            Assert.Equal(expected, farm.Finalize());
+            Assert.Equal(expected, farm.FinalizeHash());
         }
     }
 
@@ -205,7 +205,7 @@ public class FarmHashTest
                 offset += count;
             }
 
-            Assert.Equal(expected, farm.Finalize());
+            Assert.Equal(expected, farm.FinalizeHash());
         }
     }
 
@@ -221,7 +221,7 @@ public class FarmHashTest
         farm.Append(data.AsSpan(200));
         farm.Append(ReadOnlySpan<byte>.Empty);
 
-        Assert.Equal(expected, farm.Finalize());
+        Assert.Equal(expected, farm.FinalizeHash());
     }
 
     [Fact]
@@ -232,8 +232,8 @@ public class FarmHashTest
         var farm = default(FarmHash);
         farm.Append(data);
 
-        var hash1 = farm.Finalize();
-        var hash2 = farm.Finalize();
+        var hash1 = farm.FinalizeHash();
+        var hash2 = farm.FinalizeHash();
 
         Assert.Equal(hash1, hash2);
         Assert.Equal(FarmHash.Hash64(data), hash1);
@@ -251,10 +251,10 @@ public class FarmHashTest
 
         var farm = default(FarmHash);
         farm.Append(data1);
-        _ = farm.Finalize();
+        _ = farm.FinalizeHash();
         farm.Append(data2);
 
-        Assert.Equal(FarmHash.Hash64(combined), farm.Finalize());
+        Assert.Equal(FarmHash.Hash64(combined), farm.FinalizeHash());
     }
 
     [Fact]
@@ -265,12 +265,12 @@ public class FarmHashTest
 
         var farm = default(FarmHash);
         farm.Append(first);
-        _ = farm.Finalize();
+        _ = farm.FinalizeHash();
 
-        farm.Initialize();
+        farm.Reset();
         farm.Append(second);
 
-        Assert.Equal(FarmHash.Hash64(second), farm.Finalize());
+        Assert.Equal(FarmHash.Hash64(second), farm.FinalizeHash());
     }
 
     [Fact]
@@ -281,12 +281,12 @@ public class FarmHashTest
 
         var farm = default(FarmHash);
         farm.Append(first);
-        _ = farm.Finalize();
+        _ = farm.FinalizeHash();
 
-        farm.Initialize();
+        farm.Reset();
         farm.Append(second);
 
-        Assert.Equal(FarmHash.Hash64(second), farm.Finalize());
+        Assert.Equal(FarmHash.Hash64(second), farm.FinalizeHash());
     }
 
     [Theory]
@@ -301,8 +301,8 @@ public class FarmHashTest
         var farm = default(FarmHash);
         farm.Append(text.AsSpan());
 
-        Assert.Equal(FarmHash.Hash64(text), farm.Finalize());
-        Assert.Equal(FarmHash.Hash64(text.AsSpan()), farm.Finalize());
+        Assert.Equal(FarmHash.Hash64(text), farm.FinalizeHash());
+        Assert.Equal(FarmHash.Hash64(text.AsSpan()), farm.FinalizeHash());
     }
 
     [Fact]
@@ -318,7 +318,7 @@ public class FarmHashTest
         farm.Append(b.AsSpan());
         farm.Append(c.AsSpan());
 
-        Assert.Equal(FarmHash.Hash64(combined), farm.Finalize());
+        Assert.Equal(FarmHash.Hash64(combined), farm.FinalizeHash());
     }
 
     [Fact]

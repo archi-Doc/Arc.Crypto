@@ -57,8 +57,8 @@ public class Utf16HashtableBenchmark
             this.concurrentDictionary.TryAdd(strings[i], strings[i]);
             this.hashtable.Add(strings[i], strings[i]);
             this.unorderedMap.Add(strings[i], strings[i]);
-            this.unorderedMapSlim.Add(strings[i], strings[i]);
-            this.utf16UnorderedMap.Add(strings[i], strings[i]);
+            this.unorderedMapSlim.AddOrUpdate(strings[i], strings[i]);
+            this.utf16UnorderedMap.AddOrUpdate(strings[i], strings[i]);
         }
     }
 
@@ -178,7 +178,7 @@ public class Utf16HashtableBenchmark
         using (this.lockObject.EnterScope())
         {
             var result = this.unorderedMapSlim.Remove(Id);
-            this.unorderedMapSlim.Add(Id, Id);
+            this.unorderedMapSlim.AddOrUpdate(Id, Id);
             return result;
         }
     }
@@ -189,7 +189,7 @@ public class Utf16HashtableBenchmark
         using (this.lockObject.EnterScope())
         {
             var result = this.utf16UnorderedMap.Remove(Id);
-            this.utf16UnorderedMap.Add(Id, Id);
+            this.utf16UnorderedMap.AddOrUpdate(Id, Id);
             return result;
         }
     }

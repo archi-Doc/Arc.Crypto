@@ -10,36 +10,36 @@ namespace Arc.Crypto;
 public interface IBase32Converter
 {
     /// <summary>
-    /// Encode from a byte array to a base32 (utf-8) span.
+    /// Encode bytes to a base32 (utf-8) span.
     /// </summary>
-    /// <param name="source">The source byte array.</param>
+    /// <param name="source">The source bytes.</param>
     /// <param name="destination">The destination span of byte (utf-8).<br/>Allocate an array of a length greater than or equal to <seealso cref="Base32Sort.GetEncodedLength(int)"/>.</param>
     /// <param name="written">The number of bytes that were written in destination.</param>
     /// <returns><see langword="true"/> if the encoding was successful; otherwise, <see langword="false"/>.</returns>
-    public bool FromByteArrayToSpan(ReadOnlySpan<byte> source, Span<byte> destination, out int written);
+    public bool FromBytesToSpan(ReadOnlySpan<byte> source, Span<byte> destination, out int written);
 
     /// <summary>
-    /// Encode from a byte array to a base32 (utf-16) span.
+    /// Encode bytes to a base32 (utf-16) span.
     /// </summary>
-    /// <param name="source">The source byte array.</param>
+    /// <param name="source">The source bytes.</param>
     /// <param name="destination">The destination span of char (utf-16).<br/>Allocate an array of a length greater than or equal to <seealso cref="Base32Sort.GetEncodedLength(int)"/>.</param>
     /// <param name="written">The number of bytes that were written in destination.</param>
     /// <returns><see langword="true"/> if the encoding was successful; otherwise, <see langword="false"/>.</returns>
-    public bool FromByteArrayToSpan(ReadOnlySpan<byte> source, Span<char> destination, out int written);
+    public bool FromBytesToSpan(ReadOnlySpan<byte> source, Span<char> destination, out int written);
 
     /// <summary>
-    /// Encode from a byte array to a base32 (utf-8) string.
+    /// Encode bytes to a base32 (utf-8) string.
     /// </summary>
     /// <param name="source">The data to be encoded.</param>
     /// <returns>An encoded utf-8 string.</returns>
-    public byte[] FromByteArrayToUtf8(ReadOnlySpan<byte> source);
+    public byte[] FromBytesToUtf8(ReadOnlySpan<byte> source);
 
     /// <summary>
-    /// Encode from a byte array to a base32 (utf-16) string.
+    /// Encode bytes to a base32 (utf-16) string.
     /// </summary>
     /// <param name="source">The data to be encoded.</param>
     /// <returns>An encoded utf-16 string.</returns>
-    public string FromByteArrayToString(ReadOnlySpan<byte> source);
+    public string FromBytesToString(ReadOnlySpan<byte> source);
 
     /// <summary>
     /// Decode from a base32 (utf-8) string to a byte array.

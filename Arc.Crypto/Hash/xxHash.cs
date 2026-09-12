@@ -14,7 +14,7 @@ namespace Arc.Crypto;
 /// <summary>
 /// xxHash 64bit Class.
 /// </summary>
-public unsafe partial class XxHash64 : InternalXXHash, IHash
+public unsafe partial class XxHash64 : XxHashBase, IHash
 {
     /// <summary>
     /// Length of the hash in bytes.
@@ -316,7 +316,7 @@ public unsafe partial class XxHash64 : InternalXXHash, IHash
 /// <summary>
 /// xxHash 32bit Class.
 /// </summary>
-public unsafe class XXHash32 : InternalXXHash, IHash
+public unsafe class XxHash32 : XxHashBase, IHash
 {
     private const uint PRIME32_1 = 2654435761u;
     private const uint PRIME32_2 = 2246822519u;
@@ -586,12 +586,12 @@ public unsafe class XXHash32 : InternalXXHash, IHash
 /// <summary>
 /// Base class for xxHash 32/64 bit. Do not use directly.
 /// </summary>
-public unsafe class InternalXXHash
+public unsafe class XxHashBase
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="InternalXXHash"/> class. Protected constructor to prevent instantiation.
+    /// Initializes a new instance of the <see cref="XxHashBase"/> class. Protected constructor to prevent instantiation.
     /// </summary>
-    protected InternalXXHash()
+    protected XxHashBase()
     {
     }
 

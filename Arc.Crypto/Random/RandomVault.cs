@@ -3,7 +3,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using Arc.Crypto.Random;
 
 namespace Arc.Crypto;
 
@@ -11,7 +10,7 @@ namespace Arc.Crypto;
 /// A thread-safe random number pool that buffers output from a supplied generator.
 /// Calls to the generator are serialized, including requests that bypass the buffer.
 /// </summary>
-public class RandomVault : RandomUInt64
+public class RandomVault : RandomUInt64Base
 {
     private const int DefaultBufferSize = 4096;
     private const int DefaultSkipVaultThreshold = 256;
@@ -20,7 +19,7 @@ public class RandomVault : RandomUInt64
     {
         var xo = new Xoshiro256StarStar();
         Xoshiro = new RandomVault(x => xo.NextBytes(x), 16);
-        RandomNumberGenerator = new RandomVault(x => System.Security.Cryptography.RandomNumberGenerator.Fill(x));
+        SystemRng = new RandomVault(x => RandomNumberGenerator.Fill(x));
         Libsodium = new RandomVault(x => CryptoRandom.NextBytes(x));
         var aegis = new AegisRandom();
         Aegis = new RandomVault(x => aegis.NextBytes(x), 16);
@@ -44,7 +43,7 @@ public class RandomVault : RandomUInt64
     /// <summary>
     ///  Gets the cryptographically secure pseudo random number pool (<see cref="RandomNumberGenerator.Fill(Span{byte})"/>).
     /// </summary>
-    public static RandomVault RandomNumberGenerator { get; }
+    public static RandomVault SystemRng { get; }
 
     /// <summary>
     ///  Gets the cryptographically secure pseudo random number pool (Libsodium: <see cref="CryptoRandom.NextBytes(Span{byte})"/>).

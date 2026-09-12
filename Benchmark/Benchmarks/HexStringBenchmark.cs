@@ -36,5 +36,5 @@ public class HexStringBenchmark
 
     [Benchmark]
     public string Hex_ByteArrayToString()
-        => Hex.FromByteArrayToString(this.testArray);
+        => Hex.FromBytesToString(this.testArray);
 }

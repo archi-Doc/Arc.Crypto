@@ -8,11 +8,11 @@ namespace Arc.Crypto;
 public static class CryptoRandom
 {
     /// <summary>
-    /// Fills the provided buffer with cryptographically secure random bytes.
+    /// Fills the specified span with cryptographically secure random bytes.
     /// </summary>
-    /// <param name="buffer">The buffer to fill with random bytes.</param>
-    public static void NextBytes(Span<byte> buffer)
+    /// <param name="destination">The span to fill with random bytes.</param>
+    public static void NextBytes(Span<byte> destination)
     {
-        LibsodiumInterops.randombytes_buf(buffer, (UIntPtr)buffer.Length);
+        LibsodiumInterops.randombytes_buf(destination, (UIntPtr)destination.Length);
     }
 }

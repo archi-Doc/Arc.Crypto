@@ -37,7 +37,7 @@ public static class Sha2Helper
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The computed hash (32 bytes).</returns>
-    public static byte[] Get256_ByteArray(ReadOnlySpan<byte> input)
+    public static byte[] Get256ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[32];
         ComputeHash(Sha256, input, output, 32);
@@ -51,7 +51,7 @@ public static class Sha2Helper
     /// <param name="input">The input to compute the hash for.</param>
     /// <param name="output">A buffer of at least 32 bytes; any trailing bytes are unchanged.</param>
     /// <exception cref="ArgumentException">The output buffer is too small.</exception>
-    public static void Get256_Span(ReadOnlySpan<byte> input, Span<byte> output)
+    public static void Get256Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         ComputeHash(Sha256, input, output, 32);
     }
@@ -61,7 +61,7 @@ public static class Sha2Helper
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The hash bytes interpreted as unsigned 64-bit words in native byte order.</returns>
-    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256_UInt64(ReadOnlySpan<byte> input)
+    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) Get256UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[4];
 
@@ -77,7 +77,7 @@ public static class Sha2Helper
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The computed hash (48 bytes).</returns>
-    public static byte[] Get384_ByteArray(ReadOnlySpan<byte> input)
+    public static byte[] Get384ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[48];
         ComputeHash(Sha384, input, output, 48);
@@ -91,7 +91,7 @@ public static class Sha2Helper
     /// <param name="input">The input to compute the hash for.</param>
     /// <param name="output">A buffer of at least 48 bytes; any trailing bytes are unchanged.</param>
     /// <exception cref="ArgumentException">The output buffer is too small.</exception>
-    public static void Get384_Span(ReadOnlySpan<byte> input, Span<byte> output)
+    public static void Get384Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         ComputeHash(Sha384, input, output, 48);
     }
@@ -101,7 +101,7 @@ public static class Sha2Helper
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The hash bytes interpreted as unsigned 64-bit words in native byte order.</returns>
-    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) Get384_UInt64(ReadOnlySpan<byte> input)
+    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5) Get384UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[6];
 
@@ -115,7 +115,7 @@ public static class Sha2Helper
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The computed hash (64 bytes).</returns>
-    public static byte[] Get512_ByteArray(ReadOnlySpan<byte> input)
+    public static byte[] Get512ByteArray(ReadOnlySpan<byte> input)
     {
         var output = new byte[64];
         ComputeHash(Sha512, input, output, 64);
@@ -129,7 +129,7 @@ public static class Sha2Helper
     /// <param name="input">The input to compute the hash for.</param>
     /// <param name="output">A buffer of at least 64 bytes; any trailing bytes are unchanged.</param>
     /// <exception cref="ArgumentException">The output buffer is too small.</exception>
-    public static void Get512_Span(ReadOnlySpan<byte> input, Span<byte> output)
+    public static void Get512Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         ComputeHash(Sha512, input, output, 64);
     }
@@ -139,7 +139,7 @@ public static class Sha2Helper
     /// </summary>
     /// <param name="input">The input to compute the hash for.</param>
     /// <returns>The hash bytes interpreted as unsigned 64-bit words in native byte order.</returns>
-    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Get512_UInt64(ReadOnlySpan<byte> input)
+    public static (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3, ulong Hash4, ulong Hash5, ulong Hash6, ulong Hash7) Get512UInt64(ReadOnlySpan<byte> input)
     {
         Span<ulong> state = stackalloc ulong[8];
 
@@ -154,7 +154,7 @@ public static class Sha2Helper
     /// <param name="input">The input to compute the hash for.</param>
     /// <param name="output">A buffer of at least 64 bytes; any trailing bytes are unchanged.</param>
     /// <exception cref="ArgumentException">The output buffer is too small.</exception>
-    public static void Get512_Libsodium(ReadOnlySpan<byte> input, Span<byte> output)
+    public static void Get512SpanLibsodium(ReadOnlySpan<byte> input, Span<byte> output)
     {
         if (output.Length < 64)
         {

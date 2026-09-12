@@ -44,13 +44,13 @@ public class BoundaryRegressionTest
     public void RandomRangesAndFloatingPointEndpoints()
     {
         var random = new ConstantRandom(0);
-        Assert.Equal(0, RandomUInt64.Log2Ceiling(0));
-        Assert.Equal(0, RandomUInt64.Log2Ceiling(1));
-        Assert.Equal(64, RandomUInt64.Log2Ceiling(ulong.MaxValue));
+        Assert.Equal(0, RandomUInt64Base.Log2Ceiling(0));
+        Assert.Equal(0, RandomUInt64Base.Log2Ceiling(1));
+        Assert.Equal(64, RandomUInt64Base.Log2Ceiling(ulong.MaxValue));
         for (var bit = 1; bit < 64; bit++)
         {
-            Assert.Equal(bit, RandomUInt64.Log2Ceiling(1UL << bit));
-            Assert.Equal(bit + 1, RandomUInt64.Log2Ceiling((1UL << bit) + 1));
+            Assert.Equal(bit, RandomUInt64Base.Log2Ceiling(1UL << bit));
+            Assert.Equal(bit + 1, RandomUInt64Base.Log2Ceiling((1UL << bit) + 1));
         }
 
         Assert.Equal(0, random.NextInt32(0));
@@ -60,8 +60,8 @@ public class BoundaryRegressionTest
         Assert.Equal(int.MinValue, random.NextInt32(int.MinValue, int.MaxValue));
         Assert.Equal(long.MinValue, random.NextInt64(long.MinValue, long.MaxValue));
         Assert.Equal(0, random.NextDouble());
-        Assert.Equal(0, random.NextDouble2());
-        Assert.True(random.NextDouble3() > 0);
+        Assert.Equal(0, random.NextDoubleInclusive());
+        Assert.True(random.NextDoubleExclusive() > 0);
         random.Value = ulong.MaxValue;
         Assert.Equal(ulong.MaxValue, random.NextUInt64());
         Assert.Equal(long.MaxValue, random.NextInt63());
@@ -70,8 +70,8 @@ public class BoundaryRegressionTest
         Assert.Equal(int.MaxValue, random.NextInt31());
         Assert.Equal(-1, random.NextInt64());
         Assert.True(random.NextDouble() < 1);
-        Assert.Equal(1, random.NextDouble2());
-        Assert.True(random.NextDouble3() < 1);
+        Assert.Equal(1, random.NextDoubleInclusive());
+        Assert.True(random.NextDoubleExclusive() < 1);
         Assert.True(random.NextSingle() < 1);
 
         var generator = new Xoshiro256StarStar(42);
@@ -87,12 +87,12 @@ public class BoundaryRegressionTest
     public void Sha2RejectsShortDestinationsBeforeWriting()
     {
         var buffer = Enumerable.Repeat((byte)0xA5, 80).ToArray();
-        Assert.Throws<ArgumentException>(() => Sha2Helper.Get256_Span("abc"u8, buffer.AsSpan(0, 31)));
-        Assert.Throws<ArgumentException>(() => Sha2Helper.Get384_Span("abc"u8, buffer.AsSpan(0, 47)));
-        Assert.Throws<ArgumentException>(() => Sha2Helper.Get512_Span("abc"u8, buffer.AsSpan(0, 63)));
+        Assert.Throws<ArgumentException>(() => Sha2Helper.Get256Span("abc"u8, buffer.AsSpan(0, 31)));
+        Assert.Throws<ArgumentException>(() => Sha2Helper.Get384Span("abc"u8, buffer.AsSpan(0, 47)));
+        Assert.Throws<ArgumentException>(() => Sha2Helper.Get512Span("abc"u8, buffer.AsSpan(0, 63)));
 
         // The backing array is large enough even on the old, unchecked native path.
-        Assert.Throws<ArgumentException>(() => Sha2Helper.Get512_Libsodium("abc"u8, buffer.AsSpan(0, 63)));
+        Assert.Throws<ArgumentException>(() => Sha2Helper.Get512SpanLibsodium("abc"u8, buffer.AsSpan(0, 63)));
         Assert.All(buffer, value => Assert.Equal(0xA5, value));
     }
 
@@ -110,9 +110,9 @@ public class BoundaryRegressionTest
         sponge.SqueezeTo(output);
         var expected = bits switch
         {
-            256 => Sha3Helper.Get256_ByteArray("abc"u8),
-            384 => Sha3Helper.Get384_ByteArray("abc"u8),
-            _ => Sha3Helper.Get512_ByteArray("abc"u8),
+            256 => Sha3Helper.Get256ByteArray("abc"u8),
+            384 => Sha3Helper.Get384ByteArray("abc"u8),
+            _ => Sha3Helper.Get512ByteArray("abc"u8),
         };
         Assert.Equal(expected, output[..(bits / 8)].ToArray());
     }
@@ -120,14 +120,14 @@ public class BoundaryRegressionTest
     [Fact]
     public void CurveRejectsNonCanonicalCoordinates()
     {
-        foreach (var curve in new ECCurveBase[] { P256K1Curve.Instance, P256R1Curve.Instance, })
+        foreach (var curve in new ECCurveBase[] { Secp256k1Curve.Instance, Secp256r1Curve.Instance, })
         {
             var q = new BigInteger(curve.ByteQ, isUnsigned: true, isBigEndian: true);
             for (var offset = 0; offset < 32; offset++)
             {
                 var x = (q + offset).ToByteArray(isUnsigned: true, isBigEndian: true);
-                Assert.Null(curve.TryDecompressY(x, 0));
-                Assert.Null(curve.TryDecompressY(x, 1));
+                Assert.Null(curve.DecompressY(x, 0));
+                Assert.Null(curve.DecompressY(x, 1));
             }
         }
     }
@@ -137,7 +137,7 @@ public class BoundaryRegressionTest
     {
         var random = new Random(42);
         var seed = new byte[32];
-        foreach (var curve in new ECCurveBase[] { P256K1Curve.Instance, P256R1Curve.Instance, })
+        foreach (var curve in new ECCurveBase[] { Secp256k1Curve.Instance, Secp256r1Curve.Instance, })
         {
             var order = new BigInteger(curve.ByteOrder, isUnsigned: true, isBigEndian: true);
             for (var i = 0; i < 2_000; i++)
@@ -155,7 +155,7 @@ public class BoundaryRegressionTest
         }
     }
 
-    private sealed class ConstantRandom(ulong value) : RandomUInt64
+    private sealed class ConstantRandom(ulong value) : RandomUInt64Base
     {
         public ulong Value { get; set; } = value;
 

@@ -26,8 +26,8 @@ public class ECTest
             {
                 var p = ecdh.ExportParameters(false);
 
-                var yt = P256R1Curve.Instance.CompressY(p.Q.Y!);
-                var y = P256R1Curve.Instance.TryDecompressY(p.Q.X!, yt);
+                var yt = Secp256r1Curve.Instance.CompressY(p.Q.Y!);
+                var y = Secp256r1Curve.Instance.DecompressY(p.Q.X!, yt);
                 y!.SequenceEqual(p.Q.Y!).IsTrue();
             }
         }
@@ -39,8 +39,8 @@ public class ECTest
             {
                 var p = ecdh.ExportParameters(false);
 
-                var yt = P256K1Curve.Instance.CompressY(p.Q.Y!);
-                var y = P256K1Curve.Instance.TryDecompressY(p.Q.X!, yt);
+                var yt = Secp256k1Curve.Instance.CompressY(p.Q.Y!);
+                var y = Secp256k1Curve.Instance.DecompressY(p.Q.X!, yt);
                 y!.SequenceEqual(p.Q.Y!).IsTrue();
             }
         }
@@ -52,38 +52,38 @@ public class ECTest
         var xo = new Xoshiro256StarStar(42);
         var rv = new RandomVault(x => xo.NextBytes(x));
 
-        P256K1Curve.Instance.IsValidSeed(new byte[1]).IsFalse();
+        Secp256k1Curve.Instance.IsValidSeed(new byte[1]).IsFalse();
 
-        var seed = new byte[P256K1Curve.Instance.ByteLength];
-        P256K1Curve.Instance.IsValidSeed(seed).IsFalse();
+        var seed = new byte[Secp256k1Curve.Instance.ByteLength];
+        Secp256k1Curve.Instance.IsValidSeed(seed).IsFalse();
 
-        var order = Hex.FromStringToByteArray(P256K1Curve.HexOrder);
-        P256K1Curve.Instance.IsValidSeed(order).IsFalse();
+        var order = Hex.FromStringToByteArray(Secp256k1Curve.HexOrder);
+        Secp256k1Curve.Instance.IsValidSeed(order).IsFalse();
         order[order.Length - 1]++;
-        P256K1Curve.Instance.IsValidSeed(order).IsFalse();
+        Secp256k1Curve.Instance.IsValidSeed(order).IsFalse();
 
         for (var i = 0; i < 1; i++)
         {
             rv.NextBytes(seed);
 
-            P256K1Curve.Instance.IsValidSeed(seed);
+            Secp256k1Curve.Instance.IsValidSeed(seed);
         }
 
-        P256R1Curve.Instance.IsValidSeed(new byte[1]).IsFalse();
+        Secp256r1Curve.Instance.IsValidSeed(new byte[1]).IsFalse();
 
-        seed = new byte[P256R1Curve.Instance.ByteLength];
-        P256R1Curve.Instance.IsValidSeed(seed).IsFalse();
+        seed = new byte[Secp256r1Curve.Instance.ByteLength];
+        Secp256r1Curve.Instance.IsValidSeed(seed).IsFalse();
 
-        order = Hex.FromStringToByteArray(P256R1Curve.HexOrder);
-        P256R1Curve.Instance.IsValidSeed(order).IsFalse();
+        order = Hex.FromStringToByteArray(Secp256r1Curve.HexOrder);
+        Secp256r1Curve.Instance.IsValidSeed(order).IsFalse();
         order[order.Length - 1]++;
-        P256R1Curve.Instance.IsValidSeed(order).IsFalse();
+        Secp256r1Curve.Instance.IsValidSeed(order).IsFalse();
 
         for (var i = 0; i < 1; i++)
         {
             rv.NextBytes(seed);
 
-            P256R1Curve.Instance.IsValidSeed(seed);
+            Secp256r1Curve.Instance.IsValidSeed(seed);
         }
     }
 
@@ -93,8 +93,8 @@ public class ECTest
         var total = 1_000;
         var curves = new ECCurveBase[]
         {
-            P256K1Curve.Instance,
-            P256R1Curve.Instance,
+            Secp256k1Curve.Instance,
+            Secp256r1Curve.Instance,
         };
 
         var random = new Random(130);
@@ -192,7 +192,7 @@ public class ECTest
     public void P256K1_ReduceBoundaries()
     {
         var rng = new Random(4242);
-        var q = ToBig(P256K1Curve.Instance.UIntQ);
+        var q = ToBig(Secp256k1Curve.Instance.UIntQ);
         var max = (BigInteger.One << 256) - 1;
         var c = (BigInteger.One << 32) + 977;
         var xx = new uint[16];
@@ -213,8 +213,8 @@ public class ECTest
                 hi >>= 32;
             }
 
-            P256K1Curve.Reduce(xx, zA);
-            P256K1Curve.ReduceSoft(xx, zB);
+            Secp256k1Curve.Reduce(xx, zA);
+            Secp256k1Curve.ReduceSoft(xx, zB);
             zA.AsSpan().SequenceEqual(zB).IsTrue();
             (ToBig(zA) == ToBig(xx) % q).IsTrue();
         }
@@ -246,7 +246,7 @@ public class ECTest
     public void ElementSquareN_MatchesRepeatedSquares()
     {
         var rng = new Random(90210);
-        var curves = new ECCurveBase[] { P256K1Curve.Instance, P256R1Curve.Instance };
+        var curves = new ECCurveBase[] { Secp256k1Curve.Instance, Secp256r1Curve.Instance };
         var x = new uint[8];
         var a = new uint[8];
         var b = new uint[8];
@@ -274,13 +274,13 @@ public class ECTest
                 }
 
                 var n = 1 + rng.Next(10);
-                if (curve is P256K1Curve)
+                if (curve is Secp256k1Curve)
                 {
-                    P256K1Curve.ElementSquareN(x, n, a);
+                    Secp256k1Curve.ElementSquareN(x, n, a);
                 }
                 else
                 {
-                    P256R1Curve.ElementSquareN(x, n, a);
+                    Secp256r1Curve.ElementSquareN(x, n, a);
                 }
 
                 x.CopyTo(b, 0);
@@ -305,8 +305,8 @@ public class ECTest
     public void CorrectionHelpers()
     {
         var rng = new Random(5150);
-        var pR1 = BigInteger.Parse("0" + P256R1Curve.HexQ, NumberStyles.HexNumber);
-        var pK1 = BigInteger.Parse("0" + P256K1Curve.HexQ, NumberStyles.HexNumber);
+        var pR1 = BigInteger.Parse("0" + Secp256r1Curve.HexQ, NumberStyles.HexNumber);
+        var pK1 = BigInteger.Parse("0" + Secp256k1Curve.HexQ, NumberStyles.HexNumber);
         var two256 = BigInteger.One << 256;
 
         var values = new List<BigInteger>
@@ -336,14 +336,14 @@ public class ECTest
             var r3 = (ulong)((v >> 192) & m);
 
             var (a0, a1, a2, a3) = (r0, r1, r2, r3);
-            P256R1Curve.AddPInv(ref a0, ref a1, ref a2, ref a3);
+            Secp256r1Curve.AddPInv(ref a0, ref a1, ref a2, ref a3);
             var joined = a0 | ((BigInteger)a1 << 64) | ((BigInteger)a2 << 128) | ((BigInteger)a3 << 192);
             (joined == (v + two256 - pR1) % two256).IsTrue();
 
-            (P256R1Curve.GteP(r0, r1, r2, r3) == (v >= pR1)).IsTrue();
+            (Secp256r1Curve.GteP(r0, r1, r2, r3) == (v >= pR1)).IsTrue();
 
             (a0, a1, a2, a3) = (r0, r1, r2, r3);
-            P256K1Curve.SubtractP(ref a0, ref a1, ref a2, ref a3);
+            Secp256k1Curve.SubtractP(ref a0, ref a1, ref a2, ref a3);
             joined = a0 | ((BigInteger)a1 << 64) | ((BigInteger)a2 << 128) | ((BigInteger)a3 << 192);
             (joined == (v + two256 - pK1) % two256).IsTrue();
         }
@@ -356,7 +356,7 @@ public class ECTest
     public void FieldOps_MatchBigInteger()
     {
         var rng = new Random(777);
-        var curves = new ECCurveBase[] { P256K1Curve.Instance, P256R1Curve.Instance };
+        var curves = new ECCurveBase[] { Secp256k1Curve.Instance, Secp256r1Curve.Instance };
         var x = new uint[8];
         var y = new uint[8];
         var z = new uint[8];

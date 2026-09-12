@@ -14,7 +14,7 @@ public static class Hex
     /// </summary>
     /// <param name="bytes">The bytes to convert.</param>
     /// <returns>A hexadecimal string twice as long as <paramref name="bytes"/>.</returns>
-    public static string FromByteArrayToString(ReadOnlySpan<byte> bytes)
+    public static string FromBytesToString(ReadOnlySpan<byte> bytes)
         => Convert.ToHexStringLower(bytes); // Vectorized in the BCL, and writes straight into the string.
 
     /// <summary>
@@ -22,18 +22,18 @@ public static class Hex
     /// Both upper-case and lower-case digits are accepted. For performance reasons the input is not validated,
     /// and characters outside <c>0-9</c>, <c>a-f</c> and <c>A-F</c> produce unspecified bytes.
     /// </summary>
-    /// <param name="str">The hexadecimal string to convert. Its length must be even.</param>
-    /// <returns>A byte array half as long as <paramref name="str"/>.</returns>
-    /// <exception cref="ArgumentException">Thrown when the length of <paramref name="str"/> is odd.</exception>
-    public static byte[] FromStringToByteArray(string str)
+    /// <param name="hex">The hexadecimal string to convert. Its length must be even.</param>
+    /// <returns>A byte array half as long as <paramref name="hex"/>.</returns>
+    /// <exception cref="ArgumentException">Thrown when the length of <paramref name="hex"/> is odd.</exception>
+    public static byte[] FromStringToByteArray(string hex)
     {
-        if ((str.Length & 1) != 0)
+        if ((hex.Length & 1) != 0)
         {
-            throw new ArgumentException($"The length of {nameof(str)} must be even.", nameof(str));
+            throw new ArgumentException($"The length of {nameof(hex)} must be even.", nameof(hex));
         }
 
-        ReadOnlySpan<char> span = str.AsSpan();
-        var result = new byte[str.Length / 2];
+        ReadOnlySpan<char> span = hex.AsSpan();
+        var result = new byte[hex.Length / 2];
         for (var i = 0; i < result.Length; i++)
         {
             int high = span[i * 2];

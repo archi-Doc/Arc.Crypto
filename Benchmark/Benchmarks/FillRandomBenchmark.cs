@@ -1,7 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System.Security.Cryptography;
-using Arc.Crypto.Random;
+using Arc.Crypto;
 using BenchmarkDotNet.Attributes;
 
 namespace Benchmark;

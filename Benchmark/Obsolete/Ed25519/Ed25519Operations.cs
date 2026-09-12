@@ -17,7 +17,7 @@ internal static class Ed25519Operations
         seed.CopyTo(expandedPrivateKey);
 
         Span<byte> hash = stackalloc byte[64];
-        Sha2Helper.Get512_Span(seed, hash);
+        Sha2Helper.Get512Span(seed, hash);
 
         ScalarOperations.sc_clamp(hash, 0);
 
