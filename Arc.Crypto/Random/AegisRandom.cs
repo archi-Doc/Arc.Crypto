@@ -15,14 +15,13 @@ public class AegisRandom
     private const int RandomSize = 1024;
     private const int KeyNonceSize = Aegis256.KeySize + Aegis256.NonceSize;
     private const int SourceSize = RandomSize + KeyNonceSize;
-    private const int DestinationSize = RandomSize + KeyNonceSize + Aegis256.MinTagSize;
     private const int StoreSize = 4096;
 
     #region FieldAndProperty
 
     private readonly Xoshiro256StarStar xo = new();
     private readonly byte[] source = new byte[SourceSize];
-    private readonly byte[] destination = new byte[DestinationSize];
+    private readonly byte[] destination = new byte[SourceSize];
     private readonly byte[] store = new byte[StoreSize];
     private int position;
     private int storeRemaining;
@@ -84,7 +83,8 @@ public class AegisRandom
         s[0] ^= (ulong)Stopwatch.GetTimestamp();
 
         this.xo.NextBytes(this.source);
-        Aegis256.Encrypt(this.destination, this.source, keyNonce.Slice(Aegis256.KeySize, Aegis256.NonceSize), keyNonce.Slice(0, Aegis256.KeySize));
+        // The output is used as a key stream, so the authentication tag is never needed.
+        Aegis256.Encrypt(this.destination, this.source, keyNonce.Slice(Aegis256.KeySize, Aegis256.NonceSize), keyNonce.Slice(0, Aegis256.KeySize), default, 0);
         this.position = 0;
     }
 }

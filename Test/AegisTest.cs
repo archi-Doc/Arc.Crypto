@@ -250,11 +250,11 @@ public class AegisTest
         for (var i = 0; i < Length; i += 13)
         {
             Aegis256.Encrypt(cipher[..i], message[..i], nonce256, key256, default, 0);
-            Aegis256.TryDecrypt(decrypted[..i], cipher[..i], nonce256, key256, default, 0);
+            Aegis256.TryDecrypt(decrypted[..i], cipher[..i], nonce256, key256, default, 0).IsTrue();
             decrypted[..i].SequenceEqual(message[..i]).IsTrue();
 
             Aegis128L.Encrypt(cipher[..i], message[..i], nonce128, key128, default, 0);
-            Aegis128L.TryDecrypt(decrypted[..i], cipher[..i], nonce128, key128, default, 0);
+            Aegis128L.TryDecrypt(decrypted[..i], cipher[..i], nonce128, key128, default, 0).IsTrue();
             decrypted[..i].SequenceEqual(message[..i]).IsTrue();
         }
     }
@@ -381,7 +381,7 @@ public class AegisTest
             var cipher2 = new byte[message.Length + Aegis128L.MaxTagSize];
 
             Aegis128L.Encrypt(cipher, message, nonce, key, default, 32);
-            Aegis128L.TryDecrypt(message2, cipher, nonce, key, default, 32);
+            Aegis128L.TryDecrypt(message2, cipher, nonce, key, default, 32).IsTrue();
             message.SequenceEqual(message2).IsTrue();
         }
     }

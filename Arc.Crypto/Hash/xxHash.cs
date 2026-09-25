@@ -29,6 +29,14 @@ public unsafe partial class XxHash64 : XxHashBase, IHash
 
     private XXH64_state state;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="XxHash64"/> class.
+    /// </summary>
+    public XxHash64()
+    {
+        this.HashInitialize();
+    }
+
     /// <inheritdoc/>
     public string HashName => "xxHash64";
 
@@ -325,6 +333,14 @@ public unsafe class XxHash32 : XxHashBase, IHash
     private const uint PRIME32_5 = 374761393u;
 
     private XXH32_state state;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="XxHash32"/> class.
+    /// </summary>
+    public XxHash32()
+    {
+        this.HashInitialize();
+    }
 
     /// <inheritdoc/>
     public string HashName => "xxHash32";

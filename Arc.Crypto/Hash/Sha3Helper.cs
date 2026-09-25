@@ -179,7 +179,7 @@ internal unsafe ref struct KeccakSpongeStruct
     {
         if (outputBits != 224 && outputBits != 256 && outputBits != 384 && outputBits != 512)
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(outputBits));
         }
 
         this.OutputBits = outputBits;
@@ -187,6 +187,25 @@ internal unsafe ref struct KeccakSpongeStruct
         this.State = state[..StateLength];
         this.State.Clear();
         this.statePosition = 0;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="KeccakSpongeStruct"/> struct that resumes an existing sponge state.
+    /// </summary>
+    /// <param name="outputBits">The number of hash size in bits.</param>
+    /// <param name="state">The sponge state (ulong[StateLength]) to resume.</param>
+    /// <param name="statePosition">The byte position within the rate, as returned by <see cref="StatePosition"/>.</param>
+    public KeccakSpongeStruct(int outputBits, Span<ulong> state, int statePosition)
+    {
+        if (outputBits != 224 && outputBits != 256 && outputBits != 384 && outputBits != 512)
+        {
+            throw new ArgumentOutOfRangeException(nameof(outputBits));
+        }
+
+        this.OutputBits = outputBits;
+        this.Bitrate = 1600 - (this.OutputBits * 2);
+        this.State = state[..StateLength];
+        this.statePosition = statePosition;
     }
 
     #region FieldAndProperty
@@ -198,6 +217,11 @@ internal unsafe ref struct KeccakSpongeStruct
     public readonly int Bitrate; // 1600 - (this.OutputBits * 2)
     public readonly Span<ulong> State;
     private int statePosition;
+
+    /// <summary>
+    /// Gets the byte position within the rate at which the next input is absorbed.
+    /// </summary>
+    public readonly int StatePosition => this.statePosition;
 
     #endregion
 

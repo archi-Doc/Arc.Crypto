@@ -70,6 +70,22 @@ public static class CryptoDual
             BaseHelper.ThrowSizeMismatchException(nameof(boxPublicKey32), CryptoBox.PublicKeySize);
         }
 
+        if (seed32.Overlaps(signSecretKey64) || seed32.Overlaps(signPublicKey32) || seed32.Overlaps(boxSecretKey32) || seed32.Overlaps(boxPublicKey32))
+        {// The seed is read again after the first keys are written (e.g. seed32 = signSecretKey64[..32]), so work from a copy.
+            Span<byte> copy = stackalloc byte[CryptoSign.SeedSize];
+            try
+            {
+                seed32.CopyTo(copy);
+                CreateKeyPair(copy, signSecretKey64, signPublicKey32, boxSecretKey32, boxPublicKey32);
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(copy);
+            }
+
+            return;
+        }
+
         LibsodiumInterops.crypto_sign_seed_keypair(signPublicKey32, signSecretKey64, seed32);
         LibsodiumInterops.crypto_box_seed_keypair(boxPublicKey32, boxSecretKey32, seed32);
 
@@ -102,7 +118,7 @@ public static class CryptoDual
 
     /// <summary>
     /// Converts a signature public key(32) to an encryption public key(32).
-    /// Input and output may overlap; the additional sign bit is preserved.
+    /// Input and output may overlap; the additional sign bit is preserved. The input key is not validated.
     /// </summary>
     /// <param name="signPublicKey32">The signature public key. The size must be <see cref="CryptoSign.PublicKeySize"/>(32 bytes).</param>
     /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/>(32 bytes).</param>
@@ -120,11 +136,13 @@ public static class CryptoDual
 
         // return LibsodiumInterops.crypto_sign_ed25519_pk_to_curve25519(boxPublicKey32, signPublicKey32) == 0;
 
+        // Only y is needed: u = (1 + y) / (1 - y). Decoding the whole point would add a square root, and an
+        // invalid key would silently map to u = 1; the input key is not validated, as in the reverse conversion.
         var signBit = (byte)(0x80 & signPublicKey32[31]);
-        Ed25519Internal.ge25519_frombytes_negate_vartime(out var a, signPublicKey32);
+        Ed25519Internal.fe25519_frombytes(out var y, signPublicKey32);
         var one = new fe25519(1);
-        Ed25519Internal.fe25519_sub(out var xMinusOne, ref one, ref a.Y);
-        Ed25519Internal.fe25519_add(out var xPlusOne, ref one, ref a.Y);
+        Ed25519Internal.fe25519_sub(out var xMinusOne, ref one, ref y);
+        Ed25519Internal.fe25519_add(out var xPlusOne, ref one, ref y);
         Ed25519Internal.fe25519_invert(out var inv, ref xMinusOne);
         Ed25519Internal.fe25519_mul(out var res, ref xPlusOne, ref inv);
         Ed25519Internal.fe25519_tobytes(boxPublicKey32, ref res);

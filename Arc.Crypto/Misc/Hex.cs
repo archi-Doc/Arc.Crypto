@@ -19,31 +19,21 @@ public static class Hex
 
     /// <summary>
     /// Converts a hexadecimal string to a byte array.<br/>
-    /// Both upper-case and lower-case digits are accepted. For performance reasons the input is not validated,
-    /// and characters outside <c>0-9</c>, <c>a-f</c> and <c>A-F</c> produce unspecified bytes.
+    /// Both upper-case and lower-case digits are accepted.
     /// </summary>
     /// <param name="hex">The hexadecimal string to convert. Its length must be even.</param>
     /// <returns>A byte array half as long as <paramref name="hex"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="hex"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when the length of <paramref name="hex"/> is odd.</exception>
+    /// <exception cref="FormatException">Thrown when <paramref name="hex"/> contains a character outside <c>0-9</c>, <c>a-f</c> and <c>A-F</c>.</exception>
     public static byte[] FromStringToByteArray(string hex)
     {
+        ArgumentNullException.ThrowIfNull(hex);
         if ((hex.Length & 1) != 0)
         {
             throw new ArgumentException($"The length of {nameof(hex)} must be even.", nameof(hex));
         }
 
-        ReadOnlySpan<char> span = hex.AsSpan();
-        var result = new byte[hex.Length / 2];
-        for (var i = 0; i < result.Length; i++)
-        {
-            int high = span[i * 2];
-            int low = span[(i * 2) + 1];
-            high = (high & 0xf) + (((high & 0x40) >> 6) * 9);
-            low = (low & 0xf) + (((low & 0x40) >> 6) * 9);
-
-            result[i] = (byte)((high << 4) | low);
-        }
-
-        return result;
+        return Convert.FromHexString(hex); // Vectorized in the BCL, and validates every digit.
     }
 }
