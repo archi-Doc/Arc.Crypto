@@ -137,8 +137,8 @@ internal class Base32SortReference : IBase32Converter
     internal nint CharToValue(char c)
     {
         if (c > byte.MaxValue)
-        {
-            return -1;
+        {// Same marker as the table uses for invalid characters.
+            return byte.MaxValue;
         }
         else
         {

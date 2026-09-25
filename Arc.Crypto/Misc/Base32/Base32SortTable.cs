@@ -1,7 +1,6 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
-using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -251,7 +250,6 @@ internal class Base32SortTable : IBase32Converter
         var j = 0;
         fixed (byte* table = &encodeTable[0])
         {
-            long* lp = (long*)chars;
             for (i = 0; i < n; i += 5)
             {
                 chars[j] = table[(bytes[i] & 0b11111000) >> 3];
@@ -314,14 +312,20 @@ internal class Base32SortTable : IBase32Converter
         {
             for (i = 0; i < n; i += 8)
             {
-                var i0 = table[inChars[i] & 0xFF];
-                var i1 = table[inChars[i + 1] & 0xFF];
-                var i2 = table[inChars[i + 2] & 0xFF];
-                var i3 = table[inChars[i + 3] & 0xFF];
-                var i4 = table[inChars[i + 4] & 0xFF];
-                var i5 = table[inChars[i + 5] & 0xFF];
-                var i6 = table[inChars[i + 6] & 0xFF];
-                var i7 = table[inChars[i + 7] & 0xFF];
+                // Reject characters above U+00FF in one test (the high byte of every 16-bit lane), then index the table directly.
+                if (((Unsafe.ReadUnaligned<ulong>(inChars + i) | Unsafe.ReadUnaligned<ulong>(inChars + i + 4)) & 0xFF00_FF00_FF00_FF00UL) != 0)
+                {
+                    return false;
+                }
+
+                var i0 = table[inChars[i]];
+                var i1 = table[inChars[i + 1]];
+                var i2 = table[inChars[i + 2]];
+                var i3 = table[inChars[i + 3]];
+                var i4 = table[inChars[i + 4]];
+                var i5 = table[inChars[i + 5]];
+                var i6 = table[inChars[i + 6]];
+                var i7 = table[inChars[i + 7]];
                 if (IsInvalid(i0, i1, i2, i3, i4, i5, i6, i7))
                 {
                     return false;
@@ -339,13 +343,13 @@ internal class Base32SortTable : IBase32Converter
             var remaining = length - i;
             if (remaining == 7)
             {
-                var i0 = table[inChars[i] & 0xFF];
-                var i1 = table[inChars[i + 1] & 0xFF];
-                var i2 = table[inChars[i + 2] & 0xFF];
-                var i3 = table[inChars[i + 3] & 0xFF];
-                var i4 = table[inChars[i + 4] & 0xFF];
-                var i5 = table[inChars[i + 5] & 0xFF];
-                var i6 = table[inChars[i + 6] & 0xFF];
+                var i0 = Lookup(table, inChars[i]);
+                var i1 = Lookup(table, inChars[i + 1]);
+                var i2 = Lookup(table, inChars[i + 2]);
+                var i3 = Lookup(table, inChars[i + 3]);
+                var i4 = Lookup(table, inChars[i + 4]);
+                var i5 = Lookup(table, inChars[i + 5]);
+                var i6 = Lookup(table, inChars[i + 6]);
                 if (IsInvalid(i0, i1, i2, i3, i4, i5, i6))
                 {
                     return false;
@@ -358,12 +362,12 @@ internal class Base32SortTable : IBase32Converter
             }
             else if (remaining == 6)
             {
-                var i0 = table[inChars[i] & 0xFF];
-                var i1 = table[inChars[i + 1] & 0xFF];
-                var i2 = table[inChars[i + 2] & 0xFF];
-                var i3 = table[inChars[i + 3] & 0xFF];
-                var i4 = table[inChars[i + 4] & 0xFF];
-                var i5 = table[inChars[i + 5] & 0xFF];
+                var i0 = Lookup(table, inChars[i]);
+                var i1 = Lookup(table, inChars[i + 1]);
+                var i2 = Lookup(table, inChars[i + 2]);
+                var i3 = Lookup(table, inChars[i + 3]);
+                var i4 = Lookup(table, inChars[i + 4]);
+                var i5 = Lookup(table, inChars[i + 5]);
                 if (IsInvalid(i0, i1, i2, i3, i4, i5))
                 {
                     return false;
@@ -375,11 +379,11 @@ internal class Base32SortTable : IBase32Converter
             }
             else if (remaining == 5)
             {
-                var i0 = table[inChars[i] & 0xFF];
-                var i1 = table[inChars[i + 1] & 0xFF];
-                var i2 = table[inChars[i + 2] & 0xFF];
-                var i3 = table[inChars[i + 3] & 0xFF];
-                var i4 = table[inChars[i + 4] & 0xFF];
+                var i0 = Lookup(table, inChars[i]);
+                var i1 = Lookup(table, inChars[i + 1]);
+                var i2 = Lookup(table, inChars[i + 2]);
+                var i3 = Lookup(table, inChars[i + 3]);
+                var i4 = Lookup(table, inChars[i + 4]);
                 if (IsInvalid(i0, i1, i2, i3, i4))
                 {
                     return false;
@@ -391,10 +395,10 @@ internal class Base32SortTable : IBase32Converter
             }
             else if (remaining == 4)
             {
-                var i0 = table[inChars[i] & 0xFF];
-                var i1 = table[inChars[i + 1] & 0xFF];
-                var i2 = table[inChars[i + 2] & 0xFF];
-                var i3 = table[inChars[i + 3] & 0xFF];
+                var i0 = Lookup(table, inChars[i]);
+                var i1 = Lookup(table, inChars[i + 1]);
+                var i2 = Lookup(table, inChars[i + 2]);
+                var i3 = Lookup(table, inChars[i + 3]);
                 if (IsInvalid(i0, i1, i2, i3))
                 {
                     return false;
@@ -405,9 +409,9 @@ internal class Base32SortTable : IBase32Converter
             }
             else if (remaining == 3)
             {
-                var i0 = table[inChars[i] & 0xFF];
-                var i1 = table[inChars[i + 1] & 0xFF];
-                var i2 = table[inChars[i + 2] & 0xFF];
+                var i0 = Lookup(table, inChars[i]);
+                var i1 = Lookup(table, inChars[i + 1]);
+                var i2 = Lookup(table, inChars[i + 2]);
                 if (IsInvalid(i0, i1, i2))
                 {
                     return false;
@@ -417,14 +421,21 @@ internal class Base32SortTable : IBase32Converter
             }
             else if (remaining == 2)
             {
-                var i0 = table[inChars[i] & 0xFF];
-                var i1 = table[inChars[i + 1] & 0xFF];
+                var i0 = Lookup(table, inChars[i]);
+                var i1 = Lookup(table, inChars[i + 1]);
                 if (IsInvalid(i0, i1))
                 {
                     return false;
                 }
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
+            }
+            else if (remaining == 1)
+            {// A lone trailing character carries no complete byte, but must still be valid.
+                if (IsInvalid(Lookup(table, inChars[i])))
+                {
+                    return false;
+                }
             }
         }
 
@@ -552,6 +563,13 @@ internal class Base32SortTable : IBase32Converter
 
                 outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
             }
+            else if (remaining == 1)
+            {// A lone trailing character carries no complete byte, but must still be valid.
+                if (IsInvalid(table[inChars[i]]))
+                {
+                    return false;
+                }
+            }
         }
 
         return true;
@@ -559,6 +577,13 @@ internal class Base32SortTable : IBase32Converter
 
 #pragma warning disable CS0675
 #pragma warning disable SA1204
+    /// <summary>
+    /// Maps a UTF-16 character through the 256-entry decode table; characters above U+00FF are invalid.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe byte Lookup(byte* table, char c)
+        => table[Math.Min(c, (uint)byte.MaxValue)]; // table[0xFF] is invalid.
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsInvalid(byte i0)
         => (i0 & 0b10000000) == 0b10000000;

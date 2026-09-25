@@ -44,7 +44,7 @@ var plaintext = new byte[message.Length];
 bool valid = Aegis256.TryDecrypt(plaintext, cipher, nonce, key, associatedData: "header"u8);
 ```
 
-AEGIS-256 uses a 32-byte key and nonce; AEGIS-128L uses 16 bytes each. Tags are 16 bytes by default or 32 bytes when requested. A tag size of zero disables authentication and tamper detection. Authentication failure returns `false` and clears the plaintext buffer. Invalid lengths throw. In-place operation requires the plaintext and ciphertext spans to start at the same address; shifted overlaps are unsupported.
+AEGIS-256 uses a 32-byte key and nonce; AEGIS-128L uses 16 bytes each. Tags are 16 bytes by default or 32 bytes when requested. A tag size of zero disables authentication and tamper detection. Authentication failure returns `false` and clears the plaintext buffer. Invalid lengths throw. In-place operation requires the plaintext and ciphertext spans to start at the same address; an overlapping output span that starts after the input throws `ArgumentException`.
 
 Never reuse a nonce with the same key. Store or transmit the nonce alongside the ciphertext, and supply the same associated data when decrypting.
 
@@ -127,7 +127,7 @@ Static span hashing avoids a result allocation. SHA-2 reuses pooled hash instanc
 
 `Blake3Hasher` supports keyed hashing, context-based key derivation, reset, parallel updates (`UpdateParallel`), and arbitrary-length output. Derivation contexts identify the application; append secret key material with `Update`. The hasher owns native state: dispose it, do not copy an initialized struct, and do not use it concurrently. Finalization is repeatable and does not reset the state.
 
-`IHash` provides `HashInitialize`, `HashUpdate`, and `HashFinal` for xxHash32/64, Adler-32, CRC-32, and the SHA wrappers. Initialize each new incremental calculation explicitly; reset behavior after finalization varies. `HashFinal` returns an allocated array. SHA-3 also has span output. Dispose the SHA-1/SHA-2 wrappers. Incremental FarmHash uses its separate stack-based `Reset`/`Append`/`FinalizeHash` API.
+`IHash` provides `HashInitialize`, `HashUpdate`, and `HashFinal` for xxHash32/64, Adler-32, CRC-32, and the SHA wrappers. Initialize each new incremental calculation explicitly; reset behavior after finalization varies. One-shot `GetHash` calls do not disturb an incremental calculation in progress. `HashFinal` returns an allocated array. SHA-3 also has span output. Dispose the SHA-1/SHA-2 wrappers. Incremental FarmHash uses its separate stack-based `Reset`/`Append`/`FinalizeHash` API.
 
 String hashing overloads hash the native UTF-16 representation, not UTF-8. Non-cryptographic hashes and checksums are unsuitable for authentication. SHA-1 is retained for compatibility. Performance depends on input size, processor, and algorithm; there is no universal 32-bit versus 64-bit ranking.
 
@@ -166,7 +166,7 @@ string base32 = Base32Sort.Default.FromBytesToString(data); // "000H40S"
 
 Base32Sort uses `0123456789ABCEFGHJKMNPQRSTUVWXYZ`, preserves byte sort order with ordinal string comparison, and emits no padding. Decoding accepts lower-case letters, maps `I`/`i`/`l` to `1` and `O`/`o` to `0`; upper-case `L` is rejected. `Default` aliases the table converter; `Reference` supplies an alternative implementation. Span decoders return `false` on invalid input; array decoders return an empty array, which also represents valid empty input. Prefer span decoding when that distinction matters. Length helpers reject negative input and encoding overflow.
 
-Hex output is lower-case. `Hex.FromStringToByteArray` requires an even length but deliberately does not validate characters; invalid digits produce unspecified bytes.
+Hex output is lower-case. `Hex.FromStringToByteArray` accepts either case, throws `ArgumentException` for an odd length and `FormatException` for invalid digits.
 
 `Utf8StringEqualityComparer` and `Utf16StringEqualityComparer` compare arrays by content and support allocation-free alternate span lookups in `Dictionary`. They perform ordinal comparison without case folding or Unicode normalization. Inserting a new span key copies it into an owned array. Do not mutate an array used as a dictionary key.
 

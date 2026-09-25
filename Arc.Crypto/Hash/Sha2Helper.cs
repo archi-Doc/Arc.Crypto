@@ -164,7 +164,7 @@ public static class Sha2Helper
         LibsodiumInterops.crypto_hash(output, input, (ulong)input.Length);
     }
 
-    private static void ComputeHash(ObjectPool<HashAlgorithm> pool, ReadOnlySpan<byte> input, Span<byte> output, int hashSize)
+    internal static void ComputeHash(ObjectPool<HashAlgorithm> pool, ReadOnlySpan<byte> input, Span<byte> output, int hashSize)
     {
         if (output.Length < hashSize)
         {

@@ -1,5 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System.Security.Cryptography;
+
 namespace Arc.Crypto;
 
 /// <summary>
@@ -70,6 +72,22 @@ public static class CryptoSign
         if (publicKey32.Length != PublicKeySize)
         {
             BaseHelper.ThrowSizeMismatchException(nameof(publicKey32), PublicKeySize);
+        }
+
+        if (seed32.Overlaps(secretKey64) || seed32.Overlaps(publicKey32))
+        {// Libsodium copies the seed into the secret key after writing both keys (e.g. seed32 = secretKey64[..32]), so work from a copy.
+            Span<byte> copy = stackalloc byte[SeedSize];
+            try
+            {
+                seed32.CopyTo(copy);
+                LibsodiumInterops.crypto_sign_seed_keypair(publicKey32, secretKey64, copy);
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(copy);
+            }
+
+            return;
         }
 
         LibsodiumInterops.crypto_sign_seed_keypair(publicKey32, secretKey64, seed32);

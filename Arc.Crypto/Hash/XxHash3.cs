@@ -123,7 +123,7 @@ public sealed unsafe class XxHash3
     {
         if (destination.Length < sizeof(long))
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(destination));
         }
 
         ulong hash = Hash64(source, seed);

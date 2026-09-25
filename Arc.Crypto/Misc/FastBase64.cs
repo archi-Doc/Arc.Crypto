@@ -622,7 +622,7 @@ internal static unsafe class B64
         fixed (byte* src = &MemoryMarshal.GetReference(utf8))
         fixed (byte* dst = &MemoryMarshal.GetReference(dest))
         {
-            if (!DecodeUtf8<T>(src, len, dst, dst + dest.Length))
+            if (!DecodeUtf8<T>(src, len, dst, dst + required))
             {
                 return false;
             }
@@ -656,7 +656,7 @@ internal static unsafe class B64
         fixed (char* src = &MemoryMarshal.GetReference(chars))
         fixed (byte* dst = &MemoryMarshal.GetReference(dest))
         {
-            if (!DecodeChars<T>(src, len, dst, dst + dest.Length))
+            if (!DecodeChars<T>(src, len, dst, dst + required))
             {
                 return false;
             }
@@ -1124,7 +1124,8 @@ internal static unsafe class B64
     // ------------------------------------------------------------------
     // Decode core: UTF-8 bytes -> bytes
     //   srcLength is the length with padding already trimmed. destEnd is the
-    //   end of the destination buffer (guards the over-length SIMD stores).
+    //   end of the decoded output (guards the over-length SIMD stores, so bytes
+    //   after the output are never touched even when the buffer is larger).
     // ------------------------------------------------------------------
     internal static bool DecodeUtf8<T>(byte* srcStart, int srcLength, byte* destStart, byte* destEnd)
         where T : struct, IAlphabet

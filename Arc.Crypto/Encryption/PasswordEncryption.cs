@@ -69,13 +69,20 @@ public static class PasswordEncryption
     /// <param name="plaintext">The plaintext to encrypt.</param>
     /// <param name="utf8Password">The utf8 password to use for encryption.</param>
     /// <param name="ciphertext">The encrypted data.<br/>
-    ///  The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
+    ///  The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).<br/>
+    ///  For in-place operation, place <paramref name="plaintext"/> at offset <see cref="SaltSize"/> of this buffer.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="plaintext"/> overlaps <paramref name="ciphertext"/> other than at offset <see cref="SaltSize"/> or later.</exception>
     public static void Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> utf8Password, Span<byte> ciphertext)
     {// Encrypted: Salt[32] + EncryptedData + Tag[16]
         var cipherLength = checked(SaltSize + plaintext.Length + TagSize);
         if (ciphertext.Length != cipherLength)
         {
             BaseHelper.ThrowSizeMismatchException(nameof(ciphertext), cipherLength);
+        }
+
+        if (plaintext.Overlaps(ciphertext, out var offset) && offset > -SaltSize)
+        {// The salt or an encrypted block would overwrite plaintext that has not been read yet.
+            throw new ArgumentException($"{nameof(plaintext)} must not overlap {nameof(ciphertext)} before offset {SaltSize}.", nameof(plaintext));
         }
 
         var salt = ciphertext.Slice(0, SaltSize);
@@ -104,6 +111,7 @@ public static class PasswordEncryption
     /// <returns><c>true</c> if decryption was successful; otherwise, <c>false</c>.</returns>
     public static bool TryDecrypt(ReadOnlySpan<byte> ciphertext, string password, [MaybeNullWhen(false)] out byte[] plaintext)
     {
+        ArgumentNullException.ThrowIfNull(password);
         if (ciphertext.Length < SaltSize + TagSize)
         {// Invalid size.
             plaintext = default;

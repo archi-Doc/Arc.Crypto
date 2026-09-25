@@ -29,7 +29,8 @@ public static class Aegis256
 
     /// <summary>
     /// Encrypts the specified plaintext using the Aegis-256 algorithm.<br/>
-    /// In-place operation is supported when both spans start at the same address. Other overlaps are unsupported.
+    /// In-place operation is supported when both spans start at the same address.
+    /// An overlapping <paramref name="ciphertext"/> must not start after <paramref name="plaintext"/>.
     /// </summary>
     /// <param name="ciphertext">The buffer to receive the ciphertext.<br/>
     /// Allocate a buffer with the size of the plaintext length plus the Tag size (16 bytes or 32 bytes).</param>
@@ -42,6 +43,7 @@ public static class Aegis256
     /// Thrown when <paramref name="tagSize"/> is not 0, <see cref="MinTagSize"/>, or <see cref="MaxTagSize"/>,
     /// or when the lengths of <paramref name="ciphertext"/>, <paramref name="nonce32"/>, or <paramref name="key32"/> are invalid.
     /// </exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="ciphertext"/> overlaps <paramref name="plaintext"/> and starts after it.</exception>
     public static void Encrypt(Span<byte> ciphertext, ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> nonce32, ReadOnlySpan<byte> key32, ReadOnlySpan<byte> associatedData = default, int tagSize = MinTagSize)
     {
         if (tagSize != MinTagSize && tagSize != MaxTagSize && tagSize != 0)
@@ -64,6 +66,11 @@ public static class Aegis256
             throw new ArgumentOutOfRangeException(nameof(key32), key32.Length, $"{nameof(key32)} must be {KeySize} bytes long.");
         }
 
+        if (plaintext.Overlaps(ciphertext, out var offset) && offset > 0)
+        {// Each block would overwrite plaintext that has not been read yet.
+            throw new ArgumentException($"{nameof(ciphertext)} must not start after an overlapping {nameof(plaintext)}.", nameof(ciphertext));
+        }
+
         if (Aegis256x86.IsSupported())
         {
             Aegis256x86.Encrypt(ciphertext, plaintext, nonce32, key32, associatedData, tagSize);
@@ -80,7 +87,8 @@ public static class Aegis256
 
     /// <summary>
     /// Decrypts the specified ciphertext using the Aegis-256 algorithm.<br/>
-    /// In-place operation is supported when both spans start at the same address. Other overlaps are unsupported.
+    /// In-place operation is supported when both spans start at the same address.
+    /// An overlapping <paramref name="plaintext"/> must not start after <paramref name="ciphertext"/>.
     /// </summary>
     /// <param name="plaintext">The buffer to receive the plaintext.<br/>
     /// Allocate a buffer with the size of the ciphertext length minus the Tag size (16 bytes or 32 bytes).</param>
@@ -94,6 +102,7 @@ public static class Aegis256
     /// Thrown when <paramref name="tagSize"/> is not 0, <see cref="MinTagSize"/>, or <see cref="MaxTagSize"/>,
     /// or when the lengths of <paramref name="ciphertext"/>, <paramref name="plaintext"/>, <paramref name="nonce32"/>, or <paramref name="key32"/> are invalid.
     /// </exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="plaintext"/> overlaps <paramref name="ciphertext"/> and starts after it.</exception>
     public static bool TryDecrypt(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce32, ReadOnlySpan<byte> key32, ReadOnlySpan<byte> associatedData = default, int tagSize = MinTagSize)
     {
         if (tagSize != MinTagSize && tagSize != MaxTagSize && tagSize != 0)
@@ -119,6 +128,11 @@ public static class Aegis256
         if (key32.Length != KeySize)
         {
             throw new ArgumentOutOfRangeException(nameof(key32), key32.Length, $"{nameof(key32)} must be {KeySize} bytes long.");
+        }
+
+        if (ciphertext.Overlaps(plaintext, out var offset) && offset > 0)
+        {// Each block would overwrite ciphertext that has not been read yet.
+            throw new ArgumentException($"{nameof(plaintext)} must not start after an overlapping {nameof(ciphertext)}.", nameof(plaintext));
         }
 
         if (Aegis256x86.IsSupported())
