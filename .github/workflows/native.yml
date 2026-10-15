@@ -60,6 +60,8 @@ jobs:
           ./build-osx-x64.sh
           ./build-osx-arm64.sh
           brew tap messense/macos-cross-toolchains
+          # Homebrew refuses formulae from third-party taps until the tap is trusted.
+          brew trust messense/macos-cross-toolchains
           brew install aarch64-unknown-linux-musl
           brew install x86_64-unknown-linux-musl
           ./build-linux-musl-x64.sh
