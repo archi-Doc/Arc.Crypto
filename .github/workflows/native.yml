@@ -16,7 +16,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-22.04, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
@@ -34,7 +34,7 @@ jobs:
           echo "$RUNNER_TEMP/zigbuild/bin" >> "$GITHUB_PATH"
           "$RUNNER_TEMP/zigbuild/bin/python" -c 'import os, ziglang; print(os.path.dirname(ziglang.__file__))' >> "$GITHUB_PATH"
     - name: Build Linux
-      if: matrix.os == 'ubuntu-22.04'
+      if: matrix.os == 'ubuntu-latest'
       run: |
           sudo apt-get update
           sudo apt-get install -y binutils-aarch64-linux-gnu binutils-arm-linux-gnueabihf
