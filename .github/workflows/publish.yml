@@ -16,7 +16,8 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore
     - name: Test
-      run: dotnet test --no-restore --verbosity normal
+      # Test the Release build that is packed (a plain dotnet test would rebuild and test Debug).
+      run: dotnet test --project Test/Test.csproj -c Release --no-build
 
     - name: Package
       run: dotnet pack -c Release -o bin Arc.Crypto/Arc.Crypto.csproj
