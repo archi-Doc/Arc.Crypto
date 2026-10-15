@@ -54,19 +54,19 @@ public sealed unsafe class XxHash3
     }
 
     /// <summary>
-    /// Static function: Calculates a 64bit hash from the given string.
+    /// Computes the XXH3 hash (seed 0) of the characters' raw UTF-16 bytes (not UTF-8).
     /// </summary>
-    /// <param name="input">The read-only span that contains input data.</param>
-    /// <returns>A 64bit hash.</returns>
+    /// <param name="input">The characters to hash.</param>
+    /// <returns>The computed XXH3 hash.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe ulong Hash64(ReadOnlySpan<char> input)
         => Hash64(MemoryMarshal.Cast<char, byte>(input));
 
     /// <summary>
-    /// Static function: Calculates a 64bit hash from the given string.
+    /// Computes the XXH3 hash (seed 0) of the string's raw UTF-16 bytes (not UTF-8). A <see langword="null"/> string is treated as empty.
     /// </summary>
-    /// <param name="str">The string containing the characters to calculates.</param>
-    /// <returns>A 64bit hash.</returns>
+    /// <param name="str">The string to hash.</param>
+    /// <returns>The computed XXH3 hash.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe ulong Hash64(string str)
         => Hash64(MemoryMarshal.Cast<char, byte>(str));
@@ -118,7 +118,7 @@ public sealed unsafe class XxHash3
     /// <param name="destination">The buffer that receives the computed 64-bit hash code.</param>
     /// <param name="seed">The seed value for this hash computation. The default is zero.</param>
     /// <returns>The number of bytes written to <paramref name="destination"/>.</returns>
-    /// <exception cref="ArgumentException"><paramref name="destination"/> is shorter than <see cref="HashLength"/> (8 bytes).</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="destination"/> is shorter than <see cref="HashLength"/> (8 bytes).</exception>
     public static int Hash(ReadOnlySpan<byte> source, Span<byte> destination, long seed = 0)
     {
         if (destination.Length < sizeof(long))
@@ -176,6 +176,54 @@ public sealed unsafe class XxHash3
         }
 
         return current;
+    }
+
+    /// <summary>
+    /// Computes the same value as <see cref="Hash64(ReadOnlySpan{byte}, long)"/>, but uses a secret precomputed by <see cref="CreateSecret(long)"/>
+    /// for inputs over 240 bytes instead of deriving it from <paramref name="seed"/> on every call.
+    /// </summary>
+    /// <param name="source">The data to hash.</param>
+    /// <param name="seed">The seed value for this hash computation.</param>
+    /// <param name="secret">The secret returned by <see cref="CreateSecret(long)"/> for the same <paramref name="seed"/>.</param>
+    /// <returns>The computed XXH3 hash.</returns>
+    internal static unsafe ulong Hash64(ReadOnlySpan<byte> source, long seed, byte[] secret)
+    {
+        uint length = (uint)source.Length;
+        if (length <= MidSizeMaxBytes)
+        {
+            return Hash64(source, seed);
+        }
+
+        fixed (byte* sourcePtr = &MemoryMarshal.GetReference(source))
+        {
+            fixed (byte* secretPtr = secret)
+            {
+                return HashLengthOver240WithSecret(sourcePtr, length, secretPtr);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Derives the secret that <see cref="Hash64(ReadOnlySpan{byte}, long)"/> uses for inputs over 240 bytes.
+    /// </summary>
+    /// <param name="seed">The seed value.</param>
+    /// <returns>A new secret for <see cref="Hash64(ReadOnlySpan{byte}, long, byte[])"/>.</returns>
+    internal static unsafe byte[] CreateSecret(long seed)
+    {
+        var secret = new byte[SecretLengthBytes];
+        if (seed == 0)
+        {
+            DefaultSecret.CopyTo(secret);
+        }
+        else
+        {
+            fixed (byte* secretPtr = secret)
+            {
+                DeriveSecretFromSeed(secretPtr, (ulong)seed);
+            }
+        }
+
+        return secret;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -333,18 +381,17 @@ public sealed unsafe class XxHash3
                 secret = customSecret;
             }
 
-            ulong* accumulators = stackalloc ulong[AccumulatorCount];
-            InitializeAccumulators(accumulators);
-
-            HashInternalLoop(accumulators, source, length, secret);
-
-            return MergeAccumulators(accumulators, secret + 11, length * Prime64_1);
+            return HashLengthOver240WithSecret(source, length, secret);
         }
     }
 
-    private void GetCurrentHashCore(Span<byte> destination)
+    private static ulong HashLengthOver240WithSecret(byte* source, uint length, byte* secret)
     {
-        ulong hash = this.GetCurrentHashAsUInt64();
-        BinaryPrimitives.WriteUInt64BigEndian(destination, hash);
+        ulong* accumulators = stackalloc ulong[AccumulatorCount];
+        InitializeAccumulators(accumulators);
+
+        HashInternalLoop(accumulators, source, length, secret);
+
+        return MergeAccumulators(accumulators, secret + 11, length * Prime64_1);
     }
 }

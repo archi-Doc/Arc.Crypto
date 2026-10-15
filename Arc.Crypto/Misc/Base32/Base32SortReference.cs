@@ -1,6 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -308,11 +309,8 @@ internal class Base32SortReference : IBase32Converter
             }
         }
 
-        if (arrayIndex != decodedLength)
-        {
-            destination[arrayIndex] = current;
-        }
-
+        // Each byte is written as soon as its last bit arrives, so exactly GetDecodedLength(base32.Length) bytes have been written.
+        Debug.Assert(arrayIndex == decodedLength);
         return true;
     }
 
@@ -347,11 +345,8 @@ internal class Base32SortReference : IBase32Converter
             }
         }
 
-        if (arrayIndex != decodedLength)
-        {
-            destination[arrayIndex] = current;
-        }
-
+        // Each byte is written as soon as its last bit arrives, so exactly GetDecodedLength(base32.Length) bytes have been written.
+        Debug.Assert(arrayIndex == decodedLength);
         return true;
     }
 }

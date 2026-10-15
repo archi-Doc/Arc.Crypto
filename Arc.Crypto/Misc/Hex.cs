@@ -5,7 +5,7 @@ using System;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Provides conversion between byte sequences and lower-case hexadecimal strings.
+/// Converts between bytes and hexadecimal strings. Encoding emits lower-case digits; decoding accepts either case.
 /// </summary>
 public static class Hex
 {

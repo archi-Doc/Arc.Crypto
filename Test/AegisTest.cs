@@ -132,6 +132,14 @@ public class AegisVector
 
             Aegis128L.TryDecrypt(d, c.AsSpan(0, message.Length + Aegis128L.MaxTagSize), nonce, key, additional, Aegis128L.MaxTagSize).IsTrue();
             d.SequenceEqual(message).IsTrue();
+
+            // Without a tag, the output is the same ciphertext body.
+            var c0 = new byte[message.Length];
+            Aegis128L.Encrypt(c0, message, nonce, key, additional, 0);
+            c0.SequenceEqual(cipher).IsTrue();
+            d.AsSpan().Fill(0xA5);
+            Aegis128L.TryDecrypt(d, c0, nonce, key, additional, 0).IsTrue();
+            d.SequenceEqual(message).IsTrue();
         }
         else
         {
@@ -178,6 +186,14 @@ public class AegisVector
 
             Aegis256.TryDecrypt(d, c.AsSpan(0, message.Length + Aegis256.MaxTagSize), nonce, key, additional, Aegis256.MaxTagSize).IsTrue();
             d.SequenceEqual(message).IsTrue();
+
+            // Without a tag, the output is the same ciphertext body.
+            var c0 = new byte[message.Length];
+            Aegis256.Encrypt(c0, message, nonce, key, additional, 0);
+            c0.SequenceEqual(cipher).IsTrue();
+            d.AsSpan().Fill(0xA5);
+            Aegis256.TryDecrypt(d, c0, nonce, key, additional, 0).IsTrue();
+            d.SequenceEqual(message).IsTrue();
         }
         else
         {
@@ -196,38 +212,64 @@ public class AegisVector
 
 public class AegisTest
 {
+    private delegate void EncryptFunc(Span<byte> ciphertext, ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData, int tagSize);
+
+    private delegate bool DecryptFunc(Span<byte> plaintext, ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> key, ReadOnlySpan<byte> associatedData, int tagSize);
+
     [Fact]
     public void Test_MultiThread()
     {
         const int Length = 100;
+        const int Threads = 10;
 
-        Parallel.For(0, 10, x =>
+        // Each thread uses its own seed, so a race on shared state would mix different inputs and corrupt the output.
+        // The expected ciphertexts come from a single-threaded run.
+        var expected256 = new byte[Threads][];
+        var expected128 = new byte[Threads][];
+        for (var x = 0; x < Threads; x++)
         {
-            var random = new Xoroshiro128StarStar(12);
-            Span<byte> key256 = new byte[Aegis256.KeySize];
-            random.NextBytes(key256);
-            Span<byte> nonce256 = new byte[Aegis256.NonceSize];
-            random.NextBytes(nonce256);
-            Span<byte> key128 = new byte[Aegis128L.KeySize];
-            random.NextBytes(key128);
-            Span<byte> nonce128 = new byte[Aegis128L.NonceSize];
-            random.NextBytes(nonce128);
-            Span<byte> message = new byte[Length];
-            random.NextBytes(message);
-            Span<byte> cipher = new byte[Length + Aegis256.MinTagSize];
-            Span<byte> decrypted = new byte[Length];
+            var (key256, nonce256, key128, nonce128, message) = CreateInput(x);
+            expected256[x] = new byte[Length + Aegis256.MinTagSize];
+            Aegis256.Encrypt(expected256[x], message, nonce256, key256);
+            expected128[x] = new byte[Length + Aegis128L.MinTagSize];
+            Aegis128L.Encrypt(expected128[x], message, nonce128, key128);
+        }
+
+        Parallel.For(0, Threads, x =>
+        {
+            var (key256, nonce256, key128, nonce128, message) = CreateInput(x);
+            var cipher = new byte[Length + Aegis256.MinTagSize];
+            var decrypted = new byte[Length];
 
             for (var i = 0; i < 100; i++)
             {
                 Aegis256.Encrypt(cipher, message, nonce256, key256);
+                cipher.SequenceEqual(expected256[x]).IsTrue();
                 Aegis256.TryDecrypt(decrypted, cipher, nonce256, key256).IsTrue();
                 decrypted.SequenceEqual(message).IsTrue();
 
                 Aegis128L.Encrypt(cipher, message, nonce128, key128);
+                cipher.SequenceEqual(expected128[x]).IsTrue();
                 Aegis128L.TryDecrypt(decrypted, cipher, nonce128, key128).IsTrue();
                 decrypted.SequenceEqual(message).IsTrue();
             }
         });
+
+        static (byte[] Key256, byte[] Nonce256, byte[] Key128, byte[] Nonce128, byte[] Message) CreateInput(int x)
+        {
+            var random = new Xoroshiro128StarStar(12 + (ulong)x);
+            var key256 = new byte[Aegis256.KeySize];
+            random.NextBytes(key256);
+            var nonce256 = new byte[Aegis256.NonceSize];
+            random.NextBytes(nonce256);
+            var key128 = new byte[Aegis128L.KeySize];
+            random.NextBytes(key128);
+            var nonce128 = new byte[Aegis128L.NonceSize];
+            random.NextBytes(nonce128);
+            var message = new byte[Length];
+            random.NextBytes(message);
+            return (key256, nonce256, key128, nonce128, message);
+        }
     }
 
     [Fact]
@@ -245,6 +287,8 @@ public class AegisTest
         Span<byte> decrypted = stackalloc byte[Length];
         random.NextBytes(key256);
         random.NextBytes(nonce256);
+        random.NextBytes(key128);
+        random.NextBytes(nonce128);
         random.NextBytes(message);
 
         for (var i = 0; i < Length; i += 13)
@@ -262,7 +306,9 @@ public class AegisTest
     [Fact]
     public void TestVectors_128()
     {
-        foreach (var x in AegisVector.Load("Aegis128Vectors.tinyhand"))
+        var vectors = AegisVector.Load("Aegis128Vectors.tinyhand");
+        vectors.Length.Is(9); // The resource holds 9 vectors; a parsing change must not drop any.
+        foreach (var x in vectors)
         {
             x.Test128();
         }
@@ -271,9 +317,72 @@ public class AegisTest
     [Fact]
     public void TestVectors_256()
     {
-        foreach (var x in AegisVector.Load("Aegis256Vectors.tinyhand"))
+        var vectors = AegisVector.Load("Aegis256Vectors.tinyhand");
+        vectors.Length.Is(9); // The resource holds 9 vectors; a parsing change must not drop any.
+        foreach (var x in vectors)
         {
             x.Test256();
+        }
+    }
+
+    /// <summary>
+    /// Cross-checks both ciphers, on the dispatched and the portable path, against libsodium (32-byte tag)
+    /// over multi-block messages and associated data with random keys and nonces.
+    /// The tag-0 output must equal the libsodium ciphertext body.
+    /// </summary>
+    [Fact]
+    public void Libsodium_Agrees()
+    {
+        var random = new Xoroshiro128StarStar(123);
+        var key128 = new byte[Aegis128L.KeySize];
+        var nonce128 = new byte[Aegis128L.NonceSize];
+        var key256 = new byte[Aegis256.KeySize];
+        var nonce256 = new byte[Aegis256.NonceSize];
+
+        foreach (var length in new[] { 0, 1, 31, 32, 33, 63, 64, 65, 95, 96, 97, 1000 })
+        {
+            foreach (var adLength in new[] { 0, 1, 31, 32, 33, 64, 65, 100, 1000 })
+            {
+                random.NextBytes(key128);
+                random.NextBytes(nonce128);
+                random.NextBytes(key256);
+                random.NextBytes(nonce256);
+                var message = new byte[length];
+                random.NextBytes(message);
+                var additional = new byte[adLength];
+                random.NextBytes(additional);
+                var expected = new byte[length + Aegis128LHelper.ASizeInBytes];
+                var actual = new byte[length + Aegis128L.MaxTagSize];
+                var body = new byte[length];
+                var decrypted = new byte[length];
+
+                Aegis128LHelper.Encrypt(message, additional, nonce128, key128, expected);
+                Check(Aegis128L.Encrypt, Aegis128LSoft.Encrypt, Aegis128L.TryDecrypt, Aegis128LSoft.Decrypt, nonce128, key128);
+
+                Aegis256Helper.Encrypt(message, additional, nonce256, key256, expected);
+                Check(Aegis256.Encrypt, Aegis256Soft.Encrypt, Aegis256.TryDecrypt, Aegis256Soft.Decrypt, nonce256, key256);
+
+                void Check(EncryptFunc encrypt, EncryptFunc softEncrypt, DecryptFunc decrypt, DecryptFunc softDecrypt, byte[] nonce, byte[] key)
+                {
+                    actual.AsSpan().Clear();
+                    encrypt(actual, message, nonce, key, additional, 32);
+                    actual.SequenceEqual(expected).IsTrue();
+                    actual.AsSpan().Clear();
+                    softEncrypt(actual, message, nonce, key, additional, 32);
+                    actual.SequenceEqual(expected).IsTrue();
+
+                    body.AsSpan().Clear();
+                    encrypt(body, message, nonce, key, additional, 0);
+                    body.AsSpan().SequenceEqual(expected.AsSpan(0, length)).IsTrue();
+
+                    decrypted.AsSpan().Fill(0xA5);
+                    decrypt(decrypted, expected, nonce, key, additional, 32).IsTrue();
+                    decrypted.SequenceEqual(message).IsTrue();
+                    decrypted.AsSpan().Fill(0xA5);
+                    softDecrypt(decrypted, expected, nonce, key, additional, 32).IsTrue();
+                    decrypted.SequenceEqual(message).IsTrue();
+                }
+            }
         }
     }
 
@@ -342,6 +451,8 @@ public class AegisTest
 
         for (var j = 0; j < 1000; j += 13)
         {
+            random.NextBytes(key);
+            random.NextBytes(nonce);
             var message = new byte[j].AsSpan();
             var message2 = new byte[j].AsSpan();
             random.NextBytes(message);
@@ -374,6 +485,8 @@ public class AegisTest
 
         for (var j = 0; j < 1000; j += 13)
         {
+            random.NextBytes(key);
+            random.NextBytes(nonce);
             var message = new byte[j];
             var message2 = new byte[j];
             random.NextBytes(message);
@@ -383,12 +496,17 @@ public class AegisTest
             Aegis128L.Encrypt(cipher, message, nonce, key, default, 32);
             Aegis128L.TryDecrypt(message2, cipher, nonce, key, default, 32).IsTrue();
             message.SequenceEqual(message2).IsTrue();
+
+            Aegis128LHelper.Encrypt(message, default, nonce, key, cipher2);
+            cipher.SequenceEqual(cipher2).IsTrue();
         }
     }
 
     [Fact]
     public void DoubleEncryption32()
     {
+        // Encrypting twice restores the message only up to 32 bytes: the plaintext is absorbed into s0 alone,
+        // and the second keystream block does not read s0, so the first two keystream blocks do not depend on the plaintext.
         const int length = 32;
         var random = new Xoroshiro128StarStar(11);
         Span<byte> key = stackalloc byte[Aegis256.KeySize];
@@ -397,6 +515,7 @@ public class AegisTest
         var message2 = new byte[length];
         var message3 = new byte[length];
         var cipher = new byte[length];
+        var reference = new byte[length + Aegis256Helper.ASizeInBytes];
 
         for (var j = 0; j < 10; j++)
         {
@@ -405,6 +524,9 @@ public class AegisTest
             random.NextBytes(message);
 
             Aegis256.Encrypt(cipher, message, nonce, key, default, 0);
+            cipher.SequenceEqual(message).IsFalse();
+            Aegis256Helper.Encrypt(message, default, nonce, key, reference);
+            cipher.AsSpan().SequenceEqual(reference.AsSpan(0, length)).IsTrue();
             Aegis256.TryDecrypt(message2, cipher, nonce, key, default, 0).IsTrue();
             message.SequenceEqual(message2).IsTrue();
             Aegis256.Encrypt(message3, cipher, nonce, key, default, 0);

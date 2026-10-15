@@ -15,22 +15,17 @@ public class HashTest
     [Fact]
     public void TestXxHash3()
     {
-        const int N = 10;
-        const int Length = 1500;
-
-        var buffer = new byte[Length];
-        RandomVault.Xoshiro.NextBytes(buffer);
-        for (var i = 0; i < N; i++)
+        // Lengths 0..1100 cover the 0-16, 17-128, 129-240 and over-240 (single block) paths; the larger ones cover several 1024-byte blocks.
+        var buffer = new byte[100_000];
+        new Random(1).NextBytes(buffer);
+        foreach (var length in Enumerable.Range(0, 1101).Concat([2047, 2048, 2049, 3072, 3073, 4096, 10_000, 100_000]))
         {
-            for (var j = 0; j < Length; j++)
-            {
-                var span = buffer.AsSpan(0, j);
-                var hash = System.IO.Hashing.XxHash3.HashToUInt64(span, 0);
-                var hash2 = Arc.Crypto.XxHash3.Hash64(span, 0);
-                hash.Is(hash2);
-                hash2 = Arc.Collections.XxHash3Slim.Hash64(span, 0);
-                hash.Is(hash2);
-            }
+            var span = buffer.AsSpan(0, length);
+            var hash = System.IO.Hashing.XxHash3.HashToUInt64(span, 0);
+            var hash2 = Arc.Crypto.XxHash3.Hash64(span, 0);
+            hash.Is(hash2);
+            hash2 = Arc.Collections.XxHash3Slim.Hash64(span, 0);
+            hash.Is(hash2);
         }
     }
 
@@ -43,9 +38,13 @@ public class HashTest
         byte[] array;
 
         hash64 = Arc.Crypto.XxHash64.Hash64(data.AsSpan()); // As fast as FarmHash.
+        hash64.Is(System.IO.Hashing.XxHash64.HashToUInt64(data));
         hash32 = Arc.Crypto.XxHash32.Hash32(data.AsSpan()); // Same as above.
-        hash32 = Arc.Crypto.Adler32.Hash32(data.AsSpan()); // Slow
-        hash32 = Arc.Crypto.Crc32.Hash32(data.AsSpan()); // Slowest
+        hash32.Is(System.IO.Hashing.XxHash32.HashToUInt32(data));
+        hash32 = Arc.Crypto.Adler32.Hash32(data.AsSpan()); // Checksum (SIMD-accelerated).
+        hash32.Is(0x00640001u); // 100 zero bytes: a = 1, b = 100 (RFC 1950).
+        hash32 = Arc.Crypto.Crc32.Hash32(data.AsSpan()); // Checksum (PCLMULQDQ / ARM CRC32 accelerated).
+        hash32.Is(System.IO.Hashing.Crc32.HashToUInt32(data));
 
         // IHash is an interface to get a hash of large data.
         // For XxHash64, IHash version is a bit slower than static method version.
@@ -72,14 +71,15 @@ public class HashTest
         var data = new byte[N];
         random.NextBytes(data);
 
+        // The one-shot results are checked against independent implementations: System.IO.Hashing and the Adler-32 definition.
         // CRC-32
         var crc32 = new Crc32();
         for (var n = 0; n < 1000; n++)
         {
             var span = data.AsSpan(0, n);
-            var h = BitConverter.ToUInt32(crc32.GetHash(span));
-            var h2 = Crc32.Hash32(span);
-            Assert.Equal(h, h2);
+            var expected = System.IO.Hashing.Crc32.HashToUInt32(span);
+            Assert.Equal(expected, BitConverter.ToUInt32(crc32.GetHash(span)));
+            Assert.Equal(expected, Crc32.Hash32(span));
         }
 
         this.TestHashUpdate_do(crc32, data, random);
@@ -89,9 +89,9 @@ public class HashTest
         for (var n = 0; n < 1000; n++)
         {
             var span = data.AsSpan(0, n);
-            var h = BitConverter.ToUInt32(adler32.GetHash(span));
-            var h2 = Adler32.Hash32(span);
-            Assert.Equal(h, h2);
+            var expected = this.ReferenceAdler32(span);
+            Assert.Equal(expected, BitConverter.ToUInt32(adler32.GetHash(span)));
+            Assert.Equal(expected, Adler32.Hash32(span));
         }
 
         this.TestHashUpdate_do(adler32, data, random);
@@ -101,9 +101,9 @@ public class HashTest
         for (var n = 0; n < 1000; n++)
         {
             var span = data.AsSpan(0, n);
-            var h = BitConverter.ToUInt32(xxh32.GetHash(span));
-            var h2 = XxHash32.Hash32(span);
-            Assert.Equal(h, h2);
+            var expected = System.IO.Hashing.XxHash32.HashToUInt32(span);
+            Assert.Equal(expected, BitConverter.ToUInt32(xxh32.GetHash(span)));
+            Assert.Equal(expected, XxHash32.Hash32(span));
         }
 
         this.TestHashUpdate_do(xxh32, data, random);
@@ -113,9 +113,9 @@ public class HashTest
         for (var n = 0; n < 1000; n++)
         {
             var span = data.AsSpan(0, n);
-            var h = BitConverter.ToUInt64(xxh64.GetHash(span));
-            var h2 = XxHash64.Hash64(span);
-            Assert.Equal(h, h2);
+            var expected = System.IO.Hashing.XxHash64.HashToUInt64(span);
+            Assert.Equal(expected, BitConverter.ToUInt64(xxh64.GetHash(span)));
+            Assert.Equal(expected, XxHash64.Hash64(span));
         }
 
         this.TestHashUpdate_do(xxh64, data, random);
@@ -189,28 +189,47 @@ public class HashTest
         return random.Next(1, randomSize[range]);
     }
 
+    /// <summary>
+    /// Adler-32 as defined in RFC 1950, section 2.2: s1 = 1 + sum of bytes, s2 = sum of the s1 values, both modulo 65521.
+    /// </summary>
+    /// <param name="data">The data to checksum.</param>
+    /// <returns>The Adler-32 checksum.</returns>
+    private uint ReferenceAdler32(ReadOnlySpan<byte> data)
+    {
+        const uint Base = 65521;
+        uint a = 1;
+        uint b = 0;
+        foreach (var x in data)
+        {
+            a = (a + x) % Base;
+            b = (b + a) % Base;
+        }
+
+        return (b << 16) | a;
+    }
+
     [Fact]
     public void TestSha2()
     {
         using var sha2 = new Arc.Crypto.Sha2_256();
 
+        // SHA-256 processes 64-byte blocks and pads with 9 or more bytes, so lengths 0..130 cover every padding case for one and two blocks.
         var random = new Random(42);
         byte[] h;
-        byte[] h2;
         byte[] h4 = new byte[32];
-        for (var length = 0; length < 1_000; length++)
+        foreach (var length in Enumerable.Range(0, 131).Concat([183, 184, 191, 192, 255, 256, 257, 511, 512, 513, 999]))
         {
             var buffer = new byte[length];
-            for (var i = 0; i < 100; i++)
+            for (var i = 0; i < 3; i++)
             {
                 random.NextBytes(buffer);
 
-                h = sha2.GetHash(buffer, 0, length);
-                h2 = Sha2Helper.Get256ByteArray(buffer);
-                h.SequenceEqual(h2).IsTrue();
+                var expected = System.Security.Cryptography.SHA256.HashData(buffer);
+                sha2.GetHash(buffer, 0, length).SequenceEqual(expected).IsTrue();
+                Sha2Helper.Get256ByteArray(buffer).SequenceEqual(expected).IsTrue();
             }
 
-            h = sha2.GetHash(buffer, 0, length);
+            h = System.Security.Cryptography.SHA256.HashData(buffer);
 
             var h3 = Sha2Helper.Get256UInt64(buffer);
             var b = h4.AsSpan();

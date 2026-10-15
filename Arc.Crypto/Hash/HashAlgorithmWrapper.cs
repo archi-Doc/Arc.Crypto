@@ -13,7 +13,7 @@ using Arc.Collections;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Wrapper class for HashAlgorithm.
+/// Base class that adapts a <see cref="System.Security.Cryptography.HashAlgorithm"/> to <see cref="IHash"/>.
 /// </summary>
 public abstract class HashAlgorithmWrapper : IHash, IDisposable
 {
@@ -23,12 +23,12 @@ public abstract class HashAlgorithmWrapper : IHash, IDisposable
     private const int TransformBufferSize = 4096;
 
     /// <summary>
-    /// Gets or sets the instance of HashAlgorithm.
+    /// Gets or sets the wrapped hash algorithm. Derived classes must set it in their constructor.
     /// </summary>
     public HashAlgorithm HashAlgorithm { get; protected set; }
 
     /// <summary>
-    /// Gets empty byte[].
+    /// Gets an empty byte array.
     /// </summary>
     public byte[] EmptyBytes { get; } = [];
 
@@ -135,9 +135,9 @@ public abstract class HashAlgorithmWrapper : IHash, IDisposable
     }
 
     /// <summary>
-    /// free managed/native resources.
+    /// Releases the wrapped hash algorithm.
     /// </summary>
-    /// <param name="disposing">true: free managed resources.</param>
+    /// <param name="disposing"><see langword="true"/> to release managed resources.</param>
     protected virtual void Dispose(bool disposing)
     {
         if (!this.disposed)
@@ -218,7 +218,7 @@ public class Sha2_256 : HashAlgorithmWrapper
 }
 
 /// <summary>
-/// SHA2-386 Hash Class.
+/// SHA2-384 Hash Class.
 /// </summary>
 public class Sha2_384 : HashAlgorithmWrapper
 {

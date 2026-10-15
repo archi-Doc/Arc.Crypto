@@ -19,11 +19,19 @@ public static class Sha2Helper
     /// <summary>
     /// A pool of reusable incremental SHA-256 instances.
     /// </summary>
+    /// <remarks>
+    /// The pool does not reset instances. Return an instance only after <see cref="IncrementalHash.GetHashAndReset()"/> (or <c>TryGetHashAndReset</c>) has completed, so no appended data remains for the next renter.<br/>
+    /// If a calculation is abandoned, for example after an exception, dispose the instance instead of returning it. Do not dispose an instance you return.
+    /// </remarks>
     public static readonly ObjectPool<IncrementalHash> IncrementalSha256Pool = new(static () => IncrementalHash.CreateHash(HashAlgorithmName.SHA256));
 
     /// <summary>
     /// A pool of reusable incremental SHA-512 instances.
     /// </summary>
+    /// <remarks>
+    /// The pool does not reset instances. Return an instance only after <see cref="IncrementalHash.GetHashAndReset()"/> (or <c>TryGetHashAndReset</c>) has completed, so no appended data remains for the next renter.<br/>
+    /// If a calculation is abandoned, for example after an exception, dispose the instance instead of returning it. Do not dispose an instance you return.
+    /// </remarks>
     public static readonly ObjectPool<IncrementalHash> IncrementalSha512Pool = new(static () => IncrementalHash.CreateHash(HashAlgorithmName.SHA512));
 
     private static readonly ObjectPool<HashAlgorithm> Sha256 = new(static () => System.Security.Cryptography.SHA256.Create());

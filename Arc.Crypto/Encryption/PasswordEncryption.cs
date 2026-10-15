@@ -6,10 +6,14 @@ using System.Security.Cryptography;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Provides methods for encrypting and decrypting data using a password.<br/>
-/// The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).<br/>
-/// Uses Argon2id and AEGIS-256. An empty password uses the public salt as the key and provides no secrecy.
+/// Encrypts and decrypts data with a password, using Argon2id (2 passes, 64 MiB) for key derivation and AEGIS-256 for encryption.<br/>
+/// Format: Salt(32) + encrypted data + Tag(16), so the output is <see cref="SaltSize"/> + <see cref="TagSize"/> (48) bytes longer than the data.<br/>
+/// The salt is the AEGIS-256 nonce, and its first 16 bytes are the Argon2id salt.<br/>
+/// An empty password skips Argon2id and uses the public salt as the key, so it provides no secrecy.
 /// </summary>
+/// <remarks>
+/// Without hardware AES, AEGIS-256 falls back to a table-based software AES that is not constant-time (see <see cref="Aegis256"/>).
+/// </remarks>
 public static class PasswordEncryption
 {
     /// <summary>
@@ -23,12 +27,13 @@ public static class PasswordEncryption
     public const int TagSize = 16;
 
     /// <summary>
-    /// Encrypts the specified data using the provided password.
+    /// Encrypts data with a password into a new array.
     /// </summary>
     /// <param name="plaintext">The plaintext to encrypt.</param>
-    /// <param name="password">The password to use for encryption.</param>
-    /// <param name="ciphertext">The encrypted data.<br/>
-    ///  The size will be the plaintext size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
+    /// <param name="password">The password (encoded as UTF-8; unpaired surrogates become U+FFFD). An empty password provides no secrecy.</param>
+    /// <param name="ciphertext">Receives Salt(32) + encrypted data + Tag(16), the plaintext length + 48 bytes.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="password"/> is <see langword="null"/>.</exception>
+    /// <exception cref="CryptographicException">Argon2id key derivation failed, typically because the required memory could not be allocated.</exception>
     public static void Encrypt(ReadOnlySpan<byte> plaintext, string password, out byte[] ciphertext)
     {
         ciphertext = new byte[checked(SaltSize + plaintext.Length + TagSize)];
@@ -36,12 +41,12 @@ public static class PasswordEncryption
     }
 
     /// <summary>
-    /// Encrypts the specified data using the provided utf8 password.
+    /// Encrypts data with a UTF-8 password into a new array.
     /// </summary>
     /// <param name="plaintext">The plaintext to encrypt.</param>
-    /// <param name="utf8Password">The UTF-8 password to use for encryption.</param>
-    /// <param name="ciphertext">The encrypted data.<br/>
-    ///  The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
+    /// <param name="utf8Password">The UTF-8 password. An empty password provides no secrecy.</param>
+    /// <param name="ciphertext">Receives Salt(32) + encrypted data + Tag(16), the plaintext length + 48 bytes.</param>
+    /// <exception cref="CryptographicException">Argon2id key derivation failed, typically because the required memory could not be allocated.</exception>
     public static void Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> utf8Password, out byte[] ciphertext)
     {
         ciphertext = new byte[checked(SaltSize + plaintext.Length + TagSize)];
@@ -49,12 +54,17 @@ public static class PasswordEncryption
     }
 
     /// <summary>
-    /// Encrypts the specified data using the provided password.
+    /// Encrypts data with a password into a caller-provided buffer.
     /// </summary>
     /// <param name="plaintext">The plaintext to encrypt.</param>
-    /// <param name="password">The password to use for encryption.</param>
-    /// <param name="ciphertext">The encrypted data.<br/>
-    ///  The size will be the plaintext size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
+    /// <param name="password">The password (encoded as UTF-8; unpaired surrogates become U+FFFD). An empty password provides no secrecy.</param>
+    /// <param name="ciphertext">The output buffer: Salt(32) + encrypted data + Tag(16).<br/>
+    /// The size must be exactly the plaintext length + <see cref="SaltSize"/> + <see cref="TagSize"/> (48 bytes).<br/>
+    /// For in-place operation, place <paramref name="plaintext"/> at offset <see cref="SaltSize"/> of this buffer.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="password"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The size of <paramref name="ciphertext"/> is invalid.</exception>
+    /// <exception cref="ArgumentException"><paramref name="plaintext"/> overlaps <paramref name="ciphertext"/> and starts before offset <see cref="SaltSize"/> of it.</exception>
+    /// <exception cref="CryptographicException">Argon2id key derivation failed, typically because the required memory could not be allocated.</exception>
     public static void Encrypt(ReadOnlySpan<byte> plaintext, string password, Span<byte> ciphertext)
     {
         ArgumentNullException.ThrowIfNull(password);
@@ -64,14 +74,16 @@ public static class PasswordEncryption
     }
 
     /// <summary>
-    /// Encrypts the specified data using the provided utf8 password.
+    /// Encrypts data with a UTF-8 password into a caller-provided buffer.
     /// </summary>
     /// <param name="plaintext">The plaintext to encrypt.</param>
-    /// <param name="utf8Password">The utf8 password to use for encryption.</param>
-    /// <param name="ciphertext">The encrypted data.<br/>
-    ///  The size will be the data size plus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).<br/>
-    ///  For in-place operation, place <paramref name="plaintext"/> at offset <see cref="SaltSize"/> of this buffer.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="plaintext"/> overlaps <paramref name="ciphertext"/> other than at offset <see cref="SaltSize"/> or later.</exception>
+    /// <param name="utf8Password">The UTF-8 password. An empty password provides no secrecy. It may overlap <paramref name="ciphertext"/>.</param>
+    /// <param name="ciphertext">The output buffer: Salt(32) + encrypted data + Tag(16).<br/>
+    /// The size must be exactly the plaintext length + <see cref="SaltSize"/> + <see cref="TagSize"/> (48 bytes).<br/>
+    /// For in-place operation, place <paramref name="plaintext"/> at offset <see cref="SaltSize"/> of this buffer.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The size of <paramref name="ciphertext"/> is invalid.</exception>
+    /// <exception cref="ArgumentException"><paramref name="plaintext"/> overlaps <paramref name="ciphertext"/> and starts before offset <see cref="SaltSize"/> of it.</exception>
+    /// <exception cref="CryptographicException">Argon2id key derivation failed, typically because the required memory could not be allocated.</exception>
     public static void Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> utf8Password, Span<byte> ciphertext)
     {// Encrypted: Salt[32] + EncryptedData + Tag[16]
         var cipherLength = checked(SaltSize + plaintext.Length + TagSize);
@@ -85,13 +97,20 @@ public static class PasswordEncryption
             throw new ArgumentException($"{nameof(plaintext)} must not overlap {nameof(ciphertext)} before offset {SaltSize}.", nameof(plaintext));
         }
 
-        var salt = ciphertext.Slice(0, SaltSize);
+        // The salt would overwrite a password stored in the salt region before it is read, so generate it in a separate buffer in that case.
+        var saltInPlace = !utf8Password.Overlaps(ciphertext.Slice(0, SaltSize));
+        Span<byte> salt = saltInPlace ? ciphertext.Slice(0, SaltSize) : stackalloc byte[SaltSize];
         CryptoRandom.NextBytes(salt);
 
         Span<byte> key32 = stackalloc byte[Aegis256.KeySize];
         try
         {
             DeriveKey(utf8Password, salt, key32);
+            if (!saltInPlace)
+            {
+                salt.CopyTo(ciphertext);
+            }
+
             Aegis256.Encrypt(ciphertext.Slice(SaltSize, plaintext.Length + TagSize), plaintext, salt, key32);
         }
         finally
@@ -101,14 +120,14 @@ public static class PasswordEncryption
     }
 
     /// <summary>
-    /// Tries to decrypt the specified encrypted data using the provided password.
+    /// Tries to decrypt data encrypted with a password.
     /// </summary>
-    /// <param name="ciphertext">The encrypted data.<br/>
-    /// The size must be at least <see cref="SaltSize"/>+<see cref="TagSize"/> (48 in the current implementation).</param>
-    /// <param name="password">The password to use for decryption.</param>
-    /// <param name="plaintext">The decrypted data.<br/>
-    /// The size will be the encrypted data size minus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
-    /// <returns><c>true</c> if decryption was successful; otherwise, <c>false</c>.</returns>
+    /// <param name="ciphertext">Salt(32) + encrypted data + Tag(16). Input shorter than <see cref="SaltSize"/> + <see cref="TagSize"/> (48 bytes) returns <see langword="false"/>.</param>
+    /// <param name="password">The password used for encryption (encoded as UTF-8; unpaired surrogates become U+FFFD).</param>
+    /// <param name="plaintext">The decrypted data (the ciphertext length minus 48 bytes), or <see langword="null"/> on failure.</param>
+    /// <returns><see langword="true"/> if the password is correct and the data is authentic; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="password"/> is <see langword="null"/>.</exception>
+    /// <exception cref="CryptographicException">Argon2id key derivation failed, typically because the required memory could not be allocated.</exception>
     public static bool TryDecrypt(ReadOnlySpan<byte> ciphertext, string password, [MaybeNullWhen(false)] out byte[] plaintext)
     {
         ArgumentNullException.ThrowIfNull(password);
@@ -131,14 +150,13 @@ public static class PasswordEncryption
     }
 
     /// <summary>
-    /// Tries to decrypt the specified encrypted data using the provided utf8 password.
+    /// Tries to decrypt data encrypted with a UTF-8 password.
     /// </summary>
-    /// <param name="ciphertext">The encrypted data.<br/>
-    /// The size must be at least <see cref="SaltSize"/>+<see cref="TagSize"/> (48 in the current implementation).</param>
-    /// <param name="utf8Password">The UTF-8 password to use for decryption.</param>
-    /// <param name="plaintext">The decrypted data.<br/>
-    /// The size will be the encrypted data size minus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
-    /// <returns><c>true</c> if decryption was successful; otherwise, <c>false</c>.</returns>
+    /// <param name="ciphertext">Salt(32) + encrypted data + Tag(16). Input shorter than <see cref="SaltSize"/> + <see cref="TagSize"/> (48 bytes) returns <see langword="false"/>.</param>
+    /// <param name="utf8Password">The UTF-8 password used for encryption.</param>
+    /// <param name="plaintext">The decrypted data (the ciphertext length minus 48 bytes), or <see langword="null"/> on failure.</param>
+    /// <returns><see langword="true"/> if the password is correct and the data is authentic; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="CryptographicException">Argon2id key derivation failed, typically because the required memory could not be allocated.</exception>
     public static bool TryDecrypt(ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> utf8Password, [MaybeNullWhen(false)] out byte[] plaintext)
     {
         if (ciphertext.Length < SaltSize + TagSize)
@@ -160,14 +178,17 @@ public static class PasswordEncryption
     }
 
     /// <summary>
-    /// Tries to decrypt the specified encrypted data using the provided password.
+    /// Tries to decrypt data encrypted with a password into a caller-provided buffer.
     /// </summary>
-    /// <param name="ciphertext">The encrypted data.<br/>
-    /// The size must be at least <see cref="SaltSize"/>+<see cref="TagSize"/> (48 in the current implementation).</param>
-    /// <param name="password">The password to use for decryption.</param>
-    /// <param name="plaintext">The decrypted data.<br/>
-    /// The size will be the encrypted data size minus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
-    /// <returns><c>true</c> if decryption was successful; otherwise, <c>false</c>.</returns>
+    /// <param name="ciphertext">Salt(32) + encrypted data + Tag(16). Input shorter than <see cref="SaltSize"/> + <see cref="TagSize"/> (48 bytes) returns <see langword="false"/>.</param>
+    /// <param name="password">The password used for encryption (encoded as UTF-8; unpaired surrogates become U+FFFD).</param>
+    /// <param name="plaintext">The output buffer. The size must be exactly the ciphertext length minus 48 bytes. It is cleared if authentication fails.<br/>
+    /// It may overlap <paramref name="ciphertext"/> if it starts at or before offset <see cref="SaltSize"/> of it (in-place decryption).</param>
+    /// <returns><see langword="true"/> if the password is correct and the data is authentic; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="password"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The size of <paramref name="plaintext"/> is invalid.</exception>
+    /// <exception cref="ArgumentException"><paramref name="plaintext"/> overlaps <paramref name="ciphertext"/> and starts after offset <see cref="SaltSize"/> of it.</exception>
+    /// <exception cref="CryptographicException">Argon2id key derivation failed, typically because the required memory could not be allocated.</exception>
     public static bool TryDecrypt(ReadOnlySpan<byte> ciphertext, string password, Span<byte> plaintext)
     {
         ArgumentNullException.ThrowIfNull(password);
@@ -182,14 +203,16 @@ public static class PasswordEncryption
     }
 
     /// <summary>
-    /// Tries to decrypt the specified encrypted data using the provided utf8 password.
+    /// Tries to decrypt data encrypted with a UTF-8 password into a caller-provided buffer.
     /// </summary>
-    /// <param name="ciphertext">The encrypted data.<br/>
-    /// The size must be at least <see cref="SaltSize"/>+<see cref="TagSize"/> (48 in the current implementation).</param>
-    /// <param name="utf8Password">The utf8 password to use for decryption.</param>
-    /// <param name="plaintext">The decrypted data.<br/>
-    /// The size will be the encrypted data size minus <see cref="SaltSize"/> and <see cref="TagSize"/>(48 in the current implementation).</param>
-    /// <returns><c>true</c> if decryption was successful; otherwise, <c>false</c>.</returns>
+    /// <param name="ciphertext">Salt(32) + encrypted data + Tag(16). Input shorter than <see cref="SaltSize"/> + <see cref="TagSize"/> (48 bytes) returns <see langword="false"/>.</param>
+    /// <param name="utf8Password">The UTF-8 password used for encryption.</param>
+    /// <param name="plaintext">The output buffer. The size must be exactly the ciphertext length minus 48 bytes. It is cleared if authentication fails.<br/>
+    /// It may overlap <paramref name="ciphertext"/> if it starts at or before offset <see cref="SaltSize"/> of it (in-place decryption).</param>
+    /// <returns><see langword="true"/> if the password is correct and the data is authentic; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The size of <paramref name="plaintext"/> is invalid.</exception>
+    /// <exception cref="ArgumentException"><paramref name="plaintext"/> overlaps <paramref name="ciphertext"/> and starts after offset <see cref="SaltSize"/> of it.</exception>
+    /// <exception cref="CryptographicException">Argon2id key derivation failed, typically because the required memory could not be allocated.</exception>
     public static bool TryDecrypt(ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> utf8Password, Span<byte> plaintext)
     {
         if (ciphertext.Length < SaltSize + TagSize)

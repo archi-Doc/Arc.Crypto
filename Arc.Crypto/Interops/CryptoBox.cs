@@ -42,10 +42,11 @@ public static class CryptoBox
     public const int SharedSecretSize = 32;
 
     /// <summary>
-    /// Creates a new key pair (secret(32) and public(32) keys).
+    /// Creates a random key pair (secret key 32 bytes, public key 32 bytes).
     /// </summary>
     /// <param name="secretKey32">The buffer to hold the secret key. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
     /// <param name="publicKey32">The buffer to hold the public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
+    /// <exception cref="ArgumentOutOfRangeException">The size of a span is invalid.</exception>
     public static void CreateKeyPair(Span<byte> secretKey32, Span<byte> publicKey32)
     {
         if (secretKey32.Length != SecretKeySize)
@@ -62,11 +63,12 @@ public static class CryptoBox
     }
 
     /// <summary>
-    /// Creates a new key pair (public(32) and secret keys(32)) from a seed(32).
+    /// Creates a deterministic key pair (secret key 32 bytes, public key 32 bytes) from a 32-byte seed.
     /// </summary>
     /// <param name="seed32">The seed to generate the key pair. The size must be <see cref="SeedSize"/>(32 bytes).</param>
     /// <param name="secretKey32">The buffer to hold the secret key. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
     /// <param name="publicKey32">The buffer to hold the public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
+    /// <exception cref="ArgumentOutOfRangeException">The size of a span is invalid.</exception>
     public static void CreateKeyPair(ReadOnlySpan<byte> seed32, Span<byte> secretKey32, Span<byte> publicKey32)
     {
         if (seed32.Length != SeedSize)
@@ -88,14 +90,15 @@ public static class CryptoBox
     }
 
     /// <summary>
-    /// Encrypts a message using the given nonce(24), secret key(32), and public key(32).<br/>
-    /// Ciphertext = Plaintext + MAC(16).
+    /// Encrypts a message with the sender's secret key and the recipient's public key.<br/>
+    /// Output layout: MAC(16) followed by the encrypted message.
     /// </summary>
     /// <param name="plaintext">The message to encrypt.</param>
-    /// <param name="nonce24">The nonce to use for encryption. The size must be <see cref="NonceSize"/>(24 bytes).</param>
-    /// <param name="secretKey32">The secret key to use for encryption. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
-    /// <param name="publicKey32">The public key to use for encryption. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
+    /// <param name="nonce24">A nonce that must not be reused with the same pair of keys. The size must be <see cref="NonceSize"/>(24 bytes).</param>
+    /// <param name="secretKey32">The sender's secret key. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
+    /// <param name="publicKey32">The recipient's public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
     /// <param name="ciphertext">The buffer to hold the encrypted message. The size must be plaintext length + <see cref="MacSize"/>(16 bytes).</param>
+    /// <exception cref="ArgumentOutOfRangeException">The size of a span is invalid.</exception>
     /// <exception cref="CryptographicException">The recipient public key is invalid; the ciphertext buffer is cleared.</exception>
     public static void Encrypt(ReadOnlySpan<byte> plaintext, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> ciphertext)
     {
@@ -127,15 +130,15 @@ public static class CryptoBox
     }
 
     /// <summary>
-    /// Decrypts a ciphertext using the given nonce(24), secret key(32), and public key(32).<br/>
-    /// Plaintext = Ciphertext - MAC(16).
+    /// Verifies and decrypts a ciphertext produced by <see cref="Encrypt"/> (MAC(16) followed by the encrypted message).
     /// </summary>
-    /// <param name="ciphertext">The encrypted message to decrypt.</param>
+    /// <param name="ciphertext">The ciphertext. Must be at least <see cref="MacSize"/>(16 bytes).</param>
     /// <param name="nonce24">The nonce used for encryption. The size must be <see cref="NonceSize"/>(24 bytes).</param>
-    /// <param name="secretKey32">The recipient secret key. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
-    /// <param name="publicKey32">The sender public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
+    /// <param name="secretKey32">The recipient's secret key. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
+    /// <param name="publicKey32">The sender's public key. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
     /// <param name="plaintext">The buffer to hold the decrypted message. The size must be ciphertext length - <see cref="MacSize"/>(16 bytes).</param>
-    /// <returns><c>true</c> if decryption is successful; otherwise, <c>false</c>.</returns>
+    /// <returns><see langword="true"/> on success; <see langword="false"/> if authentication fails or the sender public key is invalid.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The size of a span is invalid.</exception>
     public static bool TryDecrypt(ReadOnlySpan<byte> ciphertext, ReadOnlySpan<byte> nonce24, ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> plaintext)
     {
         if (ciphertext.Length < MacSize)
@@ -173,6 +176,7 @@ public static class CryptoBox
     /// <param name="secretKey32">The secret key to use for key derivation. The size must be <see cref="SecretKeySize"/>(32 bytes).</param>
     /// <param name="publicKey32">The public key to use for key derivation. The size must be <see cref="PublicKeySize"/>(32 bytes).</param>
     /// <param name="sharedSecret">The output buffer, exactly <see cref="SharedSecretSize"/> (32) bytes.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The size of a span is invalid.</exception>
     /// <exception cref="CryptographicException">The public key is invalid for key agreement; the output is cleared.</exception>
     public static void DeriveSharedSecret(ReadOnlySpan<byte> secretKey32, ReadOnlySpan<byte> publicKey32, Span<byte> sharedSecret)
     {

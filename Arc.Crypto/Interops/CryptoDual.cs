@@ -6,10 +6,10 @@ using Arc.Crypto.Ed25519;
 namespace Arc.Crypto;
 
 /// <summary>
-/// A support class for making Ed25519 and Curve25519 public keys interchangeable.<br/>
-/// It was possible to convert an Ed25519 public key to a Curve25519 public key, but the reverse was challenging.<br/>
-/// By adding a sign bit to the Curve25519 key, reverse conversion is now possible.<br/>
-/// As a result, it does not strictly adhere to the standard Curve25519 format.
+/// Makes Ed25519 (signature) and X25519 (encryption) public keys interchangeable.<br/>
+/// Converting an Ed25519 public key to X25519 discards the sign of x, so the reverse conversion is ambiguous.
+/// CryptoDual stores that sign in the unused top bit (bit 7 of byte 31) of the X25519 public key, which makes the conversion reversible.<br/>
+/// X25519 ignores this bit, so these keys work with <see cref="CryptoBox"/>, but they are not canonical X25519 encodings. Compare them with <see cref="BoxPublicKeyEquals"/>.
 /// </summary>
 public static class CryptoDual
 {
@@ -19,7 +19,8 @@ public static class CryptoDual
     /// <param name="signSecretKey64">A span to hold the signature secret key. The size must be <see cref="CryptoSign.SecretKeySize"/> (64 bytes).</param>
     /// <param name="signPublicKey32">A span to hold the signature public key. The size must be <see cref="CryptoSign.PublicKeySize"/> (32 bytes).</param>
     /// <param name="boxSecretKey32">A span to hold the encryption secret key. The size must be <see cref="CryptoBox.SecretKeySize"/> (32 bytes).</param>
-    /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/> (32 bytes).</param>
+    /// <param name="boxPublicKey32">A span to hold the encryption public key, with the Ed25519 sign bit in its top bit. The size must be <see cref="CryptoBox.PublicKeySize"/> (32 bytes).</param>
+    /// <exception cref="ArgumentOutOfRangeException">The size of a span is invalid.</exception>
     public static void CreateKeyPair(Span<byte> signSecretKey64, Span<byte> signPublicKey32, Span<byte> boxSecretKey32, Span<byte> boxPublicKey32)
     {
         Span<byte> seed = stackalloc byte[CryptoSign.SeedSize];
@@ -35,14 +36,14 @@ public static class CryptoDual
     }
 
     /// <summary>
-    /// Generates a new key pair for both signature and encryption using the provided seed.
+    /// Generates key pairs for both signature and encryption from one seed. The seed may overlap the outputs.
     /// </summary>
     /// <param name="seed32">The seed used to generate the key pair. The size must be <see cref="CryptoSign.SeedSize"/> (32 bytes).</param>
     /// <param name="signSecretKey64">A span to hold the signature secret key. The size must be <see cref="CryptoSign.SecretKeySize"/> (64 bytes).</param>
     /// <param name="signPublicKey32">A span to hold the signature public key. The size must be <see cref="CryptoSign.PublicKeySize"/> (32 bytes).</param>
     /// <param name="boxSecretKey32">A span to hold the encryption secret key. The size must be <see cref="CryptoBox.SecretKeySize"/> (32 bytes).</param>
-    /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/> (32 bytes).</param>
-    /// <exception cref="ArgumentException">Thrown when the size of any of the provided spans does not match the expected size.</exception>
+    /// <param name="boxPublicKey32">A span to hold the encryption public key, with the Ed25519 sign bit in its top bit. The size must be <see cref="CryptoBox.PublicKeySize"/> (32 bytes).</param>
+    /// <exception cref="ArgumentOutOfRangeException">The size of a span is invalid.</exception>
     public static void CreateKeyPair(ReadOnlySpan<byte> seed32, Span<byte> signSecretKey64, Span<byte> signPublicKey32, Span<byte> boxSecretKey32, Span<byte> boxPublicKey32)
     {
         if (seed32.Length != CryptoSign.SeedSize)
@@ -87,16 +88,23 @@ public static class CryptoDual
         }
 
         LibsodiumInterops.crypto_sign_seed_keypair(signPublicKey32, signSecretKey64, seed32);
-        LibsodiumInterops.crypto_box_seed_keypair(boxPublicKey32, boxSecretKey32, seed32);
 
-        boxPublicKey32[31] |= (byte)(0x80 & signPublicKey32[31]);
+        // Same keys as crypto_box_seed_keypair (sk = SHA-512(seed)[0..32], pk = X25519(sk, 9)) plus the sign bit,
+        // but the public key is converted from the Ed25519 point instead of a second scalar multiplication.
+        ConvertSignPublicKeyToBox(signPublicKey32, boxPublicKey32);
+        Span<byte> hash = stackalloc byte[64];
+        LibsodiumInterops.crypto_hash(hash, seed32, CryptoSign.SeedSize);
+        hash.Slice(0, CryptoBox.SecretKeySize).CopyTo(boxSecretKey32);
+        CryptographicOperations.ZeroMemory(hash);
     }
 
     /// <summary>
-    /// Converts a signature secret key(64) to a encryption secret key(32).
+    /// Converts a signature secret key(64) to an encryption secret key(32). Input and output may overlap.<br/>
+    /// Only the seed (first 32 bytes) is used. The result is SHA-512(seed)[0..32], which X25519 clamps on use.
     /// </summary>
     /// <param name="signSecretKey64">The signature secret key. The size must be <see cref="CryptoSign.SecretKeySize"/>(64 bytes).</param>
     /// <param name="boxSecretKey32">A span to hold the encryption secret key. The size must be <see cref="CryptoBox.SecretKeySize"/>(32 bytes).</param>
+    /// <exception cref="ArgumentOutOfRangeException">The size of a span is invalid.</exception>
     public static void ConvertSignSecretKeyToBox(ReadOnlySpan<byte> signSecretKey64, Span<byte> boxSecretKey32)
     {
         if (signSecretKey64.Length != CryptoSign.SecretKeySize)
@@ -122,6 +130,7 @@ public static class CryptoDual
     /// </summary>
     /// <param name="signPublicKey32">The signature public key. The size must be <see cref="CryptoSign.PublicKeySize"/>(32 bytes).</param>
     /// <param name="boxPublicKey32">A span to hold the encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/>(32 bytes).</param>
+    /// <exception cref="ArgumentOutOfRangeException">The size of a span is invalid.</exception>
     public static void ConvertSignPublicKeyToBox(ReadOnlySpan<byte> signPublicKey32, Span<byte> boxPublicKey32)
     {
         if (signPublicKey32.Length != CryptoSign.PublicKeySize)
@@ -156,6 +165,7 @@ public static class CryptoDual
     /// </summary>
     /// <param name="boxPublicKey32">The encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/>(32 bytes).</param>
     /// <param name="signPublicKey32">A span to hold the signature public key. The size must be <see cref="CryptoSign.PublicKeySize"/>(32 bytes).</param>
+    /// <exception cref="ArgumentOutOfRangeException">The size of a span is invalid.</exception>
     public static void ConvertBoxPublicKeyToSign(ReadOnlySpan<byte> boxPublicKey32, Span<byte> signPublicKey32)
     {
         if (boxPublicKey32.Length != CryptoBox.PublicKeySize)
@@ -181,16 +191,13 @@ public static class CryptoDual
     }
 
     /// <summary>
-    /// Compares two encryption public keys for equality.
+    /// Compares two encryption public keys, ignoring the CryptoDual sign bit (bit 7 of the last byte).<br/>
+    /// A CryptoDual key and the matching standard X25519 key therefore compare equal. The comparison is not constant-time.
     /// </summary>
     /// <param name="publicKey1">The first encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/> (32 bytes).</param>
     /// <param name="publicKey2">The second encryption public key. The size must be <see cref="CryptoBox.PublicKeySize"/> (32 bytes).</param>
-    /// <returns>
-    /// <c>true</c> if the public keys are equal; otherwise, <c>false</c>.
-    /// </returns>
-    /// <exception cref="ArgumentException">
-    /// Thrown when the size of <paramref name="publicKey1"/> or <paramref name="publicKey2"/> does not match <see cref="CryptoBox.PublicKeySize"/>.
-    /// </exception>
+    /// <returns><see langword="true"/> if the keys are equal apart from the sign bit; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The size of <paramref name="publicKey1"/> or <paramref name="publicKey2"/> is not <see cref="CryptoBox.PublicKeySize"/>.</exception>
     public static bool BoxPublicKeyEquals(ReadOnlySpan<byte> publicKey1, ReadOnlySpan<byte> publicKey2)
     {
         if (publicKey1.Length != CryptoBox.PublicKeySize)

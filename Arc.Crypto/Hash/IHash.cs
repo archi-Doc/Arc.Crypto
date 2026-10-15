@@ -15,7 +15,7 @@ public interface IHash
     string HashName { get; }
 
     /// <summary>
-    /// Gets the number of hash bits. e.g. 256, 512.
+    /// Gets the hash size in bits, such as 256 or 512.
     /// </summary>
     uint HashBits { get; }
 
@@ -25,19 +25,25 @@ public interface IHash
     bool IsCryptographic { get; }
 
     /// <summary>
-    /// Calculates a hash from the given data.
+    /// Computes the hash of the given data in one shot.
     /// </summary>
     /// <param name="input">The read-only span that contains input data.</param>
-    /// <returns>A hash.</returns>
+    /// <returns>A new array that contains the hash.</returns>
+    /// <remarks>
+    /// Whether this affects an incremental calculation in progress depends on the implementation.
+    /// </remarks>
     byte[] GetHash(ReadOnlySpan<byte> input);
 
     /// <summary>
-    /// Calculates a hash from the given data.
+    /// Computes the hash of the given data in one shot.
     /// </summary>
     /// <param name="input">The byte array that contains input data.</param>
     /// <param name="inputOffset">The offset into the input byte array from which to begin using data.</param>
     /// <param name="inputCount">The number of bytes in the input byte array to use as data.</param>
-    /// <returns>A hash.</returns>
+    /// <returns>A new array that contains the hash.</returns>
+    /// <remarks>
+    /// Whether this affects an incremental calculation in progress depends on the implementation.
+    /// </remarks>
     byte[] GetHash(byte[] input, int inputOffset, int inputCount);
 
     /// <summary>
@@ -47,13 +53,13 @@ public interface IHash
     void HashInitialize();
 
     /// <summary>
-    /// Update hash function state.
+    /// Appends data to the incremental calculation.
     /// </summary>
     /// <param name="input">The read-only span that contains input data.</param>
     void HashUpdate(ReadOnlySpan<byte> input);
 
     /// <summary>
-    /// Update hash function state.
+    /// Appends data to the incremental calculation.
     /// </summary>
     /// <param name="input">The byte array that contains input data.</param>
     /// <param name="inputOffset">The offset into the input byte array from which to begin using data.</param>
@@ -64,6 +70,6 @@ public interface IHash
     /// Returns the hash of all appended data as a new array. Reset behavior varies by implementation;
     /// call HashInitialize before starting another calculation.
     /// </summary>
-    /// <returns>A hash.</returns>
+    /// <returns>A new array that contains the hash.</returns>
     byte[] HashFinal();
 }

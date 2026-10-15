@@ -2,6 +2,9 @@
 
 namespace Arc.Crypto;
 
+/// <summary>
+/// Software AES round function and AEGIS constants.
+/// </summary>
 internal static class AES
 {
     /// <summary>
@@ -160,6 +163,14 @@ internal static class AES
         0x4141c382, 0x9999b029, 0x2d2d775a, 0x0f0f111e, 0xb0b0cb7b, 0x5454fca8, 0xbbbbd66d, 0x16163a2c
     ];
 
+    /// <summary>
+    /// Computes one AES encryption round (SubBytes, ShiftRows, MixColumns, AddRoundKey), equivalent to x86 AESENC.<br/>
+    /// Blocks are big-endian <see cref="UInt128"/> values (byte 0 is the most significant).
+    /// </summary>
+    /// <param name="value">The input block.</param>
+    /// <param name="roundKey">The round key.</param>
+    /// <returns>The output block.</returns>
+    // Not constant-time: the table indexes depend on secret state (cache-timing side channel); used only without hardware AES.
     internal static UInt128 Encrypt(UInt128 value, UInt128 roundKey)
     {
         // value.Upper = (ulong)(value >> 64)

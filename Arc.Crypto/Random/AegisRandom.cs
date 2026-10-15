@@ -7,9 +7,14 @@ using System.Security.Cryptography;
 namespace Arc.Crypto;
 
 /// <summary>
-/// A high-performance cryptographically secure pseudo-random number generator combining RandomNumberGenerator and AEGIS-256.<br/>
-/// Please note that this is not thread-safe.
+/// A high-performance cryptographically secure pseudo-random number generator that outputs the AEGIS-256 keystream.<br/>
+/// Every 1024 output bytes, the key and nonce are replaced with 64 unused keystream bytes mixed with fresh <see cref="RandomNumberGenerator"/> bytes.<br/>
+/// Please note that this is not thread-safe; use <see cref="RandomVault.Aegis"/> for concurrent access.
 /// </summary>
+/// <remarks>
+/// When hardware AES (x86 AES-NI or ARMv8 AES) is unavailable or disabled, the portable fallback uses lookup tables and is not constant-time,
+/// so it may leak secret state through cache-timing side channels.
+/// </remarks>
 public class AegisRandom
 {
     private const int RandomSize = 1024;
@@ -19,8 +24,8 @@ public class AegisRandom
 
     #region FieldAndProperty
 
-    private readonly Xoshiro256StarStar xo = new();
-    private readonly byte[] source = new byte[SourceSize];
+    // private readonly Xoshiro256StarStar xo = new(); // Not needed: the freshly keyed AEGIS-256 keystream alone is the output.
+    private readonly byte[] source = new byte[SourceSize]; // Always zero, so encrypting it yields the raw keystream.
     private readonly byte[] destination = new byte[SourceSize];
     private readonly byte[] store = new byte[StoreSize];
     private int position;
@@ -82,7 +87,7 @@ public class AegisRandom
 
         s[0] ^= (ulong)Stopwatch.GetTimestamp();
 
-        this.xo.NextBytes(this.source);
+        // this.xo.NextBytes(this.source); // Not needed: source stays zero and the output is the raw AEGIS-256 keystream.
         // The output is used as a key stream, so the authentication tag is never needed.
         Aegis256.Encrypt(this.destination, this.source, keyNonce.Slice(Aegis256.KeySize, Aegis256.NonceSize), keyNonce.Slice(0, Aegis256.KeySize), default, 0);
         this.position = 0;

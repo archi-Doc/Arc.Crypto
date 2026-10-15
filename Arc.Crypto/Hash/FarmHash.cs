@@ -1,6 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using static System.Numerics.BitOperations;
@@ -16,8 +17,11 @@ namespace Arc.Crypto;
 /// An allocation-free, incremental 64-bit FarmHash.<br/>
 /// Usage: <c>var farm = default(FarmHash);</c> then <c>farm.Append(data);</c> repeatedly and <c>var hash = farm.FinalizeHash();</c>.<br/>
 /// The result is identical to <see cref="Hash64(ReadOnlySpan{byte})"/> over the concatenated input.
-/// Call <see cref="Reset"/> to reuse the instance after <see cref="FinalizeHash"/>.
+/// Call <see cref="Reset"/> to start a new hash.
 /// </summary>
+/// <remarks>
+/// <see cref="Hash64(ReadOnlySpan{byte})"/> computes farmhashxo::Hash64 from Google's FarmHash; the values do not depend on the platform.
+/// </remarks>
 public unsafe ref struct FarmHash
 {
     private const ulong K0 = 0xc3a5c85c97cb3127UL;
@@ -56,17 +60,17 @@ public unsafe ref struct FarmHash
     }
 
     /// <summary>
-    /// Static function: Calculates a 64bit hash from the given string.
+    /// Static function: Calculates a 64bit hash of the characters' raw UTF-16 bytes (not UTF-8).
     /// </summary>
-    /// <param name="input">The read-only span that contains input data.</param>
+    /// <param name="input">The characters to hash.</param>
     /// <returns>A 64bit hash.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong Hash64(ReadOnlySpan<char> input) => Hash64(MemoryMarshal.AsBytes(input));
 
     /// <summary>
-    /// Static function: Calculates a 64bit hash from the given string.
+    /// Static function: Calculates a 64bit hash of the string's raw UTF-16 bytes (not UTF-8). A <see langword="null"/> string is treated as empty.
     /// </summary>
-    /// <param name="str">The string containing the characters to calculates.</param>
+    /// <param name="str">The string to hash.</param>
     /// <returns>A 64bit hash.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong Hash64(string str) => Hash64(MemoryMarshal.AsBytes(str.AsSpan()));
@@ -163,7 +167,7 @@ public unsafe ref struct FarmHash
     public void Append(ReadOnlySpan<char> input) => this.Append(MemoryMarshal.AsBytes(input));
 
     /// <summary>
-    /// Finalizes the hash calculation.
+    /// Gets the hash of the data appended so far without modifying the state; more data can be appended afterward.
     /// </summary>
     /// <returns>A 64bit hash, identical to <see cref="Hash64(ReadOnlySpan{byte})"/> over the concatenated input.</returns>
     public ulong FinalizeHash()
@@ -286,10 +290,10 @@ public unsafe ref struct FarmHash
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint Fetch32(byte* p) => *(uint*)p;
+    private static uint Fetch32(byte* p) => BitConverter.IsLittleEndian ? Unsafe.ReadUnaligned<uint>(p) : BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<uint>(p));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong Fetch64(byte* p) => *(ulong*)p;
+    private static ulong Fetch64(byte* p) => BitConverter.IsLittleEndian ? Unsafe.ReadUnaligned<ulong>(p) : BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<ulong>(p));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ShiftMix(ulong val) => val ^ (val >> 47);

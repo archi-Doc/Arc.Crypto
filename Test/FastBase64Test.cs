@@ -96,12 +96,15 @@ public class FastBase64Test
 
     [Theory]
     [InlineData("A")]
+    [InlineData("AAAAA")]
     [InlineData("AA=")]
     [InlineData("AAA==")]
     public void GetDecodedLength_InvalidLengthOrPadding_Throws(string base64)
     {
         Assert.Throws<FormatException>(
             () => FastBase64.GetDecodedLength(base64.AsSpan()));
+        Assert.Throws<FormatException>(
+            () => FastBase64.GetDecodedLength(Encoding.ASCII.GetBytes(base64)));
     }
 
     [Fact]
@@ -335,11 +338,19 @@ public class FastBase64Test
             byte[] source = new byte[length];
             random.NextBytes(source);
 
-            string encoded = FastBase64.EncodeToString(source);
-            byte[] decoded = FastBase64.Decode(encoded);
+            // Span overloads: UTF-8 and UTF-16 text, decoded into a destination sized by GetMaxDecodedLength.
+            byte[] utf8 = new byte[FastBase64.GetEncodedLength(length)];
+            char[] chars = new char[utf8.Length];
+            Assert.Equal(utf8.Length, FastBase64.Encode(source, utf8));
+            Assert.Equal(chars.Length, FastBase64.Encode(source, chars));
+            Assert.Equal(Convert.ToBase64String(source), Encoding.ASCII.GetString(utf8));
+            Assert.Equal(Convert.ToBase64String(source), new string(chars));
 
-            Assert.Equal(Convert.ToBase64String(source), encoded);
-            Assert.Equal(source, decoded);
+            byte[] decoded = new byte[FastBase64.GetMaxDecodedLength(utf8.Length)];
+            Assert.Equal(length, FastBase64.Decode(utf8, decoded));
+            Assert.Equal(source, decoded.AsSpan(0, length).ToArray());
+            Assert.Equal(length, FastBase64.Decode(chars, decoded));
+            Assert.Equal(source, decoded.AsSpan(0, length).ToArray());
         }
     }
 }
@@ -375,6 +386,61 @@ public class FastBase64UrlTest
     public void GetEncodedLength_ReturnsExpectedValue(int byteCount, int expected)
     {
         Assert.Equal(expected, FastBase64Url.GetEncodedLength(byteCount));
+    }
+
+    [Fact]
+    public void Lengths_Negative_Throw()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => FastBase64Url.GetEncodedLength(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => FastBase64Url.GetMaxDecodedLength(-1));
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(2, 1)]
+    [InlineData(3, 2)]
+    [InlineData(4, 3)]
+    [InlineData(6, 4)]
+    [InlineData(8, 6)]
+    public void GetMaxDecodedLength_ReturnsExpectedValue(int encodedLength, int expected)
+    {
+        Assert.Equal(expected, FastBase64Url.GetMaxDecodedLength(encodedLength));
+    }
+
+    [Theory]
+    [InlineData("", 0)]
+    [InlineData("Zg", 1)]
+    [InlineData("Zg==", 1)]
+    [InlineData("Zm8", 2)]
+    [InlineData("Zm8=", 2)]
+    [InlineData("Zm9v", 3)]
+    [InlineData("Zm9vYmE", 5)]
+    public void GetDecodedLength_ReturnsExpectedValue(string encoded, int expected)
+    {
+        Assert.Equal(expected, FastBase64Url.GetDecodedLength(encoded.AsSpan()));
+        Assert.Equal(expected, FastBase64Url.GetDecodedLength(Encoding.ASCII.GetBytes(encoded)));
+    }
+
+    [Theory]
+    [InlineData("A")]
+    [InlineData("AAAAA")]
+    [InlineData("AA=")]
+    [InlineData("Zm8==")]
+    public void GetDecodedLength_InvalidLengthOrPadding_Throws(string encoded)
+    {
+        Assert.Throws<FormatException>(
+            () => FastBase64Url.GetDecodedLength(encoded.AsSpan()));
+        Assert.Throws<FormatException>(
+            () => FastBase64Url.GetDecodedLength(Encoding.ASCII.GetBytes(encoded)));
+    }
+
+    [Fact]
+    public void Decode_Null_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(
+            () => FastBase64Url.Decode(null!));
     }
 
     [Theory]
@@ -521,10 +587,17 @@ public class FastBase64UrlTest
             byte[] source = new byte[length];
             random.NextBytes(source);
 
-            string encoded = FastBase64Url.EncodeToString(source);
-            byte[] decoded = FastBase64Url.Decode(encoded);
+            // Span overloads: UTF-8 and UTF-16 text, decoded into a destination sized by GetMaxDecodedLength.
+            byte[] utf8 = new byte[FastBase64Url.GetEncodedLength(length)];
+            char[] chars = new char[utf8.Length];
+            Assert.Equal(utf8.Length, FastBase64Url.Encode(source, utf8));
+            Assert.Equal(chars.Length, FastBase64Url.Encode(source, chars));
 
-            Assert.Equal(source, decoded);
+            byte[] decoded = new byte[FastBase64Url.GetMaxDecodedLength(utf8.Length)];
+            Assert.Equal(length, FastBase64Url.Decode(utf8, decoded));
+            Assert.Equal(source, decoded.AsSpan(0, length).ToArray());
+            Assert.Equal(length, FastBase64Url.Decode(chars, decoded));
+            Assert.Equal(source, decoded.AsSpan(0, length).ToArray());
         }
     }
 

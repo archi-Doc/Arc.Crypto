@@ -7,7 +7,8 @@ using System.Text;
 namespace Arc.Crypto;
 
 /// <summary>
-/// Holds temporary UTF-8 password bytes and clears them before returning pooled storage.
+/// Holds temporary UTF-8 password bytes and clears them before returning pooled storage.<br/>
+/// <see cref="Encoding.UTF8"/> replaces unpaired surrogates with U+FFFD; this is kept for compatibility with existing hashes and ciphertexts.
 /// </summary>
 internal ref struct Utf8Password
 {

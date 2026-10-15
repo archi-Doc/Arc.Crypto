@@ -53,10 +53,10 @@ internal class Program
 
     public static void QuickStart_RandomVault()
     {
-        // RandomVault is a random number pool.
-        // It's thread-safe and faster than lock in most cases.
+        // RandomVault is a thread-safe, buffered random number pool.
+        // Calls are serialized with a lock, and random bytes are drawn from an internal buffer.
         var mt = new MersenneTwister(); // Create a random generator.
-        var rv = new RandomVault(x => mt.NextBytes(x)); // Specify NextBytes() delegates.
+        var rv = new RandomVault(x => mt.NextBytes(x)); // Specify a NextBytes() delegate.
         Console.WriteLine("RandomVault:");
         Console.WriteLine(rv.NextInt63());
         Console.WriteLine(rv.NextDouble());

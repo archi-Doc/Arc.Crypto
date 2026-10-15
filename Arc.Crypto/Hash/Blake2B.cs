@@ -79,7 +79,14 @@ public static class Blake2B
             throw new ArgumentException($"The {nameof(output)} length must be {Hash256Size} bytes.");
         }
 
-        LibsodiumInterops.crypto_generichash_blake2b(output, Hash256Size, input, (ulong)input.Length, IntPtr.Zero, 0);
+        if (input.Length <= Blake3.LimitPreemptive)
+        {
+            LibsodiumInterops.crypto_generichash_blake2b_short(output, Hash256Size, input, (ulong)input.Length, IntPtr.Zero, 0);
+        }
+        else
+        {
+            LibsodiumInterops.crypto_generichash_blake2b(output, Hash256Size, input, (ulong)input.Length, IntPtr.Zero, 0);
+        }
     }
 
     /// <summary>
@@ -107,6 +114,13 @@ public static class Blake2B
             throw new ArgumentException($"The {nameof(output)} length must be {Hash512Size} bytes.");
         }
 
-        LibsodiumInterops.crypto_generichash_blake2b(output, Hash512Size, input, (ulong)input.Length, IntPtr.Zero, 0);
+        if (input.Length <= Blake3.LimitPreemptive)
+        {
+            LibsodiumInterops.crypto_generichash_blake2b_short(output, Hash512Size, input, (ulong)input.Length, IntPtr.Zero, 0);
+        }
+        else
+        {
+            LibsodiumInterops.crypto_generichash_blake2b(output, Hash512Size, input, (ulong)input.Length, IntPtr.Zero, 0);
+        }
     }
 }

@@ -13,6 +13,13 @@ internal abstract class Nat256
 {
     private const ulong M = 0xFFFFFFFFUL;
 
+    /// <summary>
+    /// Computes <c>z = x + y</c> on eight-word values (least significant word first).
+    /// </summary>
+    /// <param name="x">The first operand.</param>
+    /// <param name="y">The second operand.</param>
+    /// <param name="z">Receives the low 256 bits of the sum. It may be the same span as an operand.</param>
+    /// <returns>The carry out (0 or 1).</returns>
     public static uint Add(ReadOnlySpan<uint> x, ReadOnlySpan<uint> y, Span<uint> z)
     {
         ulong c = 0;
@@ -41,22 +48,6 @@ internal abstract class Nat256
         z[7] = (uint)c;
         c >>= 32;
         return (uint)c;
-    }
-
-    public static uint GetBit(ReadOnlySpan<uint> x, int bit)
-    {
-        if (bit == 0)
-        {
-            return x[0] & 1;
-        }
-        else if ((bit & 255) != bit)
-        {
-            return 0;
-        }
-
-        int w = bit >> 5;
-        int b = bit & 31;
-        return (x[w] >> b) & 1;
     }
 
     public static bool Gte(ReadOnlySpan<uint> x, ReadOnlySpan<uint> y)
@@ -145,10 +136,11 @@ internal abstract class Nat256
     }
 
     /// <summary>
-    /// Multiplication on four 64-bit limbs (product scanning by rows, carried in a <see cref="UInt128"/>).<br/>
-    /// On x64 each partial product compiles to a single MULX plus ADD/ADC, replacing the 64 partial
-    /// products of the 32-bit path with 16. Little-endian only: eight little-endian 32-bit words are
-    /// reinterpreted in place as four little-endian 64-bit limbs.
+    /// Multiplication on four 64-bit limbs (schoolbook operand scanning, one row per limb of <paramref name="x"/>),
+    /// replacing the 64 partial products of the 32-bit path with 16.<br/>
+    /// Each 128-bit product comes from <see cref="Math.BigMul(ulong, ulong, out ulong)"/> (a single MULX on x64) and the carries
+    /// are propagated on 64-bit halves; <see cref="UInt128"/> operators are avoided because the JIT stops inlining them in a method this large.<br/>
+    /// Little-endian only: eight little-endian 32-bit words are reinterpreted in place as four little-endian 64-bit limbs.
     /// </summary>
     private static void Mul64(ReadOnlySpan<uint> x, ReadOnlySpan<uint> y, Span<uint> zz)
     {
@@ -159,64 +151,111 @@ internal abstract class Nat256
         // Reading the highest index first lets the JIT elide the remaining bounds checks.
         ulong x3 = xd[3], x2 = xd[2], x1 = xd[1], x0 = xd[0];
         ulong y3 = yd[3], y2 = yd[2], y1 = yd[1], y0 = yd[0];
+        ulong hi, lo, c;
 
         // Row x0: no overflow is possible in any accumulation below;
-        // product + carry + limb <= (2^64-1)^2 + 2*(2^64-1) = 2^128 - 1.
-        UInt128 c = (UInt128)x0 * y0;
-        ulong z0 = (ulong)c;
-        c >>= 64;
-        c += (UInt128)x0 * y1;
-        ulong z1 = (ulong)c;
-        c >>= 64;
-        c += (UInt128)x0 * y2;
-        ulong z2 = (ulong)c;
-        c >>= 64;
-        c += (UInt128)x0 * y3;
-        ulong z3 = (ulong)c;
-        ulong z4 = (ulong)(c >> 64);
+        // product + carry + limb <= (2^64-1)^2 + 2*(2^64-1) = 2^128 - 1, so (hi, lo) never wraps.
+        c = Math.BigMul(x0, y0, out ulong z0);
+        hi = Math.BigMul(x0, y1, out lo);
+        lo += c;
+        hi += lo < c ? 1UL : 0UL;
+        ulong z1 = lo;
+        c = hi;
+        hi = Math.BigMul(x0, y2, out lo);
+        lo += c;
+        hi += lo < c ? 1UL : 0UL;
+        ulong z2 = lo;
+        c = hi;
+        hi = Math.BigMul(x0, y3, out lo);
+        lo += c;
+        hi += lo < c ? 1UL : 0UL;
+        ulong z3 = lo;
+        ulong z4 = hi;
 
         // Row x1.
-        c = ((UInt128)x1 * y0) + z1;
-        z1 = (ulong)c;
-        c >>= 64;
-        c += ((UInt128)x1 * y1) + z2;
-        z2 = (ulong)c;
-        c >>= 64;
-        c += ((UInt128)x1 * y2) + z3;
-        z3 = (ulong)c;
-        c >>= 64;
-        c += ((UInt128)x1 * y3) + z4;
-        z4 = (ulong)c;
-        ulong z5 = (ulong)(c >> 64);
+        hi = Math.BigMul(x1, y0, out lo);
+        lo += z1;
+        hi += lo < z1 ? 1UL : 0UL;
+        z1 = lo;
+        c = hi;
+        hi = Math.BigMul(x1, y1, out lo);
+        lo += c;
+        hi += lo < c ? 1UL : 0UL;
+        lo += z2;
+        hi += lo < z2 ? 1UL : 0UL;
+        z2 = lo;
+        c = hi;
+        hi = Math.BigMul(x1, y2, out lo);
+        lo += c;
+        hi += lo < c ? 1UL : 0UL;
+        lo += z3;
+        hi += lo < z3 ? 1UL : 0UL;
+        z3 = lo;
+        c = hi;
+        hi = Math.BigMul(x1, y3, out lo);
+        lo += c;
+        hi += lo < c ? 1UL : 0UL;
+        lo += z4;
+        hi += lo < z4 ? 1UL : 0UL;
+        z4 = lo;
+        ulong z5 = hi;
 
         // Row x2.
-        c = ((UInt128)x2 * y0) + z2;
-        z2 = (ulong)c;
-        c >>= 64;
-        c += ((UInt128)x2 * y1) + z3;
-        z3 = (ulong)c;
-        c >>= 64;
-        c += ((UInt128)x2 * y2) + z4;
-        z4 = (ulong)c;
-        c >>= 64;
-        c += ((UInt128)x2 * y3) + z5;
-        z5 = (ulong)c;
-        ulong z6 = (ulong)(c >> 64);
+        hi = Math.BigMul(x2, y0, out lo);
+        lo += z2;
+        hi += lo < z2 ? 1UL : 0UL;
+        z2 = lo;
+        c = hi;
+        hi = Math.BigMul(x2, y1, out lo);
+        lo += c;
+        hi += lo < c ? 1UL : 0UL;
+        lo += z3;
+        hi += lo < z3 ? 1UL : 0UL;
+        z3 = lo;
+        c = hi;
+        hi = Math.BigMul(x2, y2, out lo);
+        lo += c;
+        hi += lo < c ? 1UL : 0UL;
+        lo += z4;
+        hi += lo < z4 ? 1UL : 0UL;
+        z4 = lo;
+        c = hi;
+        hi = Math.BigMul(x2, y3, out lo);
+        lo += c;
+        hi += lo < c ? 1UL : 0UL;
+        lo += z5;
+        hi += lo < z5 ? 1UL : 0UL;
+        z5 = lo;
+        ulong z6 = hi;
 
         // Row x3.
-        c = ((UInt128)x3 * y0) + z3;
-        z3 = (ulong)c;
-        c >>= 64;
-        c += ((UInt128)x3 * y1) + z4;
-        z4 = (ulong)c;
-        c >>= 64;
-        c += ((UInt128)x3 * y2) + z5;
-        z5 = (ulong)c;
-        c >>= 64;
-        c += ((UInt128)x3 * y3) + z6;
-        z6 = (ulong)c;
+        hi = Math.BigMul(x3, y0, out lo);
+        lo += z3;
+        hi += lo < z3 ? 1UL : 0UL;
+        z3 = lo;
+        c = hi;
+        hi = Math.BigMul(x3, y1, out lo);
+        lo += c;
+        hi += lo < c ? 1UL : 0UL;
+        lo += z4;
+        hi += lo < z4 ? 1UL : 0UL;
+        z4 = lo;
+        c = hi;
+        hi = Math.BigMul(x3, y2, out lo);
+        lo += c;
+        hi += lo < c ? 1UL : 0UL;
+        lo += z5;
+        hi += lo < z5 ? 1UL : 0UL;
+        z5 = lo;
+        c = hi;
+        hi = Math.BigMul(x3, y3, out lo);
+        lo += c;
+        hi += lo < c ? 1UL : 0UL;
+        lo += z6;
+        hi += lo < z6 ? 1UL : 0UL;
+        z6 = lo;
 
-        zd[7] = (ulong)(c >> 64);
+        zd[7] = hi;
         zd[0] = z0;
         zd[1] = z1;
         zd[2] = z2;
@@ -555,6 +594,13 @@ internal abstract class Nat256
         zz[15] = (w << 1) | c;
     }
 
+    /// <summary>
+    /// Computes <c>z = x - y</c> on eight-word values (least significant word first).
+    /// </summary>
+    /// <param name="x">The minuend.</param>
+    /// <param name="y">The subtrahend.</param>
+    /// <param name="z">Receives the low 256 bits of the difference. It may be the same span as an operand.</param>
+    /// <returns>The borrow out (0 or -1).</returns>
     public static int Sub(ReadOnlySpan<uint> x, ReadOnlySpan<uint> y, Span<uint> z)
     {
         long c = 0;
@@ -585,6 +631,18 @@ internal abstract class Nat256
         return (int)c;
     }
 
+    /// <summary>
+    /// Computes <c>(2^32 + w) * x + y</c> on the eight-word values at the given offsets and writes the low 256 bits to <paramref name="z"/>.<br/>
+    /// With <c>2^32 + w = 2^256 - p</c> this folds the high half of a 512-bit value (secp256k1).
+    /// </summary>
+    /// <param name="w">The low part of the multiplier; must be below 2^31.</param>
+    /// <param name="x">The span holding the eight-word multiplicand.</param>
+    /// <param name="xOff">The word offset of the multiplicand in <paramref name="x"/>.</param>
+    /// <param name="y">The span holding the eight-word addend.</param>
+    /// <param name="yOff">The word offset of the addend in <paramref name="y"/>.</param>
+    /// <param name="z">The span that receives the low 256 bits.</param>
+    /// <param name="zOff">The word offset of the result in <paramref name="z"/>.</param>
+    /// <returns>The bits of the result above 2^256.</returns>
     public static ulong Mul33Add(uint w, ReadOnlySpan<uint> x, int xOff, ReadOnlySpan<uint> y, int yOff, Span<uint> z, int zOff)
     {
         Debug.Assert(w >> 31 == 0);
@@ -626,6 +684,14 @@ internal abstract class Nat256
         return c;
     }
 
+    /// <summary>
+    /// Adds <c>(2^32 + x) * y</c> to the eight-word value starting at <c>z[zOff]</c>.
+    /// </summary>
+    /// <param name="x">The low part of the multiplier; must be below 2^31.</param>
+    /// <param name="y">The 64-bit multiplicand.</param>
+    /// <param name="z">The span holding the eight-word value, updated in place.</param>
+    /// <param name="zOff">The word offset of the value in <paramref name="z"/>.</param>
+    /// <returns>The carry out of the eight-word value (0 or 1).</returns>
     public static uint Mul33DWordAdd(uint x, ulong y, Span<uint> z, int zOff)
     {
         Debug.Assert(x >> 31 == 0);

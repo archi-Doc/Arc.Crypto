@@ -237,7 +237,7 @@ internal static unsafe class XxHashShared
                             sourceIndex += (int)stripes * StripeLengthBytes;
                             state.StripesProcessedInCurrentBlock = stripes;
 
-                            // Copy the last stripe into the end of the buffer so it is available to GetCurrentHashCore when processing the "stripe from the end".
+                            // Copy the last stripe into the end of the buffer so it is available to DigestLong when processing the "stripe from the end".
                             source.Slice(sourceIndex - StripeLengthBytes, StripeLengthBytes).CopyTo(new Span<byte>(buffer + InternalBufferLengthBytes - StripeLengthBytes, StripeLengthBytes));
                         }
                         else if (source.Length - sourceIndex > InternalBufferLengthBytes)
@@ -250,7 +250,7 @@ internal static unsafe class XxHashShared
                             }
                             while (source.Length - sourceIndex > InternalBufferLengthBytes);
 
-                            // Copy the last stripe into the end of the buffer so it is available to GetCurrentHashCore when processing the "stripe from the end".
+                            // Copy the last stripe into the end of the buffer so it is available to DigestLong when processing the "stripe from the end".
                             source.Slice(sourceIndex - StripeLengthBytes, StripeLengthBytes).CopyTo(new Span<byte>(buffer + InternalBufferLengthBytes - StripeLengthBytes, StripeLengthBytes));
                         }
 
