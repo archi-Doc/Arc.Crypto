@@ -1,5 +1,7 @@
 // Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
+using System.Diagnostics;
+using System.Reflection;
 using Arc.Crypto;
 using Arc.Crypto.EC;
 using Xunit;
@@ -8,6 +10,13 @@ namespace Test;
 
 public class AllocationTest
 {
+    // Unoptimized (Debug) code does not expand RuntimeHelpers.CreateSpan, so every access to the
+    // software AES ReadOnlySpan<uint> tables allocates; the zero-allocation guarantee holds for optimized builds only.
+    private const string UnoptimizedLibrary = "Arc.Crypto is built without JIT optimizations (Debug); AES table lookups allocate there.";
+
+    private static bool IsLibraryOptimized
+        => typeof(Aegis256).Assembly.GetCustomAttribute<DebuggableAttribute>() is not { IsJITOptimizerDisabled: true };
+
     [Fact]
     public void SeedValidationDoesNotAllocate()
     {
@@ -101,6 +110,7 @@ public class AllocationTest
 
         var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
         Assert.True(success);
+        Assert.SkipUnless(IsLibraryOptimized, UnoptimizedLibrary);
         Assert.Equal(0, allocated);
 
         bool Run()
@@ -144,6 +154,7 @@ public class AllocationTest
         }
 
         var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        Assert.SkipUnless(IsLibraryOptimized, UnoptimizedLibrary); // Without hardware AES, AegisRandom uses the software tables.
         Assert.Equal(0, allocated);
     }
 }
