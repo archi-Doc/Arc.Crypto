@@ -163,6 +163,12 @@ public class Secp256r1Curve : ECCurveBase
         }
     }
 
+    /// <summary>
+    /// Computes <c>z = x^(2^n) mod p</c> by <paramref name="n"/> successive squarings.
+    /// </summary>
+    /// <param name="x">The field element, eight 32-bit words, least significant first.</param>
+    /// <param name="n">The number of squarings; must be positive.</param>
+    /// <param name="z">Receives the result. It may be the same span as <paramref name="x"/>.</param>
     internal static void ElementSquareN(ReadOnlySpan<uint> x, int n, Span<uint> z)
     {
         Debug.Assert(n > 0);
@@ -405,7 +411,10 @@ public class Secp256r1Curve : ECCurveBase
     /// <summary>
     /// Portable word-based repeated squaring, used on big-endian platforms.
     /// </summary>
-    private static void ElementSquareNSoft(ReadOnlySpan<uint> x, int n, Span<uint> z)
+    /// <param name="x">The field element, eight 32-bit words, least significant first.</param>
+    /// <param name="n">The number of squarings; must be positive.</param>
+    /// <param name="z">Receives the result. It may be the same span as <paramref name="x"/>.</param>
+    internal static void ElementSquareNSoft(ReadOnlySpan<uint> x, int n, Span<uint> z)
     {
         scoped Span<uint> tt = stackalloc uint[P256UIntLength * 2];
         Nat256.Square(x, tt);
@@ -453,7 +462,12 @@ public class Secp256r1Curve : ECCurveBase
         z[7] = (uint)c;
     }
 
-    private static void Reduce(ReadOnlySpan<uint> xx, Span<uint> z)
+    /// <summary>
+    /// Reduces a 512-bit value modulo <c>p</c> (word-based, endianness-neutral).
+    /// </summary>
+    /// <param name="xx">The 512-bit input as sixteen 32-bit words, least significant first.</param>
+    /// <param name="z">Receives the reduced value as eight 32-bit words.</param>
+    internal static void Reduce(ReadOnlySpan<uint> xx, Span<uint> z)
     {
         long xx08 = xx[8], xx09 = xx[9], xx10 = xx[10], xx11 = xx[11];
         long xx12 = xx[12], xx13 = xx[13], xx14 = xx[14], xx15 = xx[15];

@@ -5,6 +5,10 @@ namespace Arc.Crypto;
 /// <summary>
 /// Provides methods for encryption and decryption using the AEGIS-256 algorithm.
 /// </summary>
+/// <remarks>
+/// Uses x86 AES-NI or ARMv8 AES instructions when available. When hardware AES is unavailable or disabled,
+/// the portable fallback uses lookup tables and is not constant-time, so it may leak the key through cache-timing side channels.
+/// </remarks>
 public static class Aegis256
 {
     /// <summary>
@@ -18,7 +22,8 @@ public static class Aegis256
     public const int NonceSize = 32;
 
     /// <summary>
-    /// The minimum size of the authentication tag in bytes.
+    /// The size of the shorter (default) authentication tag in bytes.<br/>
+    /// A tag size of zero, which disables authentication, is also accepted.
     /// </summary>
     public const int MinTagSize = 16;
 
@@ -28,17 +33,17 @@ public static class Aegis256
     public const int MaxTagSize = 32;
 
     /// <summary>
-    /// Encrypts the specified plaintext using the Aegis-256 algorithm.<br/>
+    /// Encrypts the specified plaintext using the AEGIS-256 algorithm and appends the authentication tag.<br/>
     /// In-place operation is supported when both spans start at the same address.
     /// An overlapping <paramref name="ciphertext"/> must not start after <paramref name="plaintext"/>.
     /// </summary>
-    /// <param name="ciphertext">The buffer to receive the ciphertext.<br/>
-    /// Allocate a buffer with the size of the plaintext length plus the Tag size (16 bytes or 32 bytes).</param>
+    /// <param name="ciphertext">The buffer to receive the ciphertext followed by the tag.<br/>
+    /// Its length must be the plaintext length plus <paramref name="tagSize"/>.</param>
     /// <param name="plaintext">The plaintext to encrypt.</param>
-    /// <param name="nonce32">The nonce (32 bytes) to use for encryption.</param>
-    /// <param name="key32">The key (32 bytes) to use for encryption.</param>
-    /// <param name="associatedData">The associated data to authenticate.</param>
-    /// <param name="tagSize">The tag size: 16 or 32 bytes. Zero disables authentication and tamper detection.</param>
+    /// <param name="nonce32">The nonce (exactly 32 bytes). Never reuse a nonce with the same key.</param>
+    /// <param name="key32">The key (exactly 32 bytes).</param>
+    /// <param name="associatedData">The associated data to authenticate but not encrypt.</param>
+    /// <param name="tagSize">The tag size: 16 or 32 bytes. Zero appends no tag and disables authentication and tamper detection.</param>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when <paramref name="tagSize"/> is not 0, <see cref="MinTagSize"/>, or <see cref="MaxTagSize"/>,
     /// or when the lengths of <paramref name="ciphertext"/>, <paramref name="nonce32"/>, or <paramref name="key32"/> are invalid.
@@ -86,17 +91,17 @@ public static class Aegis256
     }
 
     /// <summary>
-    /// Decrypts the specified ciphertext using the Aegis-256 algorithm.<br/>
-    /// In-place operation is supported when both spans start at the same address.
+    /// Decrypts the specified ciphertext using the AEGIS-256 algorithm and verifies its authentication tag.<br/>
+    /// In-place operation is supported when both spans start at the same address; the ciphertext is then overwritten even if verification fails.
     /// An overlapping <paramref name="plaintext"/> must not start after <paramref name="ciphertext"/>.
     /// </summary>
     /// <param name="plaintext">The buffer to receive the plaintext.<br/>
-    /// Allocate a buffer with the size of the ciphertext length minus the Tag size (16 bytes or 32 bytes).</param>
-    /// <param name="ciphertext">The ciphertext to decrypt.</param>
-    /// <param name="nonce32">The nonce (32 bytes) to use for decryption.</param>
-    /// <param name="key32">The key (32 bytes) to use for decryption.</param>
-    /// <param name="associatedData">The associated data to authenticate.</param>
-    /// <param name="tagSize">The tag size: 16 or 32 bytes. Zero disables authentication and tamper detection.</param>
+    /// Its length must be the ciphertext length minus <paramref name="tagSize"/>.</param>
+    /// <param name="ciphertext">The ciphertext followed by the tag.</param>
+    /// <param name="nonce32">The nonce (exactly 32 bytes) used for encryption.</param>
+    /// <param name="key32">The key (exactly 32 bytes) used for encryption.</param>
+    /// <param name="associatedData">The associated data used for encryption.</param>
+    /// <param name="tagSize">The tag size used for encryption: 16 or 32 bytes. Zero skips verification.</param>
     /// <returns>True on success; false on authentication failure, with the plaintext buffer cleared. With a zero tag size, returns true without verification.</returns>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when <paramref name="tagSize"/> is not 0, <see cref="MinTagSize"/>, or <see cref="MaxTagSize"/>,

@@ -75,7 +75,7 @@ public static class Blake3
     /// </summary>
     /// <param name="input">The input data to hash.</param>
     /// <param name="output">The span to write the 32-byte BLAKE3 hash to.</param>
-    /// <exception cref="ArgumentException">Thrown when the output span length is not 32 bytes.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="output"/> is not 32 bytes long.</exception>
     public static unsafe void Get256Span(ReadOnlySpan<byte> input, Span<byte> output)
     {
         if (output.Length != HashLength)

@@ -135,11 +135,10 @@ public abstract class RandomUInt64Base
     }
 
     /// <summary>
-    /// Returns a random 64-bit signed integer.
+    /// [long.MinValue, long.MaxValue]<br/>
+    /// Returns a random integer.
     /// </summary>
-    /// <returns>
-    /// A random <see cref="long"/> value spanning the full <see cref="long"/> range.
-    /// </returns>
+    /// <returns>A 64-bit signed integer [long.MinValue, long.MaxValue].</returns>
     public long NextInt64()
         => (long)this.NextUInt64();
 
@@ -233,7 +232,8 @@ public abstract class RandomUInt64Base
     public float NextSingle() => (this.NextUInt64() >> 40) * (1.0f / 16777216.0f);
 
     /// <summary>
-    /// Fills the elements of a specified span of bytes with random numbers.
+    /// Fills the elements of a specified span of bytes with random numbers.<br/>
+    /// The default implementation writes successive <see cref="NextUInt64"/> values in native byte order; a partial final word consumes a whole value.
     /// </summary>
     /// <param name="destination">The span to fill with random numbers.</param>
     public unsafe virtual void NextBytes(Span<byte> destination)
@@ -254,22 +254,9 @@ public abstract class RandomUInt64Base
                 return;
             }
 
-            // 0 < remaining < 8
+            // 0 < remaining < 8: copy the first bytes of the value in native byte order, like the full words above.
             var u = this.NextUInt64();
-            if (remaining >= sizeof(uint))
-            {
-                *(uint*)dest = (uint)u;
-                dest += sizeof(uint);
-                remaining -= sizeof(uint);
-                u >>= 32;
-            }
-
-            // 0 < remaining < 4
-            byte* pu = (byte*)&u;
-            while (remaining-- > 0)
-            {
-                *dest++ = *pu++;
-            }
+            Unsafe.CopyBlockUnaligned(dest, &u, (uint)remaining);
         }
     }
 }

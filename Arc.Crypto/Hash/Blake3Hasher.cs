@@ -1,9 +1,11 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Unicode;
 
 namespace Arc.Crypto;
 
@@ -15,12 +17,19 @@ namespace Arc.Crypto;
 /// </remarks>
 public unsafe struct Blake3Hasher : IDisposable
 {
+    private const int ContextStackSize = 256;
+
     /// <summary>
-    /// Construct a new Hasher for the regular hash function.
+    /// Encodes derivation contexts; it throws instead of replacing unpaired surrogates, so distinct contexts never collapse into one.
     /// </summary>
-    /// <returns>A new instance of the hasher.</returns>
+    private static readonly UTF8Encoding StrictUtf8 = new(false, true);
+
+    /// <summary>
+    /// Creates a hasher for the regular hash function.
+    /// </summary>
+    /// <returns>A new hasher.</returns>
     /// <remarks>
-    /// The struct returned needs to be disposed explicitly.
+    /// The returned hasher must be disposed.
     /// </remarks>
     public static Blake3Hasher New()
     {
@@ -28,12 +37,13 @@ public unsafe struct Blake3Hasher : IDisposable
     }
 
     /// <summary>
-    /// Construct a new Hasher for the keyed hash function.
+    /// Creates a hasher for the keyed hash function.
     /// </summary>
-    /// <param name="key">A 32 byte key.</param>
-    /// <returns>A new instance of the hasher.</returns>
+    /// <param name="key">The 32-byte key.</param>
+    /// <returns>A new hasher.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="key"/> is not 32 bytes long.</exception>
     /// <remarks>
-    /// The struct returned needs to be disposed explicitly.
+    /// The returned hasher must be disposed.
     /// </remarks>
     public static Blake3Hasher NewKeyed(ReadOnlySpan<byte> key)
     {
@@ -49,37 +59,61 @@ public unsafe struct Blake3Hasher : IDisposable
     }
 
     /// <summary>
-    /// Construct a new Hasher for the key derivation function.
+    /// Creates a hasher for the key derivation function.
     /// </summary>
-    /// <param name="context">A public, application-specific context string. Supply secret key material through Update.</param>
-    /// <returns>A new instance of the hasher.</returns>
+    /// <param name="context">A public, application-specific context string, encoded as UTF-8. Supply secret key material through Update.</param>
+    /// <returns>A new hasher.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="context"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="context"/> contains an unpaired surrogate.</exception>
     /// <remarks>
-    /// The struct returned needs to be disposed explicitly.
+    /// The returned hasher must be disposed.
     /// </remarks>
     public static Blake3Hasher NewDeriveKey(string context)
     {
         ArgumentNullException.ThrowIfNull(context);
-        Span<byte> buffer = stackalloc byte[Utf8Password.StackSize];
-        using var utf8 = new Utf8Password(context, buffer);
-        return NewDeriveKey(utf8.Bytes);
+        int length;
+        try
+        {
+            length = StrictUtf8.GetByteCount(context);
+        }
+        catch (EncoderFallbackException ex)
+        {
+            throw new ArgumentException("The context must not contain unpaired surrogates.", nameof(context), ex);
+        }
+
+        byte[]? rented = null;
+        Span<byte> buffer = length <= ContextStackSize ? stackalloc byte[ContextStackSize] : (rented = ArrayPool<byte>.Shared.Rent(length));
+        try
+        {
+            var written = StrictUtf8.GetBytes(context, buffer);
+            return NewDeriveKeyCore(buffer[..written]);
+        }
+        finally
+        {
+            if (rented is not null)
+            {// The context is public, so the buffer is not cleared.
+                ArrayPool<byte>.Shared.Return(rented);
+            }
+        }
     }
 
     /// <summary>
-    /// Construct a new Hasher for the key derivation function.
+    /// Creates a hasher for the key derivation function.
     /// </summary>
-    /// <returns>A new instance of the hasher.</returns>
-    /// <param name="utf8Context">The UTF-8 application-specific context. Supply secret key material through Update.</param>
+    /// <param name="utf8Context">The UTF-8 encoded, public, application-specific context. Supply secret key material through Update.</param>
+    /// <returns>A new hasher.</returns>
+    /// <exception cref="ArgumentException"><paramref name="utf8Context"/> is not valid UTF-8.</exception>
     /// <remarks>
-    /// The struct returned needs to be disposed explicitly.
+    /// The returned hasher must be disposed.
     /// </remarks>
     public static Blake3Hasher NewDeriveKey(ReadOnlySpan<byte> utf8Context)
     {
-        // Rust slices require a non-null pointer even for an empty input.
-        byte empty = 0;
-        fixed (void* ptr = utf8Context)
-        {
-            return new Blake3Hasher(Blake3Interops.blake3_new_derive_key(utf8Context.IsEmpty ? &empty : ptr, (void*)utf8Context.Length));
+        if (!Utf8.IsValid(utf8Context))
+        {// The native side would replace invalid sequences with U+FFFD, merging distinct contexts.
+            throw new ArgumentException("The context must be valid UTF-8.", nameof(utf8Context));
         }
+
+        return NewDeriveKeyCore(utf8Context);
     }
 
     #region FieldAndProperty
@@ -103,7 +137,7 @@ public unsafe struct Blake3Hasher : IDisposable
     }
 
     /// <summary>
-    /// Dispose this instance.
+    /// Releases the native hasher state. Calling it again on the same instance has no effect.
     /// </summary>
     public void Dispose()
     {
@@ -116,8 +150,9 @@ public unsafe struct Blake3Hasher : IDisposable
     }
 
     /// <summary>
-    /// Resets the hasher to its initial state so that it can be reused.
+    /// Resets the hasher to its initial state, keeping the key or derivation context it was created with.
     /// </summary>
+    /// <exception cref="NullReferenceException">The hasher is uninitialized or disposed.</exception>
     public void Reset()
     {
         if (this.hasher == null)
@@ -129,15 +164,13 @@ public unsafe struct Blake3Hasher : IDisposable
     }
 
     /// <summary>
-    /// Add input bytes to the hash state. You can call this any number of times.
+    /// Adds input bytes to the hash state. Can be called any number of times.
     /// </summary>
-    /// <param name="data">The input data byte buffer to hash.</param>
+    /// <param name="data">The input bytes.</param>
+    /// <exception cref="NullReferenceException">The hasher is uninitialized or disposed.</exception>
     /// <remarks>
-    /// This method is always single-threaded. For multi-threading support, see <see cref="UpdateParallel"/> below.
-    ///
-    /// Note that the degree of SIMD parallelism that update can use is limited by the size of this input buffer.
-    /// The 8 KiB buffer currently used by std::io::copy is enough to leverage AVX2, for example, but not enough to leverage AVX-512.
-    /// A 16 KiB buffer is large enough to leverage all currently supported SIMD instruction sets.
+    /// Runs on the calling thread; see <see cref="UpdateParallel(ReadOnlySpan{byte})"/> for multi-threading.<br/>
+    /// SIMD parallelism is limited by the input size; 16 KiB or more per call can use every supported instruction set.
     /// </remarks>
     public void Update(scoped ReadOnlySpan<byte> data)
     {
@@ -153,16 +186,13 @@ public unsafe struct Blake3Hasher : IDisposable
     }
 
     /// <summary>
-    /// Add input data to the hash state. You can call this any number of times.
+    /// Adds the raw memory of <paramref name="data"/> to the hash state. Can be called any number of times.
     /// </summary>
-    /// <typeparam name="T">Type of the data.</typeparam>
-    /// <param name="data">The data span to hash.</param>
+    /// <typeparam name="T">The unmanaged element type.</typeparam>
+    /// <param name="data">The input elements.</param>
+    /// <exception cref="NullReferenceException">The hasher is uninitialized or disposed.</exception>
     /// <remarks>
-    /// This method is always single-threaded. For multi-threading support, see <see cref="UpdateParallel"/> below.
-    ///
-    /// Note that the degree of SIMD parallelism that update can use is limited by the size of this input buffer.
-    /// The 8 KiB buffer currently used by std::io::copy is enough to leverage AVX2, for example, but not enough to leverage AVX-512.
-    /// A 16 KiB buffer is large enough to leverage all currently supported SIMD instruction sets.
+    /// The hash depends on the native byte order and on any padding bytes in <typeparamref name="T"/>.
     /// </remarks>
     public void Update<T>(scoped ReadOnlySpan<T> data)
         where T : unmanaged
@@ -179,16 +209,12 @@ public unsafe struct Blake3Hasher : IDisposable
     }
 
     /// <summary>
-    /// Add input bytes to the hash state, as with update, but potentially using multi-threading.
+    /// Adds input bytes to the hash state like <see cref="Update(ReadOnlySpan{byte})"/>, but may use multiple threads.
     /// </summary>
-    /// <param name="data">The input byte buffer.</param>
+    /// <param name="data">The input bytes.</param>
+    /// <exception cref="NullReferenceException">The hasher is uninitialized or disposed.</exception>
     /// <remarks>
-    /// To get any performance benefit from multi-threading, the input buffer size needs to be very large.
-    /// As a rule of thumb on x86_64, there is no benefit to multi-threading inputs less than 128 KiB.
-    /// Other platforms have different thresholds, and in general you need to benchmark your specific use case.
-    /// Where possible, memory mapping an entire input file is recommended, to take maximum advantage of multi-threading without needing to tune a specific buffer size.
-    /// Where memory mapping is not possible, good multi-threading performance requires doing IO on a background thread, to avoid sleeping all your worker threads while the input buffer is (serially) refilled.
-    /// This is quite complicated compared to memory mapping.
+    /// Only very large inputs benefit; on x86-64 there is usually no gain below 128 KiB.
     /// </remarks>
     public void UpdateParallel(scoped ReadOnlySpan<byte> data)
     {
@@ -209,17 +235,13 @@ public unsafe struct Blake3Hasher : IDisposable
     }
 
     /// <summary>
-    /// Add input data span to the hash state, as with update, but potentially using multi-threading.
+    /// Adds the raw memory of <paramref name="data"/> to the hash state like <see cref="Update{T}(ReadOnlySpan{T})"/>, but may use multiple threads.
     /// </summary>
-    /// <param name="data">The input data buffer.</param>
-    /// <typeparam name="T">The type of the data elements.</typeparam>
+    /// <typeparam name="T">The unmanaged element type.</typeparam>
+    /// <param name="data">The input elements.</param>
+    /// <exception cref="NullReferenceException">The hasher is uninitialized or disposed.</exception>
     /// <remarks>
-    /// To get any performance benefit from multi-threading, the input buffer size needs to be very large.
-    /// As a rule of thumb on x86_64, there is no benefit to multi-threading inputs less than 128 KiB.
-    /// Other platforms have different thresholds, and in general you need to benchmark your specific use case.
-    /// Where possible, memory mapping an entire input file is recommended, to take maximum advantage of multi-threading without needing to tune a specific buffer size.
-    /// Where memory mapping is not possible, good multi-threading performance requires doing IO on a background thread, to avoid sleeping all your worker threads while the input buffer is (serially) refilled.
-    /// This is quite complicated compared to memory mapping.
+    /// Only very large inputs benefit; on x86-64 there is usually no gain below 128 KiB.
     /// </remarks>
     public void UpdateParallel<T>(scoped ReadOnlySpan<T> data)
         where T : unmanaged
@@ -242,11 +264,12 @@ public unsafe struct Blake3Hasher : IDisposable
     }
 
     /// <summary>
-    /// Finalize the hash state and return the Hash of the input.
+    /// Returns the 32-byte hash of the input so far.
     /// </summary>
-    /// <returns>The calculated 256-bit/32-byte hash.</returns>
+    /// <returns>The 256-bit hash.</returns>
+    /// <exception cref="NullReferenceException">The hasher is uninitialized or disposed.</exception>
     /// <remarks>
-    /// This method is idempotent. Calling it twice will give the same result. You can also add more input and finalize again.
+    /// The state is not changed: calling it again gives the same result, and more input can be added afterward.
     /// </remarks>
     [SkipLocalsInit]
     public Struct256 FinalizeHash()
@@ -262,11 +285,12 @@ public unsafe struct Blake3Hasher : IDisposable
     }
 
     /// <summary>
-    /// Finalize the hash state to the output span, which can supply any number of output bytes.
+    /// Fills <paramref name="output"/> with the extendable output (XOF) of the input so far.
     /// </summary>
-    /// <param name="output">The output hash, which can supply any number of output bytes.</param>
+    /// <param name="output">The buffer to fill. Any length is allowed; the first 32 bytes equal <see cref="FinalizeHash()"/>, and an empty span is ignored.</param>
+    /// <exception cref="NullReferenceException">The hasher is uninitialized or disposed.</exception>
     /// <remarks>
-    /// This method is idempotent. Calling it twice will give the same result. You can also add more input and finalize again.
+    /// The state is not changed: calling it again gives the same result, and more input can be added afterward.
     /// </remarks>
     public void FinalizeHash(scoped Span<byte> output)
     {
@@ -295,6 +319,16 @@ public unsafe struct Blake3Hasher : IDisposable
             {
                 Blake3Interops.blake3_finalize_xof_preemptive(this.hasher, ptr, (void*)output.Length);
             }
+        }
+    }
+
+    private static Blake3Hasher NewDeriveKeyCore(ReadOnlySpan<byte> utf8Context)
+    {
+        // Rust slices require a non-null pointer even for an empty input.
+        byte empty = 0;
+        fixed (void* ptr = utf8Context)
+        {
+            return new Blake3Hasher(Blake3Interops.blake3_new_derive_key(utf8Context.IsEmpty ? &empty : ptr, (void*)utf8Context.Length));
         }
     }
 

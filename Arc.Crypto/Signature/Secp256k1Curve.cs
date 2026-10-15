@@ -182,6 +182,12 @@ public class Secp256k1Curve : ECCurveBase
         }
     }
 
+    /// <summary>
+    /// Computes <c>z = x^(2^n) mod p</c> by <paramref name="n"/> successive squarings.
+    /// </summary>
+    /// <param name="x">The field element, eight 32-bit words, least significant first.</param>
+    /// <param name="n">The number of squarings; must be positive.</param>
+    /// <param name="z">Receives the result. It may be the same span as <paramref name="x"/>.</param>
     internal static void ElementSquareN(ReadOnlySpan<uint> x, int n, Span<uint> z)
     {
         Debug.Assert(n > 0);
@@ -286,7 +292,10 @@ public class Secp256k1Curve : ECCurveBase
     /// <summary>
     /// Portable word-based repeated squaring, used on big-endian platforms.
     /// </summary>
-    private static void ElementSquareNSoft(ReadOnlySpan<uint> x, int n, Span<uint> z)
+    /// <param name="x">The field element, eight 32-bit words, least significant first.</param>
+    /// <param name="n">The number of squarings; must be positive.</param>
+    /// <param name="z">Receives the result. It may be the same span as <paramref name="x"/>.</param>
+    internal static void ElementSquareNSoft(ReadOnlySpan<uint> x, int n, Span<uint> z)
     {
         scoped Span<uint> tmp = stackalloc uint[P256UIntLength * 2];
         Nat256.Square(x, tmp);
@@ -299,6 +308,11 @@ public class Secp256k1Curve : ECCurveBase
         }
     }
 
+    /// <summary>
+    /// Reduces a 512-bit value modulo <c>p</c>, using <see cref="Reduce64"/> on little-endian platforms and <see cref="ReduceSoft"/> otherwise.
+    /// </summary>
+    /// <param name="xx">The 512-bit input as sixteen 32-bit words, least significant first.</param>
+    /// <param name="z">Receives the reduced value as eight 32-bit words.</param>
     internal static void Reduce(ReadOnlySpan<uint> xx, Span<uint> z)
     {
         if (BitConverter.IsLittleEndian)
@@ -313,8 +327,8 @@ public class Secp256k1Curve : ECCurveBase
 
     /// <summary>
     /// Reduction on 64-bit limbs. With <c>p = 2^256 - c</c> (<c>c = 0x1000003D1</c>),
-    /// a 512-bit value <c>hi * 2^256 + lo</c> is congruent to <c>hi * c + lo</c>;
-    /// one such fold shrinks the value to 257+ bits, a second fold of the tiny top limb
+    /// a 512-bit value <c>hi * 2^256 + lo</c> is congruent to <c>hi * c + lo</c>.
+    /// The first fold leaves a value below 2^290 (top limb below 2^34); a second fold of that limb
     /// and at most one conditional subtraction of <c>p</c> (implemented as adding <c>c</c>)
     /// bring it into <c>[0, p)</c>. Little-endian only.
     /// </summary>
@@ -366,9 +380,9 @@ public class Secp256k1Curve : ECCurveBase
     }
 
     /// <summary>
-    /// Subtracts <c>p</c> once, implemented as adding <c>2^256 - p</c> and discarding the carry out of 2^256.
-    /// Cold path: reachable only with probability about 2^-32 per reduction, so it is kept out of line
-    /// and shared between the span-based and the fused reductions (which also makes it directly unit-testable).
+    /// Subtracts <c>p</c> once, implemented as adding <c>2^256 - p</c> and discarding the carry out of 2^256.<br/>
+    /// Cold path: random inputs reach it with negligible probability (far below 2^-128), so it is kept out of line,
+    /// shared by <see cref="Reduce64"/> and <see cref="ElementSquareN"/>, and unit-tested directly.
     /// </summary>
     /// <param name="z0">Limb 0 (least significant).</param>
     /// <param name="z1">Limb 1.</param>

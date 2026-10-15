@@ -171,10 +171,11 @@ internal unsafe ref struct KeccakSpongeStruct
     };
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="KeccakSpongeStruct"/> struct.
+    /// Initializes a new instance of the <see cref="KeccakSpongeStruct"/> struct and clears the state.
     /// </summary>
-    /// <param name="outputBits">The number of hash size in bits.</param>
-    /// <param name="state">The sponge state (ulong[StateLength]).</param>
+    /// <param name="outputBits">The hash size in bits: 224, 256, 384, or 512.</param>
+    /// <param name="state">The sponge state; only the first <see cref="StateLength"/> words are used.</param>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="outputBits"/> is unsupported, or <paramref name="state"/> is too short.</exception>
     public KeccakSpongeStruct(int outputBits, Span<ulong> state)
     {
         if (outputBits != 224 && outputBits != 256 && outputBits != 384 && outputBits != 512)
@@ -192,9 +193,10 @@ internal unsafe ref struct KeccakSpongeStruct
     /// <summary>
     /// Initializes a new instance of the <see cref="KeccakSpongeStruct"/> struct that resumes an existing sponge state.
     /// </summary>
-    /// <param name="outputBits">The number of hash size in bits.</param>
-    /// <param name="state">The sponge state (ulong[StateLength]) to resume.</param>
+    /// <param name="outputBits">The hash size in bits: 224, 256, 384, or 512.</param>
+    /// <param name="state">The sponge state to resume; only the first <see cref="StateLength"/> words are used.</param>
     /// <param name="statePosition">The byte position within the rate, as returned by <see cref="StatePosition"/>.</param>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="outputBits"/> is unsupported, or <paramref name="state"/> is too short.</exception>
     public KeccakSpongeStruct(int outputBits, Span<ulong> state, int statePosition)
     {
         if (outputBits != 224 && outputBits != 256 && outputBits != 384 && outputBits != 512)
@@ -211,7 +213,7 @@ internal unsafe ref struct KeccakSpongeStruct
     #region FieldAndProperty
 
     /// <summary>
-    /// Gets the number of hash size in bits.
+    /// Gets the hash size in bits.
     /// </summary>
     public readonly int OutputBits;
     public readonly int Bitrate; // 1600 - (this.OutputBits * 2)
@@ -285,10 +287,11 @@ internal unsafe ref struct KeccakSpongeStruct
     }
 
     /// <summary>
-    /// Squeezes the hash out of the sponge state.
+    /// Pads and permutes the state, then copies the hash to <paramref name="result"/>. Do not absorb more data afterward.
     /// </summary>
-    /// <param name="result">When this method returns, the bytes representing the hash of the input data (Length >= (OutputBits / 8)).</param>
-    public unsafe void SqueezeTo(Span<byte> result)
+    /// <param name="result">A buffer of at least <see cref="OutputBits"/> / 8 bytes; any trailing bytes are unchanged.</param>
+    /// <exception cref="ArgumentException"><paramref name="result"/> is too small; the state is left unchanged.</exception>
+    public void SqueezeTo(Span<byte> result)
     { // state 0..(this.Bitrate / 8) : data, (this.Bitrate / 8)..100
         var resultSize = this.OutputBits / 8;
         if (result.Length < resultSize)
@@ -296,21 +299,10 @@ internal unsafe ref struct KeccakSpongeStruct
             throw new ArgumentException("The length of the result must be greater than or equal to (OutputBits / 8).");
         }
 
-        this.State[this.statePosition / 8] ^= 0x06UL << (8 * (this.statePosition % 8));
-        this.State[(this.Bitrate / 64) - 1] ^= 0x80UL << 56;
-        fixed (ulong* stateHead = this.State)
-        {
-            this.Permute(stateHead);
-        }
+        this.Squeeze();
 
         // copy result from this.state.
-        unsafe
-        {
-            fixed (void* source = this.State, destination = result)
-            {
-                Buffer.MemoryCopy(source, destination, resultSize, resultSize);
-            }
-        }
+        MemoryMarshal.AsBytes(this.State)[..resultSize].CopyTo(result);
     }
 
     internal void Squeeze()

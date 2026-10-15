@@ -72,4 +72,78 @@ public class AllocationTest
             Assert.Equal(0, allocated);
         }
     }
+
+    [Fact]
+    public void AegisDoesNotAllocate()
+    {
+        var key128 = new byte[Aegis128L.KeySize];
+        var nonce128 = new byte[Aegis128L.NonceSize];
+        var key256 = new byte[Aegis256.KeySize];
+        var nonce256 = new byte[Aegis256.NonceSize];
+        var message = new byte[77]; // Full blocks plus a partial block for both ciphers.
+        var ad = new byte[13]; // A partial associated-data block.
+        var cipher16 = new byte[message.Length + 16];
+        var cipher32 = new byte[message.Length + 32];
+        var decrypted = new byte[message.Length];
+        new Random(42).NextBytes(message);
+
+        var success = true;
+        for (var i = 0; i < 100; i++)
+        {
+            success &= Run();
+        }
+
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        for (var i = 0; i < 1_000; i++)
+        {
+            success &= Run();
+        }
+
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        Assert.True(success);
+        Assert.Equal(0, allocated);
+
+        bool Run()
+        {
+            var ok = true;
+            Aegis256.Encrypt(cipher16, message, nonce256, key256, ad, 16);
+            ok &= Aegis256.TryDecrypt(decrypted, cipher16, nonce256, key256, ad, 16);
+            Aegis256.Encrypt(cipher32, message, nonce256, key256, ad, 32);
+            ok &= Aegis256.TryDecrypt(decrypted, cipher32, nonce256, key256, ad, 32);
+            ok &= !Aegis256.TryDecrypt(decrypted, cipher32, nonce256, key256, default, 32); // Authentication failure.
+
+            Aegis128L.Encrypt(cipher16, message, nonce128, key128, ad, 16);
+            ok &= Aegis128L.TryDecrypt(decrypted, cipher16, nonce128, key128, ad, 16);
+            Aegis128L.Encrypt(cipher32, message, nonce128, key128, ad, 32);
+            ok &= Aegis128L.TryDecrypt(decrypted, cipher32, nonce128, key128, ad, 32);
+            ok &= !Aegis128L.TryDecrypt(decrypted, cipher32, nonce128, key128, default, 32); // Authentication failure.
+
+            // The portable backends, which the dispatch skips when hardware AES is available.
+            Aegis256Soft.Encrypt(cipher32, message, nonce256, key256, ad, 32);
+            ok &= Aegis256Soft.Decrypt(decrypted, cipher32, nonce256, key256, ad, 32);
+            Aegis128LSoft.Encrypt(cipher32, message, nonce128, key128, ad, 32);
+            ok &= Aegis128LSoft.Decrypt(decrypted, cipher32, nonce128, key128, ad, 32);
+            return ok;
+        }
+    }
+
+    [Fact]
+    public void AegisRandomNextBytesDoesNotAllocate()
+    {
+        var random = new AegisRandom();
+        var buffer = new byte[5000]; // Each call crosses several 1024-byte refills; the RandomNumberGenerator store is reloaded every 64 refills.
+        for (var i = 0; i < 100; i++)
+        {
+            random.NextBytes(buffer);
+        }
+
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        for (var i = 0; i < 1_000; i++)
+        {
+            random.NextBytes(buffer);
+        }
+
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        Assert.Equal(0, allocated);
+    }
 }

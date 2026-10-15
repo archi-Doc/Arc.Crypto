@@ -3,12 +3,14 @@
 namespace Arc.Crypto;
 
 /// <summary>
-/// Represents a pseudo-random number generator based on Xorshift.<br/>
+/// Represents a pseudo-random number generator based on 64-bit Xorshift (shifts 13, 7, 17).<br/>
+/// This class is NOT thread-safe.<br/>
+/// Consider using a <see langword="lock"/> statement or <see cref="RandomVault"/> in multi-threaded applications.
 /// </summary>
 public class Xorshift : RandomUInt64Base
 {
     /// <summary>
-    /// Advances a 32-bit Xorshift state in place. A zero state is replaced with the default seed.
+    /// Advances a 32-bit Xorshift state in place. A zero state is set to 2463534242 instead of being advanced.
     /// </summary>
     /// <param name="x">The state to advance.</param>
     public static void NextState32(ref uint x)
@@ -25,7 +27,7 @@ public class Xorshift : RandomUInt64Base
     }
 
     /// <summary>
-    /// Advances a 32-bit Xorshift state. A zero state is replaced with the default seed.
+    /// Advances a 32-bit Xorshift state. A zero state yields 2463534242 instead of being advanced.
     /// </summary>
     /// <param name="x">The current state.</param>
     /// <returns>The next state.</returns>
@@ -43,7 +45,7 @@ public class Xorshift : RandomUInt64Base
     }
 
     /// <summary>
-    /// Advances a 64-bit Xorshift state in place. A zero state is replaced with the default seed.
+    /// Advances a 64-bit Xorshift state in place. A zero state is set to 88172645463325252 instead of being advanced.
     /// </summary>
     /// <param name="x">The state to advance.</param>
     public static void NextState64(ref ulong x)
@@ -60,7 +62,7 @@ public class Xorshift : RandomUInt64Base
     }
 
     /// <summary>
-    /// Advances a 64-bit Xorshift state. A zero state is replaced with the default seed.
+    /// Advances a 64-bit Xorshift state. A zero state yields 88172645463325252 instead of being advanced.
     /// </summary>
     /// <param name="x">The current state.</param>
     /// <returns>The next state.</returns>
@@ -89,7 +91,7 @@ public class Xorshift : RandomUInt64Base
     /// <summary>
     /// Initializes a new instance of the <see cref="Xorshift"/> class with the specified seed.
     /// </summary>
-    /// <param name="seed">The seed.</param>
+    /// <param name="seed">The initial state. Zero is replaced with 88172645463325252.</param>
     public unsafe Xorshift(ulong seed)
     {
         if (seed == 0)

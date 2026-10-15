@@ -49,7 +49,11 @@ public class Base32Test
     [Fact]
     public void Test3()
     {
+        // T=25, E=13, S=24: 11001 01101 11000 11001 -> 0xCB 0x71 (the last four bits do not complete a byte).
         var bytes = Base32Sort.Default.FromStringToByteArray("test");
+        Assert.Equal(new byte[] { 0xCB, 0x71, }, bytes);
+        Assert.Equal(bytes, Base32Sort.Reference.FromStringToByteArray("TEST"));
+
         bytes = Base32Sort.Reference.FromStringToByteArray("*****");
         bytes.Length.Is(0);
 
@@ -69,7 +73,8 @@ public class Base32Test
         }
 
         bytes = Base32Sort.Reference.FromStringToByteArray("0123456abcefgHiJKOxIyzlo1234loOABC");
-        var bytes2 = Base32Sort.Reference.FromStringToByteArray("0123456abcefgHiJKOxIyzlo1234loOABC");
+        bytes.Length.Is(Base32Sort.GetDecodedLength(34));
+        var bytes2 = Base32Sort.Table.FromStringToByteArray("0123456abcefgHiJKOxIyzlo1234loOABC");
         bytes2.SequenceEqual(bytes).IsTrue();
 
         bytes2 = Base32Sort.Reference.FromStringToByteArray("o123456abcefgH1JKOx1yz1o1234looabc");
@@ -107,20 +112,33 @@ public class Base32Test
         b2.SequenceEqual(b).IsTrue();
         UTF8Encoding.UTF8.GetBytes(st).SequenceEqual(utf8).IsTrue();
 
-        // Byte array to span
-        Span<char> charSpan = new char[Base32Sort.GetEncodedLength(source.Length)];
-        Base32Sort.Reference.FromBytesToSpan(source, charSpan, out _).IsTrue();
-        st.Equals(charSpan.ToString()).IsTrue();
+        // Spans: each destination has one spare element and is refilled with a marker before every call,
+        // so a call that writes nothing, too little or too much fails.
+        foreach (var converter in new[] { Base32Sort.Reference, Base32Sort.Table, })
+        {
+            var charSpan = new char[length + 1];
+            charSpan.AsSpan().Fill('#');
+            (converter.FromBytesToSpan(source, charSpan, out var written) && written == length).IsTrue();
+            charSpan.AsSpan(0, length).SequenceEqual(st).IsTrue();
+            (charSpan[^1] == '#').IsTrue();
 
-        Span<byte> byteSpan = new byte[Base32Sort.GetEncodedLength(source.Length)];
-        Base32Sort.Reference.FromBytesToSpan(source, byteSpan, out _).IsTrue();
-        utf8.SequenceEqual(byteSpan.ToArray()).IsTrue();
+            var byteSpan = new byte[length + 1];
+            byteSpan.AsSpan().Fill(0xAA);
+            (converter.FromBytesToSpan(source, byteSpan, out written) && written == length).IsTrue();
+            byteSpan.AsSpan(0, length).SequenceEqual(utf8).IsTrue();
+            (byteSpan[^1] == 0xAA).IsTrue();
 
-        Base32Sort.Reference.FromStringToSpan(charSpan, b, out _).IsTrue();
-        source.SequenceEqual(b).IsTrue();
+            var decoded = new byte[source.Length + 1];
+            decoded.AsSpan().Fill(0xAA);
+            (converter.FromStringToSpan(st, decoded, out written) && written == source.Length).IsTrue();
+            decoded.AsSpan(0, source.Length).SequenceEqual(source).IsTrue();
+            (decoded[^1] == 0xAA).IsTrue();
 
-        Base32Sort.Reference.FromUtf8ToSpan(byteSpan, b, out _).IsTrue();
-        source.SequenceEqual(b).IsTrue();
+            decoded.AsSpan().Fill(0x55);
+            (converter.FromUtf8ToSpan(utf8, decoded, out written) && written == source.Length).IsTrue();
+            decoded.AsSpan(0, source.Length).SequenceEqual(source).IsTrue();
+            (decoded[^1] == 0x55).IsTrue();
+        }
 
         // Table
         var st2 = Base32Sort.Table.FromBytesToString(source);
@@ -134,18 +152,5 @@ public class Base32Test
         b2 = Base32Sort.Table.FromUtf8ToByteArray(utf8)!;
         b2.SequenceEqual(b).IsTrue();
         UTF8Encoding.UTF8.GetBytes(st).SequenceEqual(utf8).IsTrue();
-
-        // Byte array to span
-        Base32Sort.Table.FromBytesToSpan(source, charSpan, out _).IsTrue();
-        st.Equals(charSpan.ToString()).IsTrue();
-
-        Base32Sort.Table.FromBytesToSpan(source, byteSpan, out _).IsTrue();
-        utf8.SequenceEqual(byteSpan.ToArray()).IsTrue();
-
-        Base32Sort.Table.FromStringToSpan(charSpan, b, out _).IsTrue();
-        source.SequenceEqual(b).IsTrue();
-
-        Base32Sort.Table.FromUtf8ToSpan(byteSpan, b, out _).IsTrue();
-        source.SequenceEqual(b).IsTrue();
     }
 }

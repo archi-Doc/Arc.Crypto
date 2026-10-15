@@ -1,6 +1,6 @@
 #!/bin/sh
 $TARGET="thumbv7a-uwp-windows-msvc"
-$BUILD="win-arm64"
+$BUILD="win-arm"
 rustup target add $TARGET
 cargo build --release --target $TARGET
 New-Item -ItemType Directory -Force -Path build/$BUILD/native

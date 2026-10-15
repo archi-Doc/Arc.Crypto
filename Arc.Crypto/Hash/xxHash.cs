@@ -1,6 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -12,8 +13,13 @@ using System.Runtime.InteropServices;
 namespace Arc.Crypto;
 
 /// <summary>
-/// xxHash 64bit Class.
+/// xxHash64 (XXH64, seed 0). Not cryptographic.
 /// </summary>
+/// <remarks>
+/// <see cref="GetHash(ReadOnlySpan{byte})"/>, <see cref="GetHash(byte[], int, int)"/> and <see cref="HashFinal"/> return the value in native byte order (<see cref="BitConverter.GetBytes(ulong)"/>), which is little-endian on common platforms;
+/// there it is the reverse of System.IO.Hashing.XxHash64 and <see cref="XxHash3"/>, which use big-endian.<br/>
+/// <see cref="HashFinal"/> does not reset the state; call <see cref="HashInitialize"/> to start a new hash.
+/// </remarks>
 public unsafe partial class XxHash64 : XxHashBase, IHash
 {
     /// <summary>
@@ -61,9 +67,9 @@ public unsafe partial class XxHash64 : XxHashBase, IHash
     }
 
     /// <summary>
-    /// Static function: Calculates a 64bit hash from the given string.
+    /// Static function: Calculates a 64bit hash of the string's raw UTF-16 bytes (not UTF-8). A <see langword="null"/> string is treated as empty.
     /// </summary>
-    /// <param name="str">The string containing the characters to calculates.</param>
+    /// <param name="str">The string to hash.</param>
     /// <returns>A 64bit hash.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe ulong Hash64(string str) => Hash64(MemoryMarshal.Cast<char, byte>(str));
@@ -199,7 +205,7 @@ public unsafe partial class XxHash64 : XxHashBase, IHash
 
     private static void XXH64_reset(XXH64_state* state, ulong seed)
     {
-        XXH_zero(state, sizeof(XXH64_state));
+        *state = default;
         state->v1 = seed + PRIME64_1 + PRIME64_2;
         state->v2 = seed + PRIME64_2;
         state->v3 = seed + 0;
@@ -322,8 +328,13 @@ public unsafe partial class XxHash64 : XxHashBase, IHash
 }
 
 /// <summary>
-/// xxHash 32bit Class.
+/// xxHash32 (XXH32, seed 0). Not cryptographic.
 /// </summary>
+/// <remarks>
+/// <see cref="GetHash(ReadOnlySpan{byte})"/>, <see cref="GetHash(byte[], int, int)"/> and <see cref="HashFinal"/> return the value in native byte order (<see cref="BitConverter.GetBytes(uint)"/>), which is little-endian on common platforms;
+/// there it is the reverse of System.IO.Hashing.XxHash32, which uses big-endian.<br/>
+/// <see cref="HashFinal"/> does not reset the state; call <see cref="HashInitialize"/> to start a new hash.
+/// </remarks>
 public unsafe class XxHash32 : XxHashBase, IHash
 {
     private const uint PRIME32_1 = 2654435761u;
@@ -366,9 +377,9 @@ public unsafe class XxHash32 : XxHashBase, IHash
     }
 
     /// <summary>
-    /// Static function: Calculates a 32bit hash from the given string.
+    /// Static function: Calculates a 32bit hash of the string's raw UTF-16 bytes (not UTF-8). A <see langword="null"/> string is treated as empty.
     /// </summary>
-    /// <param name="str">The string containing the characters to calculates.</param>
+    /// <param name="str">The string to hash.</param>
     /// <returns>A 32bit hash.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe uint Hash32(string str) => Hash32(MemoryMarshal.Cast<char, byte>(str));
@@ -488,7 +499,7 @@ public unsafe class XxHash32 : XxHashBase, IHash
 
     private static void XXH32_reset(XXH32_state* state, uint seed)
     {
-        XXH_zero(state, sizeof(XXH32_state));
+        *state = default;
         state->v1 = seed + PRIME32_1 + PRIME32_2;
         state->v2 = seed + PRIME32_2;
         state->v3 = seed + 0;
@@ -612,63 +623,27 @@ public unsafe class XxHashBase
     }
 
     /// <summary>
-    /// Converts (void*) to (uint*).
+    /// Reads a little-endian 32-bit value from a possibly unaligned address.
     /// </summary>
-    /// <param name="p">pointer void*.</param>
-    /// <returns>pointer uint*.</returns>
+    /// <param name="p">The address to read from.</param>
+    /// <returns>The value read.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static uint XXH_read32(void* p) => *(uint*)p;
+    internal static uint XXH_read32(void* p) => BitConverter.IsLittleEndian ? Unsafe.ReadUnaligned<uint>(p) : BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<uint>(p));
 
     /// <summary>
-    /// Convert (void*) to (ulong*).
+    /// Reads a little-endian 64-bit value from a possibly unaligned address.
     /// </summary>
-    /// <param name="p">pointer void*.</param>
-    /// <returns>pointer ulong*.</returns>
+    /// <param name="p">The address to read from.</param>
+    /// <returns>The value read.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static ulong XXH_read64(void* p) => *(ulong*)p;
+    internal static ulong XXH_read64(void* p) => BitConverter.IsLittleEndian ? Unsafe.ReadUnaligned<ulong>(p) : BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<ulong>(p));
 
     /// <summary>
-    /// Fills target with zeros.
+    /// Copies bytes between non-overlapping buffers.
     /// </summary>
-    /// <param name="target">target data.</param>
-    /// <param name="length">target length.</param>
-    internal static void XXH_zero(void* target, int length)
-    {
-        var targetP = (byte*)target;
-
-        while (length >= sizeof(ulong))
-        {
-            *(ulong*)targetP = 0;
-            targetP += sizeof(ulong);
-            length -= sizeof(ulong);
-        }
-
-        if (length >= sizeof(uint))
-        {
-            *(uint*)targetP = 0;
-            targetP += sizeof(uint);
-            length -= sizeof(uint);
-        }
-
-        if (length >= sizeof(ushort))
-        {
-            *(ushort*)targetP = 0;
-            targetP += sizeof(ushort);
-            length -= sizeof(ushort);
-        }
-
-        if (length > 0)
-        {
-            *targetP = 0;
-        }
-    }
-
-    /// <summary>
-    /// Copy buffer.
-    /// </summary>
-    /// <param name="target">target buffer.</param>
-    /// <param name="source">source buffer.</param>
-    /// <param name="length">data length.</param>
+    /// <param name="target">The destination buffer.</param>
+    /// <param name="source">The source buffer.</param>
+    /// <param name="length">The number of bytes to copy.</param>
     internal static void XXH_copy(void* target, void* source, int length)
     {
         var sourceP = (byte*)source;

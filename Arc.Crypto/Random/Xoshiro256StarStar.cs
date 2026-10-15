@@ -11,7 +11,7 @@ namespace Arc.Crypto;
 /// <summary>
 /// Represents a pseudo-random number generator based on xoshiro256**.<br/>
 /// This class is NOT thread-safe.<br/>
-/// Consider using <see langword="lock"/> statement or <see cref="RandomVault"/> in multi-threaded application.
+/// Consider using a <see langword="lock"/> statement or <see cref="RandomVault"/> in multi-threaded applications.
 /// </summary>
 public class Xoshiro256StarStar : RandomUInt64Base
 {
@@ -29,10 +29,10 @@ public class Xoshiro256StarStar : RandomUInt64Base
     /// Derives a xoshiro256** state from a seed using SplitMix64, guaranteeing a non-zero state.
     /// </summary>
     /// <param name="seed">The seed value.</param>
-    /// <param name="state0">The first state word.</param>
-    /// <param name="state1">The second state word.</param>
-    /// <param name="state2">The third state word.</param>
-    /// <param name="state3">The fourth state word.</param>
+    /// <param name="state0">When this method returns, contains the first state word.</param>
+    /// <param name="state1">When this method returns, contains the second state word.</param>
+    /// <param name="state2">When this method returns, contains the third state word.</param>
+    /// <param name="state3">When this method returns, contains the fourth state word.</param>
     public static void InitializeState(ulong seed, out ulong state0, out ulong state1, out ulong state2, out ulong state3)
     {
         do
@@ -94,16 +94,16 @@ public class Xoshiro256StarStar : RandomUInt64Base
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Xoshiro256StarStar"/> class.<br/>
+    /// Initializes a new instance of the <see cref="Xoshiro256StarStar"/> class with the specified seed.
     /// </summary>
-    /// <param name="seed">seed.</param>
+    /// <param name="seed">The seed value, expanded into the state with <see cref="RandomUInt64Base.SplitMix64(ref ulong)"/>.</param>
     public Xoshiro256StarStar(ulong seed)
     {
         this.Reset(seed);
     }
 
     /// <summary>
-    /// Reset state vectors with random seeds.
+    /// Resets the state with random seeds from <see cref="RandomNumberGenerator"/>.
     /// </summary>
     public void Reset()
     {
@@ -122,9 +122,9 @@ public class Xoshiro256StarStar : RandomUInt64Base
     }
 
     /// <summary>
-    /// Reset state vectors with the specified seed.
+    /// Resets the state with the specified seed.
     /// </summary>
-    /// <param name="seed">seed.</param>
+    /// <param name="seed">The seed value, expanded into the state with <see cref="RandomUInt64Base.SplitMix64(ref ulong)"/>.</param>
     public void Reset(ulong seed)
     {
         InitializeState(seed, out this.ss0, out this.ss1, out this.ss2, out this.ss3);

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) All contributors. All rights reserved. Licensed under the MIT license.
 
 using System;
+using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -191,14 +192,16 @@ internal class Base32SortTable : IBase32Converter
         {
             for (i = 0; i < n; i += 5)
             {
-                chars[j] = table[(bytes[i] & 0b11111000) >> 3];
-                chars[j + 1] = table[((bytes[i] & 0b00000111) << 2) | ((bytes[i + 1] & 0b11000000) >> 6)];
-                chars[j + 2] = table[(bytes[i + 1] & 0b00111110) >> 1];
-                chars[j + 3] = table[((bytes[i + 1] & 0b00000001) << 4) | ((bytes[i + 2] & 0b11110000) >> 4)];
-                chars[j + 4] = table[((bytes[i + 2] & 0b00001111) << 1) | ((bytes[i + 3] & 0b10000000) >> 7)];
-                chars[j + 5] = table[(bytes[i + 3] & 0b01111100) >> 2];
-                chars[j + 6] = table[((bytes[i + 3] & 0b00000011) << 3) | ((bytes[i + 4] & 0b11100000) >> 5)];
-                chars[j + 7] = table[bytes[i + 4] & 0b00011111];
+                // Read the five bytes once as a big-endian 40-bit value and emit its 5-bit groups, most significant first.
+                var v = ((ulong)BinaryPrimitives.ReadUInt32BigEndian(new ReadOnlySpan<byte>(bytes + i, 4)) << 8) | bytes[i + 4];
+                chars[j] = table[(int)(v >> 35)];
+                chars[j + 1] = table[(int)(v >> 30) & 0b11111];
+                chars[j + 2] = table[(int)(v >> 25) & 0b11111];
+                chars[j + 3] = table[(int)(v >> 20) & 0b11111];
+                chars[j + 4] = table[(int)(v >> 15) & 0b11111];
+                chars[j + 5] = table[(int)(v >> 10) & 0b11111];
+                chars[j + 6] = table[(int)(v >> 5) & 0b11111];
+                chars[j + 7] = table[(int)v & 0b11111];
                 j += 8;
             }
 
@@ -252,14 +255,16 @@ internal class Base32SortTable : IBase32Converter
         {
             for (i = 0; i < n; i += 5)
             {
-                chars[j] = table[(bytes[i] & 0b11111000) >> 3];
-                chars[j + 1] = table[((bytes[i] & 0b00000111) << 2) | ((bytes[i + 1] & 0b11000000) >> 6)];
-                chars[j + 2] = table[(bytes[i + 1] & 0b00111110) >> 1];
-                chars[j + 3] = table[((bytes[i + 1] & 0b00000001) << 4) | ((bytes[i + 2] & 0b11110000) >> 4)];
-                chars[j + 4] = table[((bytes[i + 2] & 0b00001111) << 1) | ((bytes[i + 3] & 0b10000000) >> 7)];
-                chars[j + 5] = table[(bytes[i + 3] & 0b01111100) >> 2];
-                chars[j + 6] = table[((bytes[i + 3] & 0b00000011) << 3) | ((bytes[i + 4] & 0b11100000) >> 5)];
-                chars[j + 7] = table[bytes[i + 4] & 0b00011111];
+                // Read the five bytes once as a big-endian 40-bit value and emit its 5-bit groups, most significant first.
+                var v = ((ulong)BinaryPrimitives.ReadUInt32BigEndian(new ReadOnlySpan<byte>(bytes + i, 4)) << 8) | bytes[i + 4];
+                chars[j] = table[(int)(v >> 35)];
+                chars[j + 1] = table[(int)(v >> 30) & 0b11111];
+                chars[j + 2] = table[(int)(v >> 25) & 0b11111];
+                chars[j + 3] = table[(int)(v >> 20) & 0b11111];
+                chars[j + 4] = table[(int)(v >> 15) & 0b11111];
+                chars[j + 5] = table[(int)(v >> 10) & 0b11111];
+                chars[j + 6] = table[(int)(v >> 5) & 0b11111];
+                chars[j + 7] = table[(int)v & 0b11111];
                 j += 8;
             }
 
@@ -331,11 +336,10 @@ internal class Base32SortTable : IBase32Converter
                     return false;
                 }
 
-                outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
-                outData[j + 1] = (byte)(((i1 & 0b00000011) << 6) | (i2 << 1) | ((i3 & 0b00010000) >> 4));
-                outData[j + 2] = (byte)(((i3 & 0b00001111) << 4) | ((i4 & 0b00011110) >> 1));
-                outData[j + 3] = (byte)(((i4 & 0b00000001) << 7) | (i5 << 2) | ((i6 & 0b00011000) >> 3));
-                outData[j + 4] = (byte)(((i6 & 0b00000111) << 5) | i7);
+                // Pack the eight 5-bit values into a 40-bit value and store it big-endian.
+                var v = ((ulong)i0 << 35) | ((ulong)i1 << 30) | ((ulong)i2 << 25) | ((ulong)i3 << 20) | ((ulong)i4 << 15) | ((ulong)i5 << 10) | ((ulong)i6 << 5) | i7;
+                BinaryPrimitives.WriteUInt32BigEndian(new Span<byte>(outData + j, 4), (uint)(v >> 8));
+                outData[j + 4] = (byte)v;
 
                 j += 5;
             }
@@ -464,11 +468,10 @@ internal class Base32SortTable : IBase32Converter
                     return false;
                 }
 
-                outData[j] = (byte)((i0 << 3) | ((i1 & 0b00011100) >> 2));
-                outData[j + 1] = (byte)(((i1 & 0b00000011) << 6) | (i2 << 1) | ((i3 & 0b00010000) >> 4));
-                outData[j + 2] = (byte)(((i3 & 0b00001111) << 4) | ((i4 & 0b00011110) >> 1));
-                outData[j + 3] = (byte)(((i4 & 0b00000001) << 7) | (i5 << 2) | ((i6 & 0b00011000) >> 3));
-                outData[j + 4] = (byte)(((i6 & 0b00000111) << 5) | i7);
+                // Pack the eight 5-bit values into a 40-bit value and store it big-endian.
+                var v = ((ulong)i0 << 35) | ((ulong)i1 << 30) | ((ulong)i2 << 25) | ((ulong)i3 << 20) | ((ulong)i4 << 15) | ((ulong)i5 << 10) | ((ulong)i6 << 5) | i7;
+                BinaryPrimitives.WriteUInt32BigEndian(new Span<byte>(outData + j, 4), (uint)(v >> 8));
+                outData[j + 4] = (byte)v;
 
                 j += 5;
             }

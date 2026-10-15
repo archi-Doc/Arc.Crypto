@@ -22,7 +22,7 @@ public class Sha3_256 : Sha3
     /// Calculates a hash from the given data and returns it as four 64-bit unsigned integers.
     /// </summary>
     /// <param name="input">The read-only span that contains input data.</param>
-    /// <returns>The 256-bit hash as four 64-bit unsigned integers.</returns>
+    /// <returns>The hash as four unsigned 64-bit words in native byte order.</returns>
     public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) GetHashUInt64(ReadOnlySpan<byte> input)
         => Sha3Helper.Get256UInt64(input);
 
@@ -32,14 +32,14 @@ public class Sha3_256 : Sha3
     /// <param name="input">The byte array that contains input data.</param>
     /// <param name="inputOffset">The offset into the input byte array from which to begin using data.</param>
     /// <param name="inputCount">The number of bytes in the input byte array to use as data.</param>
-    /// <returns>The 256-bit hash as four 64-bit unsigned integers.</returns>
+    /// <returns>The hash as four unsigned 64-bit words in native byte order.</returns>
     public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) GetHashUInt64(byte[] input, int inputOffset, int inputCount)
         => Sha3Helper.Get256UInt64(input.AsSpan(inputOffset, inputCount));
 
     /// <summary>
-    /// Completes the hash calculation and returns the result as four 64-bit unsigned integers.
+    /// Completes the hash calculation, returns the result, and resets the state.
     /// </summary>
-    /// <returns>The 256-bit hash as four 64-bit unsigned integers.</returns>
+    /// <returns>The hash as four unsigned 64-bit words in native byte order.</returns>
     public (ulong Hash0, ulong Hash1, ulong Hash2, ulong Hash3) HashFinalUInt64()
     {
         var state = this.Squeeze();
@@ -99,7 +99,7 @@ public class Sha3_512 : Sha3
 }
 
 /// <summary>
-/// Wrapper class for SHA3.<br/>
+/// Base class for the managed SHA-3 implementations.<br/>
 /// One-shot methods (GetHash) do not affect an incremental calculation in progress.
 /// </summary>
 public abstract class Sha3 : IHash
@@ -114,7 +114,7 @@ public abstract class Sha3 : IHash
     public virtual uint HashBits => 0;
 
     /// <summary>
-    /// Gets the number of hash bytes. e.g. 32, 64.
+    /// Gets the hash size in bytes, such as 32 or 64.
     /// </summary>
     public virtual uint HashBytes => this.HashBits / 8;
 
@@ -137,7 +137,8 @@ public abstract class Sha3 : IHash
     /// Calculates a hash from the given data and writes it to <paramref name="output"/>.
     /// </summary>
     /// <param name="input">The read-only span that contains input data.</param>
-    /// <param name="output">The span that receives the hash. Its length must be at least <see cref="HashBits"/> / 8.</param>
+    /// <param name="output">A buffer of at least <see cref="HashBits"/> / 8 bytes; any trailing bytes are unchanged.</param>
+    /// <exception cref="ArgumentException"><paramref name="output"/> is too small.</exception>
     [SkipLocalsInit]
     public void GetHash(ReadOnlySpan<byte> input, Span<byte> output)
     {
@@ -156,9 +157,10 @@ public abstract class Sha3 : IHash
     }
 
     /// <summary>
-    /// Completes the hash calculation and writes the result to <paramref name="output"/>.
+    /// Completes the hash calculation, writes the result to <paramref name="output"/>, and resets the state.
     /// </summary>
-    /// <param name="output">The span that receives the hash. Its length must be at least <see cref="HashBits"/> / 8.</param>
+    /// <param name="output">A buffer of at least <see cref="HashBits"/> / 8 bytes; any trailing bytes are unchanged.</param>
+    /// <exception cref="ArgumentException"><paramref name="output"/> is too small; the state is left unchanged.</exception>
     public void HashFinal(Span<byte> output)
     {
         var sponge = new KeccakSpongeStruct((int)this.HashBits, this.state, this.statePosition);

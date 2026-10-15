@@ -21,19 +21,38 @@ public class AegisValidationTest
         var message = new byte[33];
         var ad = "associated data"u8.ToArray();
         var cipher = new byte[49];
+        var nonceName = small ? "nonce16" : "nonce32";
+        var keyName = small ? "key16" : "key32";
         foreach (var tag in new[] { -1, 1, 15, 17, 31, 33, })
-        {
-            Assert.Throws<ArgumentOutOfRangeException>(() => encrypt(cipher, message, nonce, key, ad, tag));
-            Assert.Throws<ArgumentOutOfRangeException>(() => decrypt(message, cipher, nonce, key, ad, tag));
+        {// The buffers fit the tag size, so only the tagSize check can reject it.
+            Assert.Throws<ArgumentOutOfRangeException>("tagSize", () => encrypt(new byte[message.Length + tag], message, nonce, key, ad, tag));
+            Assert.Throws<ArgumentOutOfRangeException>("tagSize", () => decrypt(message, new byte[message.Length + tag], nonce, key, ad, tag));
         }
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => encrypt(new byte[48], message, nonce, key, ad, 16));
-        Assert.Throws<ArgumentOutOfRangeException>(() => encrypt(cipher, message, nonce[..^1], key, ad, 16));
-        Assert.Throws<ArgumentOutOfRangeException>(() => encrypt(cipher, message, nonce, key[..^1], ad, 16));
-        Assert.Throws<ArgumentOutOfRangeException>(() => decrypt(message, new byte[15], nonce, key, ad, 16));
-        Assert.Throws<ArgumentOutOfRangeException>(() => decrypt(new byte[32], cipher, nonce, key, ad, 16));
-        Assert.Throws<ArgumentOutOfRangeException>(() => decrypt(message, cipher, nonce[..^1], key, ad, 16));
-        Assert.Throws<ArgumentOutOfRangeException>(() => decrypt(message, cipher, nonce, key[..^1], ad, 16));
+        foreach (var tag in new[] { int.MinValue, int.MaxValue, })
+        {
+            Assert.Throws<ArgumentOutOfRangeException>("tagSize", () => encrypt(cipher, message, nonce, key, ad, tag));
+            Assert.Throws<ArgumentOutOfRangeException>("tagSize", () => decrypt(message, cipher, nonce, key, ad, tag));
+        }
+
+        // A rejected tag size must not write anything, in particular past the end of the ciphertext span.
+        var canary = new byte[message.Length + 17 + 32];
+        canary.AsSpan().Fill(0xCC);
+        Assert.Throws<ArgumentOutOfRangeException>("tagSize", () => encrypt(canary.AsSpan(0, message.Length + 17), message, nonce, key, ad, 17));
+        Assert.All(canary, value => Assert.Equal(0xCC, value));
+
+        Assert.Throws<ArgumentOutOfRangeException>("ciphertext", () => encrypt(new byte[48], message, nonce, key, ad, 16));
+        Assert.Throws<ArgumentOutOfRangeException>("ciphertext", () => decrypt(message, new byte[15], nonce, key, ad, 16));
+        Assert.Throws<ArgumentOutOfRangeException>("plaintext", () => decrypt(new byte[32], cipher, nonce, key, ad, 16));
+
+        // The nonce and key must have the exact size: shorter or longer inputs (such as an AEGIS-256 key passed to AEGIS-128L) are rejected, not truncated.
+        foreach (var length in new[] { 0, key.Length - 1, key.Length + 1, key.Length * 2, })
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(nonceName, () => encrypt(cipher, message, new byte[length], key, ad, 16));
+            Assert.Throws<ArgumentOutOfRangeException>(keyName, () => encrypt(cipher, message, nonce, new byte[length], ad, 16));
+            Assert.Throws<ArgumentOutOfRangeException>(nonceName, () => decrypt(message, cipher, new byte[length], key, ad, 16));
+            Assert.Throws<ArgumentOutOfRangeException>(keyName, () => decrypt(message, cipher, nonce, new byte[length], ad, 16));
+        }
 
         var random = new Random(42);
         random.NextBytes(key);
@@ -64,8 +83,12 @@ public class AegisValidationTest
                     output.AsSpan().Fill(0xA5);
                     Assert.False(softDecrypt(output, cipher, nonce, key, ad, tag));
                     Assert.All(output, value => Assert.Equal(0, value));
+                    output.AsSpan().Fill(0xA5);
+                    Assert.False(decrypt(output, cipher, nonce, key, ad, tag));
+                    Assert.All(output, value => Assert.Equal(0, value));
                     cipher[^1] ^= 1;
                     ad[0] ^= 1;
+                    output.AsSpan().Fill(0xA5);
                     Assert.False(decrypt(output, cipher, nonce, key, ad, tag));
                     Assert.All(output, value => Assert.Equal(0, value));
                     ad[0] ^= 1;

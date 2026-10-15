@@ -10,6 +10,9 @@ cargo build --release --target "$TARGET"
 mkdir -p "build/$BUILD/native"
 cp "target/$TARGET/release/libblake3_dotnet.so" "build/$BUILD/native"
 
-if command -v strip >/dev/null 2>&1; then
+# Prefer a target-specific strip if available (the macOS strip cannot read ELF), otherwise fall back.
+if command -v x86_64-linux-musl-strip >/dev/null 2>&1; then
+  x86_64-linux-musl-strip "build/$BUILD/native"/*.so
+elif command -v strip >/dev/null 2>&1; then
   strip "build/$BUILD/native"/*.so || true
 fi

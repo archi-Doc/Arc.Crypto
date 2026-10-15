@@ -337,10 +337,7 @@ public class AuditRegressionTest
     [Fact]
     public void Sha3MatchesSystemImplementation()
     {
-        if (!SHA3_256.IsSupported || !SHA3_384.IsSupported || !SHA3_512.IsSupported)
-        {
-            return;
-        }
+        Assert.SkipUnless(SHA3_256.IsSupported && SHA3_384.IsSupported && SHA3_512.IsSupported, "The platform does not provide SHA-3.");
 
         var random = new Xoshiro256StarStar(7);
         var data = new byte[1100];

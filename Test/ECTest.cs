@@ -62,11 +62,12 @@ public class ECTest
         order[order.Length - 1]++;
         Secp256k1Curve.Instance.IsValidSeed(order).IsFalse();
 
-        for (var i = 0; i < 1; i++)
+        // A random seed is valid except with negligible probability (and these seeds are fixed by the generator seed).
+        for (var i = 0; i < 4; i++)
         {
             rv.NextBytes(seed);
 
-            Secp256k1Curve.Instance.IsValidSeed(seed);
+            Secp256k1Curve.Instance.IsValidSeed(seed).IsTrue();
         }
 
         Secp256r1Curve.Instance.IsValidSeed(new byte[1]).IsFalse();
@@ -79,12 +80,15 @@ public class ECTest
         order[order.Length - 1]++;
         Secp256r1Curve.Instance.IsValidSeed(order).IsFalse();
 
-        for (var i = 0; i < 1; i++)
+        for (var i = 0; i < 4; i++)
         {
             rv.NextBytes(seed);
 
-            Secp256r1Curve.Instance.IsValidSeed(seed);
+            Secp256r1Curve.Instance.IsValidSeed(seed).IsTrue();
         }
+
+        // RFC 6979 A.2.5: the P-256 private key x.
+        Secp256r1Curve.Instance.IsValidSeed(Hex.FromStringToByteArray("C9AFA9D845BA75166B5C215767B1D6934E50C3DB36E89B127B8A622B120F6721")).IsTrue();
     }
 
     [Fact]
@@ -103,6 +107,7 @@ public class ECTest
         {
             ECParameters key = default;
             key.Curve = ECCurve.CreateFromFriendlyName(curve.CurveName);
+            var valid = 0;
 
             for (var i = 0; i < total; i++)
             {
@@ -111,6 +116,7 @@ public class ECTest
 
                 if (curve.IsValidSeed(seed))
                 {// Valid
+                    valid++;
                     ECParameters key1;
                     using (var ecdsa = ECDsa.Create(key))
                     {
@@ -126,8 +132,14 @@ public class ECTest
                     key1.Q.X!.SequenceEqual(key2.Q.X!).IsTrue();
                     key1.Q.Y!.SequenceEqual(key2.Q.Y!).IsTrue();
                     key1.D!.SequenceEqual(key2.D!).IsTrue();
+
+                    // The point computed by the BCL from this seed must round-trip through the library's point compression.
+                    curve.DecompressY(key1.Q.X!, curve.CompressY(key1.Q.Y!))!.SequenceEqual(key1.Q.Y!).IsTrue();
                 }
             }
+
+            // Almost every random seed is valid; this also keeps the loop from passing vacuously.
+            (valid > total / 2).IsTrue();
         }
     }
 
@@ -186,7 +198,7 @@ public class ECTest
     /// <summary>
     /// The secp256k1 64-bit reduction must match the portable reduction on inputs crafted to hit
     /// its rare branches: the second-fold carry out of 2^256, and results in <c>[p, 2^256)</c>.
-    /// Random inputs cannot reach these (probability ~2^-32), hence the construction.
+    /// Random inputs reach these with negligible probability (far below 2^-128), hence the construction.
     /// </summary>
     [Fact]
     public void P256K1_ReduceBoundaries()
@@ -299,7 +311,8 @@ public class ECTest
 
     /// <summary>
     /// Unit tests for the out-of-line correction helpers of the fused reductions. These paths run
-    /// with probability ~2^-32 per reduction, so they are exercised directly on boundary values.
+    /// with probability ~2^-32 (secp256r1) or far less (secp256k1) per reduction, so they are exercised
+    /// directly on boundary values.
     /// </summary>
     [Fact]
     public void CorrectionHelpers()
@@ -312,6 +325,7 @@ public class ECTest
         var values = new List<BigInteger>
         {
             0, 1, pR1 - 1, pR1, pR1 + 1, pK1 - 1, pK1, pK1 + 1, two256 - 1, two256 - 2,
+            pR1 + (BigInteger.One << 64), pR1 + (BigInteger.One << 128), pR1 - (BigInteger.One << 64), pR1 - (BigInteger.One << 128),
         };
         for (var w = 0; w < 8; w++)
         {

@@ -1,19 +1,22 @@
 extern crate libc;
 
+use zeroize::Zeroize;
+
 // Creates a new instance of Blake3 Hasher
 #[no_mangle]
 pub extern "C" fn blake3_new() -> *mut blake3::Hasher {
   return Box::into_raw(Box::new(blake3::Hasher::new()));
 }
 
-// Creates a new instance of Blake3 Hasher from keyed
+// Creates a Blake3 Hasher in keyed hash mode from a 32-byte key.
 #[no_mangle]
 pub extern "C" fn blake3_new_keyed(ptr: *const u8) -> *mut blake3::Hasher {
     let array = ptr as *const [u8; 32];
     return Box::into_raw(Box::new(blake3::Hasher::new_keyed(unsafe { &*array })));
 }
 
-// Creates a new instance of Blake3 Hasher from keyed
+// Creates a Blake3 Hasher in key derivation mode; invalid UTF-8 in the context is replaced with U+FFFD.
+// The managed wrapper rejects invalid UTF-8 before calling this.
 #[no_mangle]
 pub extern "C" fn blake3_new_derive_key(ptr: *const u8, size: libc::size_t) -> *mut blake3::Hasher {
     let slice = unsafe { std::slice::from_raw_parts(ptr as *const u8, size as usize) };
@@ -21,10 +24,12 @@ pub extern "C" fn blake3_new_derive_key(ptr: *const u8, size: libc::size_t) -> *
     return Box::into_raw(Box::new(blake3::Hasher::new_derive_key(&st)));
 }
 
-// Deletes an existing a new instance of Blake3 Hasher
+// Deletes a Blake3 Hasher created by one of the blake3_new* functions, zeroing its state (key, buffered input) first.
 #[no_mangle]
 pub extern "C" fn blake3_delete(hasher: *mut blake3::Hasher) {
-  unsafe { drop(Box::from_raw(hasher)); }
+  let mut hasher = unsafe { Box::from_raw(hasher) };
+  hasher.zeroize();
+  drop(hasher);
 }
 
 // Resets Blake3 hasher
@@ -59,7 +64,7 @@ pub extern "C" fn blake3_update(
   hasher.update(slice);  
 }
 
-// Updates Blake3 hash with data
+// Updates Blake3 hash with data using Rayon multi-threading (requires the "rayon" feature).
 #[cfg(feature = "rayon")]
 #[no_mangle]
 pub extern "C" fn blake3_update_rayon(

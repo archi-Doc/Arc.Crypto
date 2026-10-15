@@ -6,6 +6,12 @@ defaults:
   run:
     working-directory: lib/blake3_dotnet
 
+env:
+  # Pinned so every runner builds with the same compiler; bump deliberately.
+  RUSTUP_TOOLCHAIN: '1.97.1'
+  # Oldest glibc the linux-x64/arm64/arm libraries may require (RHEL/CentOS 7 and later).
+  MAX_GLIBC: '2.17'
+
 jobs:
   build:
     strategy:
@@ -14,25 +20,50 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
+    - name: Install Rust
+      shell: bash
+      run: |
+          rustup toolchain install "$RUSTUP_TOOLCHAIN" --profile minimal
+          rustc --version
+    - name: Install cargo-zigbuild
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+          python3 -m venv "$RUNNER_TEMP/zigbuild"
+          "$RUNNER_TEMP/zigbuild/bin/pip" install cargo-zigbuild==0.23.4 ziglang==0.16.0
+          echo "$RUNNER_TEMP/zigbuild/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/zigbuild/bin/python" -c 'import os, ziglang; print(os.path.dirname(ziglang.__file__))' >> "$GITHUB_PATH"
     - name: Build Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
+          sudo apt-get update
+          sudo apt-get install -y binutils-aarch64-linux-gnu binutils-arm-linux-gnueabihf
+          zig version
+          cargo zigbuild --version
           chmod 755 *.sh
           echo "building linux-x64"
           ./build-linux-x64.sh
           echo "building linux-arm64"
-          sudo apt-get install gcc-aarch64-linux-gnu      
           ./build-linux-arm64.sh
           echo "building linux-arm"
-          sudo apt-get install gcc-arm-linux-gnueabihf      
           ./build-linux-arm.sh
-    - name: Build macOS
+    - name: Check glibc symbol versions
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+          ./check-glibc.sh "$MAX_GLIBC" objdump build/linux-x64/native/libblake3_dotnet.so
+          ./check-glibc.sh "$MAX_GLIBC" aarch64-linux-gnu-objdump build/linux-arm64/native/libblake3_dotnet.so
+          ./check-glibc.sh "$MAX_GLIBC" arm-linux-gnueabihf-objdump build/linux-arm/native/libblake3_dotnet.so
+    - name: Build macOS and musl Linux
       if: matrix.os == 'macos-latest'
       run: |
           chmod 755 *.sh
           ./build-osx-x64.sh
           ./build-osx-arm64.sh
+          brew tap messense/macos-cross-toolchains
+          brew install aarch64-unknown-linux-musl
+          brew install x86_64-unknown-linux-musl
+          ./build-linux-musl-x64.sh
+          ./build-linux-musl-arm64.sh
     - name: Build Windows
       if: matrix.os == 'windows-latest'
       run: |
@@ -41,7 +72,7 @@ jobs:
           ./build-win-arm64.ps1
 #          ./build-win-arm.ps1
     - name: Artifacts
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: native-${{ matrix.os }}
         path: lib/blake3_dotnet/build/
