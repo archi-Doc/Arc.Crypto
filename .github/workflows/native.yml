@@ -15,6 +15,8 @@ env:
 jobs:
   build:
     strategy:
+      # Let every OS finish and upload its artifact even if another one fails.
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
@@ -39,7 +41,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y binutils-aarch64-linux-gnu binutils-arm-linux-gnueabihf
           zig version
-          cargo zigbuild --version
+          # The zigbuild subcommand rejects --version; ask the binary itself.
+          cargo-zigbuild --version
           chmod 755 *.sh
           echo "building linux-x64"
           ./build-linux-x64.sh
